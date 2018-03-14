@@ -5,6 +5,8 @@ import scipy.cluster
 import chess_helper
 import chess
 import cv2
+import math
+
 
 BLACK = (0.0, 0.0, 0.0)
 MINIMAL_PLAYER_BOARD_RATIO = 0.2
