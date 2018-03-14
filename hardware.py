@@ -38,12 +38,17 @@ class hardware:
             gui_img_manager.add_img(img)
             return img
         else:
-                if(angle_idx==0):
-                    angle = connection.RIGHT
-                else:
-                    angle = connection.LEFT
-                self.socket.send_msg(connection.REQUEST_SHOT_MSG + angle)
-                img =self.socket.get_image()
-                gui_img_manager.add_img(img)
-                return img
+            if(angle_idx==0):
+                angle = connection.RIGHT
+            else:
+                angle = connection.LEFT
+            self.socket.send_msg(connection.REQUEST_SHOT_MSG + angle)
+            img =self.socket.get_image()
+            gui_img_manager.add_img(img)
+            return img
 
+    def player_indication(self, move):
+        if self.is_test:
+            print("sending move to player: " + move)
+        else:
+            self.socket.send_msg(connection.MOVE_MSG + move)

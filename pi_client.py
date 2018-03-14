@@ -467,7 +467,5 @@ while True:
     print('msg is '+msg)
     if msg[0:-1] == connection.REQUEST_SHOT_MSG:
         take_shot(msg[-1])
-    elif msg == connection.GOOD_SHOT_MSG:
-        print('good shot!')
-    else:
-        indicate_move(msg)
+    elif msg[0:-4] == connection.MOVE_MSG:
+        indicate_move(msg[-4:])

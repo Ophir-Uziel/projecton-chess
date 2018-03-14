@@ -7,8 +7,8 @@ from threading import Thread
 SIZE_LEN = 10
 
 ### Error fixing consts ###
-REQUEST_SHOT_MSG = "please take photo"
-GOOD_SHOT_MSG = "great f*king shot"
+REQUEST_SHOT_MSG = "please take photo" #append 0 or 1 to indicate direction
+MOVE_MSG = "please do move" #append move to request it
 RIGHT = "0"
 LEFT = "1"
 
