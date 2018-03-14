@@ -1,5 +1,4 @@
 import socket
-import cv2
 import numpy
 
 from threading import Thread
@@ -9,8 +8,6 @@ SIZE_LEN = 10
 ### Error fixing consts ###
 REQUEST_SHOT_MSG = "please take photo"
 GOOD_SHOT_MSG = "great f*king shot"
-RIGHT = "0"
-LEFT = "1"
 
 LAPTOP_IP = '192.168.43.195'
 SEND_TIMEOUT = 2.0 #seconds
@@ -26,46 +23,34 @@ sender is nonblocking while receiver obviously is.
 class connection:
 
     def __init__(self, type, port=PORT):
-        while True:
-            try:
-                if(type == SENDER):
-                    self.timeout = SEND_TIMEOUT
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.settimeout(self.timeout)
-                    s.connect((LAPTOP_IP, port))
-                    print("Connected to GUI!")
-                    self.socket = s
-                else:
-                    self.timeout = LISTEN_TIMEOUT
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.bind(("", port))
-                    self.sock = s
-                    self.sock.settimeout(self.timeout)
-                    self.sock.listen(1)
-                    sender, address = self.sock.accept()
-                    print("Successfully connected to pi: ", address)
-                    self.socket = sender
-                break
-            except:
-                a=0
-                #print("Failed to connect to GUI!")
-        self.thread = None
 
-    def send_image(self, img):
-        def really_send(img):
-            try:
-                self.socket.settimeout(SEND_TIMEOUT)
-                str_encode = cv2.imencode('.jpg', img)[1].tostring()
-                print('sending img message of size ' + str(len(str_encode)))
-                self.send_data(str_encode)
-            except:
-                print("failed to send image <:-(")
+        def setup_socket(me,port, type):
+            while True:
+                try:
+                    if(type == SENDER):
+                        me.timeout = SEND_TIMEOUT
+                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        s.settimeout(me.timeout)
+                        s.connect((LAPTOP_IP, port))
+                        print("Connected to GUI!")
+                        self.socket = s
+                    else:
+                        me.timeout = LISTEN_TIMEOUT
+                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        s.bind(("", port))
+                        self.sock = s
+                        self.sock.settimeout(me.timeout)
+                        self.sock.listen(1)
+                        sender, address = self.sock.accept()
+                        print("Successfully connected to pi: ", address)
+                        self.socket = sender
+                    break
+                except:
+                    print("Failed to connect to GUI!")
 
-        if not self.thread is None:
-            self.thread.join()
-
-        self.thread = Thread(target = really_send, args = (img,))
+        self.thread = Thread(target=setup_socket, args=(self,port,type))
         self.thread.start()
+        self.thread.join()
 
     def send_msg(self, msg):
         def really_send(msg):
@@ -80,16 +65,6 @@ class connection:
 
         self.thread = Thread(target=really_send, args=(msg,))
         self.thread.start()
-
-    def get_image(self):
-        self.socket.settimeout(LISTEN_TIMEOUT)
-        while True:
-            msg = self.recv_data()
-            decoded = numpy.fromstring(msg,numpy.uint8)
-            img = cv2.imdecode(decoded,
-                                cv2.IMREAD_COLOR)
-            if not (img is None):
-                return img
 
     def get_msg(self):
         self.socket.settimeout(LISTEN_TIMEOUT)
