@@ -9,6 +9,10 @@ class chess_helper:
     ME = True
 
     def __init__(self, start_player):
+        """
+
+        :param start_player:
+        """
         self.board = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         self.curr_player = start_player
         if(True):

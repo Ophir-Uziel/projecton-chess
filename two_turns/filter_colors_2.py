@@ -73,7 +73,7 @@ class filter_colors_2:
         main_colors = board_colors
         main_colors.append(user_color)
         main_colors.append(rival_color)
-        self.set_colors_nums_and_RC(main_colors)
+        self.set_colors_nums(main_colors)
         print('main colors are:')
         print(main_colors)
         self.main_colors = main_colors
@@ -149,17 +149,17 @@ class filter_colors_2:
         rank = num_of_player_pix / num_of_pix
         print(rank)
         if rank < MINIMAL_PLAYER_BOARD_RATIO:
-            if (is_me_white and is_up) or (not is_me_white and not is_up):
+            if (is_me_white and not player) or (not is_me_white and player):
                 player_color = board_colors[0]
             else:
                 player_color = board_colors[1]
         return player_color
 
-    def set_colors_nums_and_RC(self, main_colors):
+    def set_colors_nums(self, main_colors):
         self.USER_NUM = 4
         self.RIVAL_NUM = 8
 
-        # main colors order: black, white, user, rival
+        # main colors order: black = 1, white = 2, user = 4, rival = 8
         if self.cmpT(main_colors[2], main_colors[0]):
             self.USER_NUM = BLACK_NUM
         elif self.cmpT(main_colors[2], main_colors[1]):
@@ -168,28 +168,14 @@ class filter_colors_2:
             self.RIVAL_NUM = BLACK_NUM
         elif self.cmpT(main_colors[3], main_colors[1]):
             self.RIVAL_NUM = WHITE_NUM
-        
-        self.RC_ME_BLACK_SOURCE = [BLACK_NUM - self.USER_NUM, self.RIVAL_NUM - self.USER_NUM]
-        self.RC_ME_WHITE_SOURCE = [WHITE_NUM - self.USER_NUM, self.RIVAL_NUM - self.USER_NUM]
-        self.RC_HIM_BLACK_SOURCE = [BLACK_NUM - self.RIVAL_NUM, self.USER_NUM - self.RIVAL_NUM]
-        self.RC_HIM_WHITE_SOURCE = [WHITE_NUM - self.RIVAL_NUM, self.USER_NUM - self.RIVAL_NUM]
-        self.RC_ME_BLACK_TARGET = [self.USER_NUM - BLACK_NUM, self.USER_NUM - self.RIVAL_NUM]
-        self.RC_ME_WHITE_TARGET = [self.USER_NUM - WHITE_NUM, self.USER_NUM - self.RIVAL_NUM]
-        self.RC_HIM_BLACK_TARGET = [self.RIVAL_NUM - BLACK_NUM, self.RIVAL_NUM - self.USER_NUM]
-        self.RC_HIM_WHITE_TARGET = [self.RIVAL_NUM - WHITE_NUM, self.RIVAL_NUM - self.USER_NUM]
 
-        if self.USER_NUM == BLACK_NUM :
-            self.RC_ME_BLACK_SOURCE = [self.RIVAL_NUM - self.USER_NUM]
-            self.RC_ME_BLACK_TARGET = [self.USER_NUM - self.RIVAL_NUM]
-        elif self.USER_NUM == WHITE_NUM:
-            self.RC_ME_WHITE_SOURCE = [self.RIVAL_NUM - self.USER_NUM]
-            self.RC_ME_WHITE_TARGET = [self.USER_NUM - self.RIVAL_NUM]
-        if self.RIVAL_NUM == BLACK_NUM:
-            self.RC_HIM_BLACK_SOURCE = [self.USER_NUM - self.RIVAL_NUM]
-            self.RC_HIM_BLACK_TARGET = [self.RIVAL_NUM - self.USER_NUM]
-        elif self.RIVAL_NUM == WHITE_NUM:
-            self.RC_HIM_WHITE_SOURCE = [self.USER_NUM - self.RIVAL_NUM]
-            self.RC_HIM_WHITE_TARGET = [self.RIVAL_NUM - self.USER_NUM]
+        self.R2W = WHITE_NUM - self.RIVAL_NUM
+        self.R2B = BLACK_NUM - self.RIVAL_NUM
+        self.R2U = self.USER_NUM - self.RIVAL_NUM
+        self.U2R = self.RIVAL_NUM - self.USER_NUM
+        self.B2R = self.RIVAL_NUM - BLACK_NUM
+        self.W2R = self.RIVAL_NUM - WHITE_NUM
+
         return
 
     ###########################################################################
@@ -296,29 +282,27 @@ class filter_colors_2:
                 i += 1
         return new_im
 
-    def make_binary_relevant_diff_im(self, im1, im2, is_white, is_source,my_turn):
-        if my_turn:
+    def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
+        is_white = self.chess_helper_2.square_color(square)
+        RC = []
+        if is_source:
             if is_white:
-                if is_source:
-                    RC = self.RC_ME_WHITE_SOURCE
-                else:
-                    RC = self.RC_ME_WHITE_TARGET
+                RC.append(self.R2W)
             else:
-                if is_source:
-                    RC = self.RC_ME_BLACK_SOURCE
-                else:
-                    RC = self.RC_ME_BLACK_TARGET
+                RC.append(self.R2B)
+            if self.chess_helper_2.piece_color(square):
+                #TODO correct chess_helper - change the colors of pieces to User and Rival
+                RC.append(self.R2U)
         else:
             if is_white:
-                if is_source:
-                    RC = self.RC_HIM_WHITE_SOURCE
-                else:
-                    RC = self.RC_HIM_WHITE_TARGET
+                RC.append(self.W2R)
             else:
-                if is_source:
-                    RC = self.RC_HIM_BLACK_SOURCE
-                else:
-                    RC = self.RC_HIM_BLACK_TARGET
+                RC.append(self.B2R)
+            if self.delayed_chess_helper.piece_color(square) or \
+                    self.delayed_chess_helper.piece_color(self.chess_helper_2.get_square_bellow(square)):
+                RC.append(self.U2R)
+        while 0 in RC:
+            RC.remove(0)
         binary_im = []
         for rowidx in range(len(im1)):
             binary_im.append([])
