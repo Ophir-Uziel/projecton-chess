@@ -75,15 +75,15 @@ class identify_board:
         self.first = False
 
     """
-    :return image of board, including an extra line above the board.
+    :return image of board, including an extra line above the board
     """
 
     def get_board_image(self, img):
-        fy_shrink = 500 / len(img)
-        fx_shrink = 500 / len(img[0])
+        fy_shrink = RESIZE_HEIGHT / len(img)
+        fx_shrink = RESIZE_WIDTH / len(img[0])
         resizeImg = cv2.resize(img, (len(img[0]), len(img)), fx=fx_shrink,
                                fy=fy_shrink)
-        resizeImg = resizeImg[CUT_UP:CUT_DOWN, :]
+        resizeImg = resizeImg[CUT_UP:CUT_DOWN,:]
         resizeImgGrey = cv2.cvtColor(resizeImg, cv2.COLOR_RGB2GRAY)
         # get lines from image, and edge-image
         edgeim = self.get_edge_image(resizeImgGrey)
@@ -726,9 +726,9 @@ class identify_board:
             print("identify board has failed")
             return real_img, edgeim
 
-# a = identify_board()
-# img = cv2.imread("images/0.jpg", cv2.IMREAD_COLOR)
-# new = a.main(img)
+a = identify_board()
+img = cv2.imread("images/0.jpg", cv2.IMREAD_COLOR)
+new = a.main(img)
 
 
 # if you want to see the image:
