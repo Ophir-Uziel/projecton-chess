@@ -1,7 +1,8 @@
+import cv2
+
 import filter_colors_2
 import identify_board
-import board_cut_fixer
-import cv2
+from two_turns import board_cut_fixer
 
 print_and_save = True
 

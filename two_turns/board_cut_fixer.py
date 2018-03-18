@@ -869,7 +869,7 @@ def test(foldername):
             print(str(j)+" failed")
 
 
-test('pics')
+#test('pics')
 
 
 
