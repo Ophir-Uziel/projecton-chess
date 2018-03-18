@@ -2,7 +2,7 @@ import os
 import cv2
 #import RPi.GPIO as gpio
 import gpio
-import picamera
+#import picamera
 import time
 from scipy import misc
 import gui_img_manager
@@ -36,7 +36,7 @@ class hardware:
                 sorted_img_names = sorted(img_names, key= first_2_chars)
                 img_array = []
                 for j in range(len(sorted_img_names)):
-                    img_array.append(cv2.imread(imgs_if_tester[i] +
+                    img_array.append(cv2.imread(imgs_if_tester[i] +'/'+
                                               sorted_img_names[j]))
                 print(sorted_img_names)
                 self.angles_imgs_lst.append(img_array)
@@ -46,10 +46,10 @@ class hardware:
             gpio.setmode(gpio.BCM)
             if(ENABLE_VIBRATIONS):
                 self.init_vib()
-        if (IS_PI):
-            self.socket = connection.connection(connection.SENDER)
-        else:
-            self.socket = connection.connection(connection.LISTENER)
+        #if (IS_PI):
+         #   self.socket = connection.connection(connection.SENDER)
+        #else:
+         #   self.socket = connection.connection(connection.LISTENER)
 
     def init_vib(self):
         gpio.setup(ur, gpio.OUT)

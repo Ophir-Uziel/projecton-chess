@@ -1,6 +1,6 @@
 import math
 import cv2
-import identify_board
+import identify_board3
 import copy
 import numpy as np
 import bisect
@@ -13,8 +13,8 @@ DEBUG = False
 MIN_GRID_SIZE = 1.0 / 15
 MAX_GRID_SIZE = 1.0 / 7
 MAX_LINE_DIST_RATIO = 1.0 / 15
-RESIZE_HEIGHT = identify_board.RESIZE_HEIGHT
-RESIZE_WIDTH = identify_board.RESIZE_WIDTH
+RESIZE_HEIGHT = identify_board3.RESIZE_HEIGHT
+RESIZE_WIDTH = identify_board3.RESIZE_WIDTH
 MAX_NUM_LINES = 11
 MAX_LINES_IN_GRID = 9
 LINE_SERIES_COEFF = 5

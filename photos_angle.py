@@ -3,7 +3,6 @@ import identify_board
 import board_cut_fixer
 import cv2
 
-
 print_and_save = True
 class photos_angle:
     def __init__(self, hardware1, chess_helper1, self_idx):
@@ -25,14 +24,14 @@ class photos_angle:
         cut_board_im, edges = self.boardid.main(new_board_im)
         if print_and_save:
             if dir_if_test is not  None:
-                cv2.imwrite(dir_if_test + 'first_cut_img.jpg', cut_board_im)
+                cv2.imwrite(dir_if_test + 'first_cut_img(new)' + str(self.idx) + '.jpg', cut_board_im)
             else:
-                cv2.imwrite('first_cut_img.jpg', cut_board_im)
+                cv2.imwrite('first_cut_img(new)' + str(self.idx) + '.jpg', cut_board_im)
         better_cut_board_im = self.fixer.main(cut_board_im, edges)
         if dir_if_test is not None:
-            cv2.imwrite(dir_if_test + 'second_cut_img' + str(self.idx) + '.jpg', better_cut_board_im)
+            cv2.imwrite(dir_if_test + 'second_cut_img(new)' + str(self.idx) + '.jpg', better_cut_board_im)
         else:
-            cv2.imwrite('second_cut_img' + str(self.idx) + '.jpg', better_cut_board_im)
+            cv2.imwrite('second_cut_img(new)' + str(self.idx) + '.jpg', better_cut_board_im)
         return better_cut_board_im
 
     def get_square_diff(self, cut_board_im, src, is_source):

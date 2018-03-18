@@ -73,7 +73,7 @@ class game_loop:
         # for angle in self.ph_angles:
         #    angle.update_board(self.last_move)
         real_move = None
-        if(self.is_test): 
+        if self.is_test:
             real_move = self.real_moves[self.moves_counter]
         relevant_squares = self.chesshelper.get_relevant_locations()
         sources = relevant_squares[0]
