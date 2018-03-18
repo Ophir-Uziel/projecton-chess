@@ -24,6 +24,7 @@ def super_tester(moves_file, img_dir_lst,with_saves):
         angles_num = len(img_dir_lst)
     game = game_loop.game_loop(angles_num, real_moves,img_dir_lst, with_saves)
     detected_moves = []
+
     for i in range(len(real_moves)):
         detected_moves.append(game.get_new_move())
         if detected_moves[i][0] == real_moves[i][0] and detected_moves[i][1] == real_moves[i][1]:
