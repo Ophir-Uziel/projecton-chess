@@ -730,3 +730,4 @@ a = identify_board()
 #new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
 #a.draw_lines([],new)
 a.test('images\\source')
+#check
