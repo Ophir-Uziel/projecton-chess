@@ -148,19 +148,6 @@ class game_loop_2:
             locsabvims.append(diff_abv_im)
         return locssims, locsabvims
 
-    def get_abv_loc(self, loc):
-        column = loc[0]
-        row_num = int(loc[1])
-        if row_num < 8:
-            return column + str(row_num + 1)
-        else:
-            return False
-
-    def get_bel_loc(self, loc):
-        column = loc[0]
-        row_num = int(loc[1])
-        return column + str(row_num - 1)
-
     def create_black_im(self):
         black_im = []
         for i in range(20):
