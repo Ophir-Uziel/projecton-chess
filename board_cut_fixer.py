@@ -1,20 +1,31 @@
 import math
 import cv2
-import identify_board3
+import identify_board
 import copy
 import numpy as np
 import bisect
-import gui_img_manager
+#import gui_img_manager
 
 ### DEBUG FLAG ###
-DEBUG = False
+DEBUG = True
+
+##### Gaussian Threshold parameters #####
+GAUSS_MAX_VALUE = 255
+GAUSS_BLOCK_SIZE = 115
+GAUSS_C = 13
+
+##### Edge detection parameters #####
+EDGE_DST = 10
+EDGE_KSIZE = 3
+EDGE_SCALE = 10
+
 
 
 MIN_GRID_SIZE = 1.0 / 15
 MAX_GRID_SIZE = 1.0 / 7
 MAX_LINE_DIST_RATIO = 1.0 / 15
-RESIZE_HEIGHT = identify_board3.RESIZE_HEIGHT
-RESIZE_WIDTH = identify_board3.RESIZE_WIDTH
+RESIZE_HEIGHT = identify_board.RESIZE_HEIGHT
+RESIZE_WIDTH = identify_board.RESIZE_WIDTH
 MAX_NUM_LINES = 11
 MAX_LINES_IN_GRID = 9
 LINE_SERIES_COEFF = 5
@@ -36,19 +47,48 @@ LINE_METRIC_DIST_ERROR_COEFF = 6
 LINE_UNIFORM_SCANNER_PIXEL_JUMP = 15
 
 #####sizes of the window in the convolution
-PartOfWindowHeight = 25
-PartOfWindowLength = 40
+PartOfWindowHeight = 16
+PartOfWindowLength = 60
 ConvSkipX = 4
 ConvSkipY = 4
+
 #####number of changes to be an legal image
-CHANGE_COLOR_SAF = 4
+CHANGE_COLOR_SAF = 6
+CHANGE_DIFF = 6
+BOTTOM_MAX_CHANGE_BEL = 3
+TOP_MAX_CHANGE_ABV = 3
 
 ##### Gaussian Threshold parameters #####
 GAUSS_MAX_VALUE = 255
-GAUSS_BLOCK_SIZE = 115
+GAUSS_BLOCK_SIZE = 109
 GAUSS_C = 13
 
+##### nuber of iterations for the board cut fixer#####
+NUM_ITERATIONS = 3
+
+BOTTOM_HOR_LINE_VARIATION = RESIZE_HEIGHT//16
+
+
+# Line-finding parameters
+VER_ANGLE_RANGE = 0.1
+HOR_ANGLE_RANGE = 0.18
+ANGLE_CONSTRAINT_DECAY_FACTOR = 0.3
+
+PROJECTION_SPARE_GRID_SIZE = 11
+PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
+
+## for getting best bottom line - number of options to test
+BOTTOM_LINE_INDEX_VARIATION = 2
+
+## for image diff area
+IM_DIFF_AREA_SKIP = 4
+
 class board_cut_fixer:
+
+    def __init__(self):
+        self.last_image_bw = cv2.imread("utils\\img_start_bw.jpg",
+                                        cv2.IMREAD_GRAYSCALE)
+
 
     def get_theta(self,line):
         try:
@@ -200,12 +240,20 @@ class board_cut_fixer:
     fixes projected image
     """
 
-    def projection(self, pointslst, img, frame):
+
+    def projection(self, pointslst, img, frame, take_spare):
+        if(take_spare):
+            diff = PROJECTION_SPARE_DIFF
+            gridsize = PROJECTION_SPARE_GRID_SIZE
+        else:
+            diff = 0
+            gridsize = 8
+
         pts1 = np.float32(pointslst)
-        x_hi = frame[1]*RESIZE_WIDTH/8
-        x_lo = frame[3]*RESIZE_WIDTH/8
-        y_hi = (8 - frame[0]) * RESIZE_HEIGHT / 8
-        y_lo = (8-frame[2])*RESIZE_HEIGHT/8
+        x_hi = (diff+frame[1])*RESIZE_WIDTH/gridsize
+        x_lo = (diff+frame[3])*RESIZE_WIDTH/gridsize
+        y_hi = (8+diff- frame[0]) * RESIZE_HEIGHT / gridsize
+        y_lo = (8+diff-frame[2])*RESIZE_HEIGHT/gridsize
         pts2 = np.float32([[x_lo, y_hi], [x_hi, y_hi],
                            [x_hi, y_lo],[x_lo, y_lo]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
@@ -227,17 +275,22 @@ class board_cut_fixer:
             k = cv2.waitKey(0)
             return
 
-    def get_lines(self,img):
-        linesP = cv2.HoughLinesP(img, 1, math.pi / 180, 100, minLineLength=100, maxLineGap=30)
+    def get_lines(self,img, constraint_factor):
+        linesP = cv2.HoughLinesP(img, 1, math.pi / 180, 100,
+                                 minLineLength=100, maxLineGap=50)
         lines = self.Make_3d_List_2_2d_List(linesP)
         hor = []
         ver = []
+        ver_range = VER_ANGLE_RANGE*constraint_factor
+        hor_range = HOR_ANGLE_RANGE*constraint_factor
         for l in lines:
-            if self.get_theta(l) < (math.pi / 2) + 0.1 and self.get_theta(l) > (math.pi / 2) - 0.1:
+            theta = self.get_theta(l)
+            if theta < (math.pi / 2) + ver_range and \
+                            theta > (math.pi / 2) - ver_range:
                 ver.append(l)
-            if self.get_theta(l) < 0.18 or self.get_theta(l) > 2.96:
+            if theta < hor_range or theta > math.pi - hor_range:
                 hor.append(l)
-    #        hor.sort(key=lambda x: x[1], reverse=True)
+                #        hor.sort(key=lambda x: x[1], reverse=True)
         #hor = self.connectLines(hor,len(img))
         #ver = self.connectLines(ver,len(img))
         return hor,ver
@@ -251,7 +304,8 @@ class board_cut_fixer:
     series.
     :return a list of best fits to the series, SORTED BY FIT!
     """
-    def get_line_series(self,lines, valfunc, lower_d, upper_d, num_vals):
+    def get_line_series(self,lines, valfunc, lower_d, upper_d, num_vals,
+                        ):
         lines.sort(key = valfunc)
         vals = [valfunc(l) for l in lines]
         best_d = 0
@@ -275,7 +329,6 @@ class board_cut_fixer:
                                 scores.append(0)
                                 tmp_lines.append(lines[i])
                             else:
-                                val_closest = min(vals, key=lambda x:abs(x-val_n))
                                 # find closest value <= val_n
                                 val_closest_idx = bisect.bisect_right(vals,
                                                                       val_n)-1
@@ -287,14 +340,14 @@ class board_cut_fixer:
                                 diff = abs(val_n - val_closest)
                                 if diff<=d/2:
                                     scores.append(1/(
-                                    1+LINE_SERIES_COEFF*diff*1.0/d)**LINE_SERIES_POWER)
+                                        1+LINE_SERIES_COEFF*diff*1.0/d)**LINE_SERIES_POWER)
                                     tmp_lines.append(line_closest)
                                 else:
                                     scores.append(0)
                                     tmp_lines.append(lines[i])
-                                # score it
-                                # will
-                                #  have :(
+                                    # score it
+                                    # will
+                                    #  have :(
 
                         score = sum(scores[0:num_vals])
                         best_window_score = score
@@ -319,39 +372,6 @@ class board_cut_fixer:
     def line_eq(self, l1,l2):
         return l1[0]==l2[0] and l1[1] == l2[1] and l1[2]==l2[2] and l1[3]==l2[3]
 
-    def get_last_line_extrapolation(self, lines, baseline, line_num, get_theta, get_pos, d):
-
-        tmplines = []
-        foundbase = False
-        for line in lines:
-            if not (foundbase and self.line_eq(baseline, line)):
-                tmplines.append(line)
-            if self.line_eq(baseline, line):
-                foundbase = True
-
-        angles = [get_theta(l) for l in tmplines]
-        angle_avg = sum(angles) / len(angles)
-        angle_std = np.std(angles)
-        if(DEBUG):
-            print("angles:" + str(angles))
-            print("angles std:" + str(angle_std))
-            print("angles avg:" + str(angle_avg))
-        angles2 = [angle for angle in angles if abs(angle - angle_avg) < ANGLE_STD_COEFF * angle_std]
-        if len(angles2) < MIN_NUM_ANGLES_AVG:
-            angles2 = sorted(angles, key=lambda x:abs(x-angle_avg))
-            angles2 = angles2[:MIN_NUM_ANGLES_AVG]
-        angles = angles2
-        if(DEBUG):
-            print("after fix ")
-            print("angles:" + str(angles))
-            print("angles avg:" + str(angle_avg))
-        angle_avg = sum(angles) / len(angles)
-        origpos = get_pos(baseline)
-        positions = [get_pos(l) for l in tmplines]
-        origloc = (origpos - min(positions)) * 1.0 / d
-        finalLoc = -origloc+line_num
-        finalPos = origpos + finalLoc * d
-        return finalPos , angle_avg
 
     def make_hor_line(self, point, angle):
         x1 = point[0]
@@ -447,70 +467,112 @@ class board_cut_fixer:
         return m1, n1
 
     def gausThresholdChess(self, img):
-        gaus = cv2.adaptiveThreshold(img, GAUSS_MAX_VALUE,
+        img2 = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        gaus = cv2.adaptiveThreshold(img2, GAUSS_MAX_VALUE,
                                      cv2.ADAPTIVE_THRESH_MEAN_C,
                                      cv2.THRESH_BINARY, GAUSS_BLOCK_SIZE,
                                      GAUSS_C)
-#        cv2.imshow("raveh",gaus)
-#        cv2.waitKey(0)
-        # cv2.imshow("saharur",gaus)
-        # k =  cv2.waitKey(0)
+
         return gaus
 
     def doConv(self, img, line):
         window_length = len(img) // PartOfWindowLength
-        window_width = len(img[0]) // PartOfWindowHeight
+        window_height = len(img[0]) // PartOfWindowHeight
 
-        changeCounter = 0
-        lastcolorFlag = 0  ##zero if last is white, 1 if black
-        newim = copy.deepcopy(img)
-        for i in range(len(img) - window_length - 1):
+        changeCounterAbv = 0
+        changeCounterBel = 0
+        lastcolorFlag = -1  ##zero if last is white, 1 if black
+        #    newim = copy.deepcopy(img)
+        m, n = self.find_m_n(line)
+        m = int(m)
+        n = int(n)
+        for i in range(0,len(img) - window_length - 1, window_length):
             whitepix = 0
             blackpix = 0
-            m, n = self.find_m_n(line)
             for j in range(i, i + window_length, ConvSkipX):
-                for k in range(int(m) * j + int(n) - window_width,
-                               int(m) * j + int(n), ConvSkipY):
-                    if k>=len(newim) or j>=len(newim[0]):
+                for k in range(m * j + n - window_height,
+                               m * j + n, ConvSkipY):
+                    if k>=len(img) or j>=len(img[0]):
                         break
-                    if (newim[k][j] > 0):
+                    if (img[k][j] > 0):
                         whitepix = whitepix + 1
                     else:
                         blackpix = blackpix + 1
-           #         newim[k][j] = 0
-          #  cv2.imshow("raveh", newim)
-          #  cv2.waitKey(0)
-                        #                newim[k][j] = 0
-                        #        cv2.imshow("n",newim)
-                        #        cv2.waitKey(0)
-            # print(whitepix,blackpix)
             if whitepix > blackpix:
                 specificcolorFlag = 1  ##zero if last is white, 1 if black
             else:
                 specificcolorFlag = 0
-            if specificcolorFlag != lastcolorFlag:
-                changeCounter = changeCounter + 1
+            if lastcolorFlag == -1:
                 lastcolorFlag = specificcolorFlag
-        return changeCounter
+            if specificcolorFlag != lastcolorFlag:
+                changeCounterAbv = changeCounterAbv + 1
+                lastcolorFlag = specificcolorFlag
 
+        lastcolorFlag = -1
+        for i in range(0, len(img) - window_length - 1, window_length):
+            whitepix = 0
+            blackpix = 0
+            for j in range(i, i + window_length, ConvSkipX):
+                for k in range(m * j + n,
+                               m * j + n + window_height, ConvSkipY):
+                    if k >= len(img) or j >= len(img[0]):
+                        break
+                    if (img[k][j] > 0):
+                        whitepix = whitepix + 1
+                    else:
+                        blackpix = blackpix + 1
+            if whitepix > blackpix:
+                specificcolorFlag = 1  ##zero if last is white, 1 if black
+            else:
+                specificcolorFlag = 0
+            if lastcolorFlag == -1:
+                lastcolorFlag = specificcolorFlag
+            if specificcolorFlag != lastcolorFlag:
+                changeCounterBel = changeCounterBel + 1
+                lastcolorFlag = specificcolorFlag
+                # print(changeCounterAbv,changeCounterBel)
+        return changeCounterAbv,changeCounterBel
+
+
+    ### receives dilated img
     def is_proj_correct(self, img, line):
-        newimg = self.gausThresholdChess(img)
-        resize_image = cv2.resize(newimg, (0, 0), fx=1, fy=1)
-        kernel = np.ones((5, 5), np.uint8)
-        dilim = cv2.dilate(resize_image, kernel)
-        changeColor = self.doConv(dilim, line)
+        #resize_image = cv2.resize(newimg, (0, 0), fx=1, fy=1)
+        changeColor = self.doConv(img, line)
         if (changeColor > CHANGE_COLOR_SAF):
             return True
         return False
 
-    def remove_bad_bottom_lines(self, hor_lines, valfunc, real_img):
-        img = cv2.cvtColor(real_img, cv2.COLOR_RGB2GRAY)
+    def remove_bad_hor_lines(self, hor_lines, valfunc, real_img):
+        newimg = self.gausThresholdChess(real_img)
+        kernel = np.ones((5, 5), np.uint8)
+        dilim = cv2.dilate(newimg, kernel)
         hor = sorted(hor_lines, key=lambda x:-valfunc(x))
+        bottomdiff = 0
+        topdiff = 0
+        self.draw_lines(hor, dilim)
         for i in range(len(hor)):
-            if self.is_proj_correct(img,hor[i]):
-                return hor[i:]
-        print ("all lines are bad")
-        return hor
+            changeabv,changebel = self.doConv(dilim, hor[i])
+            changediff = changeabv-changebel
+            if changediff > CHANGE_DIFF:
+                bottomdiff = abs(changediff)
+                hor = hor[i:]
+                print('found bottom line')
+                print(changeabv,changebel)
+                break
+
+        self.draw_lines(hor, dilim)
+        for i in range(len(hor)):
+            j = len(hor) - 1 - i
+            changeabv, changebel = self.doConv(dilim, hor[j])
+            changediff = changeabv - changebel
+            if changediff < -CHANGE_DIFF:
+                topdiff = abs(changediff)
+                hor = hor[:j+1]
+                print('found bottom line')
+                print(changeabv, changebel)
+                break
+        self.draw_lines(hor, dilim)
+        return hor, topdiff>bottomdiff
     """
     finds highest reasonable hor line, and returns it's index
     """
@@ -528,7 +590,7 @@ class board_cut_fixer:
         tmplines.append(baseline)
 
         ## get avg angle
-        print(tmplines)
+        #print(tmplines)
         angles = [get_theta(l) for l in tmplines]
         angle_avg = sum(angles) / len(angles)
         angle_std = np.std(angles)
@@ -558,10 +620,10 @@ class board_cut_fixer:
         scores = [(i,line_metric(lines[i],i)) for i in range(9) if not (
             self.line_eq(lines[i], baseline) and (not i==base_idx))]
         best_line_idx = scores[(max(range(len(scores)), key=lambda x:(scores[
-                                                                         x])[1]))][0]
+                                                                          x])[1]))][0]
         line_metric(lines[best_line_idx],best_line_idx)
         if(self.line_eq(lines[best_line_idx],baseline)): # index is not
-        # real. fix it by finding
+            # real. fix it by finding
             best_line_idx = base_idx
 
         return best_line_idx
@@ -569,8 +631,8 @@ class board_cut_fixer:
       finds highest reasonable hor line, and returns it's index
       """
 
-    def get_best_vertical_line_pair_index(self, lines, base_idx, d,
-                                          get_pos, get_theta):
+    def get_best_line_pair_index(self, lines, base_idx, d,
+                                 get_pos, get_theta):
 
         ##### Find average angle, without weird lines that are errors. #####
         tmplines = []
@@ -583,7 +645,7 @@ class board_cut_fixer:
         tmplines.append(baseline)
 
         ## get avg angle
-        print(tmplines)
+        ## print(tmplines)
         angles = [get_theta(l) for l in tmplines]
         angle_avg = sum(angles) / len(angles)
         angle_std = np.std(angles)
@@ -613,10 +675,11 @@ class board_cut_fixer:
             return score
 
         scores = [(i, j, pair_metric(lines[i], i, lines[j], j)) for i in
-                   range(9) if not (self.line_eq(lines[i], baseline) and (
-                not i == base_idx)) for j in range(9) if not (self.line_eq(
-            lines[j], baseline) and (
-                not j == base_idx)) ]
+                  range(9) if not (self.line_eq(lines[i], baseline) and (
+                not i == base_idx)) for j in range(9) if (not j==i) and not (
+                self.line_eq(
+                    lines[j], baseline) and (
+                    not j == base_idx)) ]
         best_pair_indices = scores[(max(range(len(scores)), key=lambda x: (
             scores[x])[2]))][0:2]
         pair_metric(lines[best_pair_indices[0]], best_pair_indices[0],
@@ -632,6 +695,47 @@ class board_cut_fixer:
 
         return best_pair_indices
 
+    ### Cut image at different idxs and check which is best
+    def get_best_cut_image(self, edgeim, realim, pts, frame, cut_spare):
+        bwim = self.gausThresholdChess(realim)
+        idx_range = range(-BOTTOM_LINE_INDEX_VARIATION,
+                          BOTTOM_LINE_INDEX_VARIATION+1)
+        bwims = [self.projection(pts,bwim,[frame[0]+i,
+                                                      frame[1],
+                                                      frame[2]+i,
+                                                      frame[3]],False)
+                                                  for i in idx_range]
+        mindiff = 999999999999
+        minidx = 0
+
+        for i in idx_range:
+            diff = self.get_diff_area(bwims[i+BOTTOM_LINE_INDEX_VARIATION],
+                                      self.last_image_bw)
+            if diff<mindiff:
+                mindiff = diff
+                minidx = i
+
+        edgeim = self.projection(pts,edgeim,[frame[0]+minidx,
+                                                      frame[1],
+                                                      frame[2]+minidx,
+                                                      frame[3]],cut_spare)
+
+
+        realim = self.projection(pts,realim,[frame[0]+minidx,
+                                                      frame[1],
+                                                      frame[2]+minidx,
+                                                      frame[3]],cut_spare)
+
+        return edgeim, realim
+
+    def get_diff_area(self, im1, im2):
+        ctr = 0
+        for i in range(0,len(im1),IM_DIFF_AREA_SKIP):
+            for j in range(0,len(im1[0]),IM_DIFF_AREA_SKIP):
+                if im1[i][j] != im2[i][j]:
+                    ctr += 1
+        return ctr
+
     def main(self, real_img, edgeim):
 
         def get_theta(line):
@@ -639,7 +743,7 @@ class board_cut_fixer:
                 return math.pi / 2
             else:
                 return (float)(math.atan2(float(line[3] - line[1]),
-                                           float(line[2] - line[0]))) % math.pi
+                                          float(line[2] - line[0]))) % math.pi
 
             """"""
 
@@ -660,7 +764,8 @@ class board_cut_fixer:
         def get_x_point_on_line(line):
             x1 = line[0]
             y1 = line[1]
-            return x1 - (y1 - RESIZE_HEIGHT // 2) * (line[2] - x1) * 1.0 / (line[3]  - y1)
+            return x1 - (y1 - RESIZE_HEIGHT // 2) * (line[2] - x1) * 1.0 / \
+                                                     (line[3]  - y1)
 
         def get_theta_hor(line):
             angle = self.get_theta(line)
@@ -670,81 +775,69 @@ class board_cut_fixer:
 
         def get_theta_ver(line):
             return self.get_theta(line)
-        try:
-            hor, ver = self.get_lines(edgeim)
 
-            hor = self.remove_bad_bottom_lines(hor,get_y_point_on_line,real_img)
 
+        for i in range(NUM_ITERATIONS):
+            angle_constraint = 1*(ANGLE_CONSTRAINT_DECAY_FACTOR**i)
+            hor, ver = self.get_lines(edgeim,angle_constraint)
+
+            # hor, start_from_top = self.remove_bad_hor_lines(hor,
+            #                                         get_y_point_on_line,
+            #                                  real_img)
+
+            #TODO: fix id of lines too low
             new_hor, best_hor_idx, hor_d = self.get_line_series(hor,
-                                                             get_y_point_on_line, len(edgeim) * MIN_GRID_SIZE,
-                                                             len(edgeim) * MAX_GRID_SIZE, 9)
+                                                                lambda
+                                                                    x:RESIZE_HEIGHT-get_y_point_on_line(x), len(edgeim) * MIN_GRID_SIZE,
+                                                                len(edgeim)*MAX_GRID_SIZE, 9)
             new_ver, best_ver_idx, ver_d = self.get_line_series(ver,
-                                                             get_x_point_on_line, len(edgeim[0]) * MIN_GRID_SIZE,
-                                                             len(edgeim[0]) * MAX_GRID_SIZE, 9)
+                                                                get_x_point_on_line, len(edgeim[0]) * MIN_GRID_SIZE,
+                                                                len(edgeim[0])*MAX_GRID_SIZE, 9)
             if(DEBUG):
                 self.draw_lines(ver, edgeim)
                 self.draw_lines(new_ver, edgeim)
                 self.draw_lines(hor, edgeim)
                 self.draw_lines(new_hor, edgeim)
 
+            best_hor_pair = self.get_best_line_pair_index(new_hor,
+                                                          best_hor_idx, hor_d,
+                                                          get_y_point_on_line, get_theta_hor)
 
-            best_hor_idx = self.get_highest_horizontal_line_index(new_hor,
-                                                                  best_hor_idx,
-                                                                  hor_d,
-                                                                  get_y_point_on_line, get_theta_hor)
+            best_ver_pair = self.get_best_line_pair_index(new_ver,
+                                                          best_ver_idx,
+                                                          ver_d,
+                                                          get_x_point_on_line,
+                                                          get_theta_ver)
 
-            best_ver_pair = self.get_best_vertical_line_pair_index(new_ver,
-                                                                  best_ver_idx,
-                                                                  ver_d,
-                                                                  get_x_point_on_line,
-                                                                  get_theta_ver)
 
-            line_num = 8-best_hor_idx
             left_num = min(best_ver_pair)
             right_num = max(best_ver_pair)
-            up_line = new_hor[best_hor_idx]
-            down_line = new_hor[8]
+            up_num = min(best_hor_pair)
+            down_num = max(best_hor_pair)
+            up_line = new_hor[up_num]
+            down_line = new_hor[down_num]
             left_line = new_ver[left_num]
             right_line = new_ver[right_num]
-            """
-
-            up_pos, up_angle = self.get_last_line_extrapolation(new_hor, best_hor, 0, get_theta_hor, lambda x: -get_y_point_on_line(x),
-                                                                 hor_d)
-            down_pos, down_angle = self.get_last_line_extrapolation(new_hor, best_hor, 8, get_theta_hor,
-                                                                    lambda x: get_y_point_on_line(x), hor_d)
-            left_pos, left_angle = self.get_last_line_extrapolation(new_ver, best_ver, 0, get_theta_ver,
-                                                                    get_x_point_on_line, ver_d)
-            right_pos, right_angle = self.get_last_line_extrapolation(new_ver, best_ver, 8, get_theta_ver,
-                                                                     get_x_point_on_line, ver_d)
-            up_point = (RESIZE_WIDTH * 1.0 / 2, -up_pos)
-            down_point = (RESIZE_WIDTH * 1.0 / 2, -down_pos)
-            left_point = (left_pos, RESIZE_HEIGHT * 1.0 / 2)
-            right_point = (right_pos, RESIZE_HEIGHT * 1.0 / 2)
-            points = [up_point, left_point, down_point, right_point]
-            self.draw_points(real_img, points)
-    #        print "up angle=" + str(up_angle)
-    #        print "down angle=" + str(down_angle)
-
-            up_line = self.make_hor_line(up_point, up_angle)
-            down_line = self.make_hor_line(down_point, down_angle)
-            left_line = self.make_ver_line(left_point, left_angle)
-            right_line = self.make_ver_line(right_point, right_angle)
-            """
+            frame = [up_num, right_num, down_num, left_num]
 
             points = self.get_board_limits(up_line, right_line, down_line, left_line)
+
+            #find where to start cutting (bottom of board)
+            edgeim, real_img= self.get_best_cut_image(edgeim, real_img,
+                                                  points, frame,
+                                                  i<NUM_ITERATIONS-1)
+
             if(DEBUG):
                 self.draw_lines([up_line, left_line, right_line, down_line], edgeim)
                 self.draw_points(real_img, points)
-            proim = self.projection(points, real_img, [line_num,right_num,0 ,
-                                                       left_num] )
-            gui_img_manager.add_img(self.get_line_image(hor, edgeim))
-            gui_img_manager.add_img(self.get_line_image(new_hor, edgeim))
-            gui_img_manager.add_img(self.get_line_image([up_line, left_line, right_line, down_line], edgeim))
-            gui_img_manager.add_img(proim)
-            return proim
-        except:
-            print("cut board fixer has failed")
-            return real_img
+
+                #gui_img_manager.add_img(self.get_line_image(hor, edgeim))
+                #gui_img_manager.add_img(self.get_line_image(new_hor, edgeim))
+                #gui_img_manager.add_img(self.get_line_image([up_line,
+                # left_line, right_line, down_line], edgeim))
+                #gui_img_manager.add_img(proim)
+
+        return real_img, edgeim
 
     def get_line_image(self, lines, img):
         bin = copy.deepcopy(img)
@@ -755,19 +848,24 @@ class board_cut_fixer:
             cv2.line(bin, (l[0], l[1]), (l[2], l[3]), (255, 0, 0), 3, cv2.LINE_AA)
         return bin
 
-
 def test(foldername):
+
     # get lines from image, and edge-image
     id = identify_board.identify_board()
     fixer = board_cut_fixer()
-    for j in range(300, 350):
-        try:
-            edgeim, realim = id.get_image_from_filename(foldername+"\\projected\\"+str(j)+".jpg",False)
-            fixed_im = fixer.main(realim, edgeim)
+    for j in range(26,56):
+    #try:
+        edgeim, realim = id.get_image_from_filename(
+            foldername+"\\projected\\"+str(j)+".jpg",False)
+        fixed_im, edgeim = fixer.main(realim, edgeim)
 
-            cv2.imwrite(foldername+"\\fixed\\"+str(j)+".jpg",fixed_im)
-            print(j)
-        except:
-            print(str(j)+" failed")
+        cv2.imwrite(foldername+"\\fixed\\"+str(j)+".jpg",fixed_im)
+        print(j)
+    #except:
+        print(str(j)+" failed")
 
-#test('pictures')
+
+test('pics')
+
+
+
