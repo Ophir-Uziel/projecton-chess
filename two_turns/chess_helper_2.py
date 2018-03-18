@@ -134,3 +134,4 @@ class chess_helper_2:
             row = int(square[1]) - 1
         if row == 9 or row == 0: return -1
         return square[0]+str(row)
+
