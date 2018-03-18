@@ -67,7 +67,8 @@ FOURTH_LINE_MIN_LENGTH = 115
 FOURTH_LINE_MAX_GAP = 30
 PROJECTION_IMAGE_PADDING_RATIO = 1.0 / 7
 
-DEBUG = False
+DEBUG = True
+
 
 class identify_board:
 
@@ -246,6 +247,111 @@ class identify_board:
 
         return m1, n1
 
+    def get_point_for_rect_cut(self, lines):
+
+        length = self.get_length(lines)
+        theta1 = self.get_real_theta_left(lines[0], lines[1])
+        theta2 = self.get_real_theta_right(lines[1], lines[2])
+        distance = self.get_distance(theta1, theta2, length)
+        new_line = self.find_rect_locaition(lines[1], lines[0], distance)
+        points = []
+        point1 = self.get_cutoff_point(lines[0], new_line)
+        point2 = self.get_cutoff_point(lines[2], new_line)
+        points.append(point1)
+        points.append(point2)
+
+        return points
+
+    def get_length(self, lines):
+        [x1, y1] = self.get_cutoff_point(lines[0], lines[1])
+        [x2, y2] = self.get_cutoff_point(lines[1], lines[2])
+        length = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+        return length
+
+    def get_real_theta_left(self, line1, line2):
+        theta1 = self.get_theta(line1)
+        theta2 = self.get_theta(line2)
+        final_theta = (theta1 - theta2) % (math.pi)
+        return final_theta
+
+    def rect_cutter(self, img, points):
+        #        print math.cos(theta)
+        h2 = UPPER_RECT_H2
+        h1 = int(UPPER_RECT_H1)
+        x1 = points[0][0]
+        x2 = points[1][0]
+        y1 = min(points[0][1], points[1][1])
+        y2 = max(points[0][1], points[1][1])
+        crop_img = img[y1 + h1:y2 + h2, x1:x2]
+
+        x_tikun = min(x1, x2)
+        y_tikun = y1 + h1
+
+        return crop_img, x_tikun, y_tikun
+
+    def find_specific_line(self, croped_img, bottom_theta, threelines,
+                           x_tikun, y_tikun):
+        croped_img = cv2.convertScaleAbs(croped_img)
+        linesP = cv2.HoughLinesP(croped_img, FOURTH_LINE_RHO_RES, FOURTH_LINE_THETA_RES,
+                                 FOURTH_LINE_MIN_VOTES, None,
+                                 FOURTH_LINE_MIN_LENGTH, FOURTH_LINE_MAX_GAP)
+        l = []
+        for line in linesP:
+            l.append(line[0])
+
+        # self.draw_lines(l,croped_img)
+        lines = []
+        for line in linesP:
+            theta = self.get_theta(line[0]) - bottom_theta
+            if abs(theta) < HOR_DIFF_ANGLE:
+                lines.append(line)
+        x1, y1 = self.get_cutoff_point(threelines[0], threelines[1])
+        x2, y2 = self.get_cutoff_point(threelines[2], threelines[1])
+        line = [x1, y1, x2, y2]
+        ver_line = self.get_perpendicular(line)
+        ver_line = [ver_line[0] - x_tikun, ver_line[1] - y_tikun, ver_line[
+            2] - x_tikun, ver_line[3] - y_tikun]
+        #        self.draw_lines([ver_line],croped_img)
+        min_y = lines[0]
+        #        print(ver_line)
+        #        print(min_y)
+        min_cut_y = (self.get_cutoff_point(min_y[0], ver_line))[1]
+        for ln in lines:
+            cut = self.get_cutoff_point(ln[0], ver_line)
+            if cut[1] < min_cut_y:
+                min_y = ln
+                min_cut_y = cut[1]
+
+        return min_y
+
+    def get_cutoff_point(self, line1, line2):
+        x1 = line1[0]
+        y1 = line1[1]
+        x2 = line1[2]
+        y2 = line1[3]
+        x3 = line2[0]
+        y3 = line2[1]
+        x4 = line2[2]
+        y4 = line2[3]
+        if x1 == x2:
+            m1 = 10000000000
+        else:
+            m1 = float(float(y2 - y1) / float(x2 - x1))
+        if x3 == x4:
+            m2 = 10000000000
+        else:
+            m2 = float(float(y4 - y3) / float(x4 - x3))
+        n1 = y1 - m1 * x1
+        n2 = y3 - m2 * x3
+
+        x = int((n1 - n2) / (m2 - m1))
+        y = int(m1 * x + n1)
+        point = []
+        point.append(x)
+        point.append(y)
+        return point
+
+
 
     def get_board_image(self, img):
         fy_shrink = RESIZE_HEIGHT / len(img)
@@ -313,38 +419,7 @@ class identify_board:
 
 
 
-    def get_cutoff_point(self, line1, line2):
-        x1 = line1[0]
-        y1 = line1[1]
-        x2 = line1[2]
-        y2 = line1[3]
-        x3 = line2[0]
-        y3 = line2[1]
-        x4 = line2[2]
-        y4 = line2[3]
-        if x1 == x2:
-            m1 = 10000000000
-        else:
-            m1 = float(float(y2 - y1) / float(x2 - x1))
-        if x3 == x4:
-            m2 = 10000000000
-        else:
-            m2 = float(float(y4 - y3) / float(x4 - x3))
-        n1 = y1 - m1 * x1
-        n2 = y3 - m2 * x3
 
-        x = int((n1 - n2) / (m2 - m1))
-        y = int(m1 * x + n1)
-        point = []
-        point.append(x)
-        point.append(y)
-        return point
-
-    def get_length(self, lines):
-        [x1, y1] = self.get_cutoff_point(lines[0], lines[1])
-        [x2, y2] = self.get_cutoff_point(lines[1], lines[2])
-        length = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-        return length
 
     def find_avg_line_color(self, line, img):
         dx = 2
@@ -393,11 +468,6 @@ class identify_board:
         return new_lines
     '''
 
-    def get_real_theta_left(self, line1, line2):
-        theta1 = self.get_theta(line1)
-        theta2 = self.get_theta(line2)
-        final_theta = (theta1 - theta2) % (math.pi)
-        return final_theta
 
     def get_real_theta_right(self, line1, line2):
         theta1 = self.get_theta(line1)
@@ -431,20 +501,6 @@ class identify_board:
 
         return [x1, y1, x2, y2]
 
-    def get_point_for_rect_cut(self, lines):
-
-        length = self.get_length(lines)
-        theta1 = self.get_real_theta_left(lines[0], lines[1])
-        theta2 = self.get_real_theta_right(lines[1], lines[2])
-        distance = self.get_distance(theta1, theta2, length)
-        new_line = self.find_rect_locaition(lines[1], lines[0], distance)
-        points = []
-        point1 = self.get_cutoff_point(lines[0], new_line)
-        point2 = self.get_cutoff_point(lines[2], new_line)
-        points.append(point1)
-        points.append(point2)
-
-        return points
 
     def fix_points_for_projection(self, points_lst):
         fix_point = 20
@@ -478,20 +534,6 @@ class identify_board:
         # k = cv2.waitKey(0)
         return dst
 
-    def rect_cutter(self, img, points):
-        #        print math.cos(theta)
-        h2 = UPPER_RECT_H2
-        h1 = int(UPPER_RECT_H1)
-        x1 = points[0][0]
-        x2 = points[1][0]
-        y1 = min(points[0][1], points[1][1])
-        y2 = max(points[0][1], points[1][1])
-        crop_img = img[y1 + h1:y2 + h2, x1:x2]
-
-        x_tikun = min(x1, x2)
-        y_tikun = y1 + h1
-
-        return crop_img, x_tikun, y_tikun
 
 
 
@@ -514,40 +556,6 @@ class identify_board:
         topx = midx - midy * m_inv
         return [int(midx), int(midy), int(topx), int(topy)]
 
-    def find_specific_line(self, croped_img, bottom_theta, threelines,
-                           x_tikun, y_tikun):
-        croped_img = cv2.convertScaleAbs(croped_img)
-        linesP = cv2.HoughLinesP(croped_img, FOURTH_LINE_RHO_RES, FOURTH_LINE_THETA_RES,
-                                 FOURTH_LINE_MIN_VOTES, None,
-                                 FOURTH_LINE_MIN_LENGTH, FOURTH_LINE_MAX_GAP)
-        l = []
-        for line in linesP:
-            l.append(line[0])
-
-        #        self.draw_lines(l,croped_img)
-        lines = []
-        for line in linesP:
-            theta = self.get_theta(line[0]) - bottom_theta
-            if abs(theta) < HOR_DIFF_ANGLE:
-                lines.append(line)
-        x1, y1 = self.get_cutoff_point(threelines[0], threelines[1])
-        x2, y2 = self.get_cutoff_point(threelines[2], threelines[1])
-        line = [x1, y1, x2, y2]
-        ver_line = self.get_perpendicular(line)
-        ver_line = [ver_line[0] - x_tikun, ver_line[1] - y_tikun, ver_line[
-            2] - x_tikun, ver_line[3] - y_tikun]
-        #        self.draw_lines([ver_line],croped_img)
-        min_y = lines[0]
-        #        print(ver_line)
-        #        print(min_y)
-        min_cut_y = (self.get_cutoff_point(min_y[0], ver_line))[1]
-        for ln in lines:
-            cut = self.get_cutoff_point(ln[0], ver_line)
-            if cut[1] < min_cut_y:
-                min_y = ln
-                min_cut_y = cut[1]
-
-        return min_y
 
     def draw_lines_by_points(self, points, img):
         line0 = points[0] + points[1]
@@ -659,24 +667,26 @@ class identify_board:
 
     def test(self, foldername):
         # get lines from image, and edge-image
-        for j in range(0, 44):
+        for j in range(1, 70,2):
             try:
                 edgeim, real_img = self.get_image_from_filename(
-                    foldername + "/" + str(j) + '.jpg', True)
+                    foldername + "\\" + str(j) + '.jpg', True)
                 egdeim_copy = copy.deepcopy(edgeim)
                 ver, her = self.lines_filter(edgeim)
-                self.draw_lines(ver,egdeim_copy)
-                self.draw_lines(her,egdeim_copy)
+                if(DEBUG):
+                    self.draw_lines(ver,egdeim_copy)
+                    self.draw_lines(her,egdeim_copy)
 
                 lines = self.lines_filter2(ver, her)
-                self.draw_lines(lines,egdeim_copy)
+                if (DEBUG):
+                    self.draw_lines(lines,egdeim_copy)
 
                 points = self.get_point_for_rect_cut(lines)
 
                 # find exectly the forth line
                 croped_img, x_tikun, y_tikun = self.rect_cutter(egdeim_copy,
                                                                 [points[0], points[1]])
-                #               self.draw_lines([],croped_img)
+                #self.draw_lines([],croped_img)
 
                 forth_line = self.find_specific_line(croped_img,
                                                      self.get_theta(lines[1]),
@@ -692,8 +702,8 @@ class identify_board:
                 if(DEBUG):
                     cv2.imshow('sss',img)
                     cv2.waitKey(0)
-                #cv2.imwrite(foldername + '/projected/' + str(j) + '.jpg', img)
-                # print (j)
+                cv2.imwrite('img\\' + str(j) + '.jpg', img)
+                print (j)
             except:
                 print(str(j) + " failed")
 
@@ -723,23 +733,23 @@ class identify_board:
             final_points = self.get_final_points(lines, forth_line, x_tikun,
                                                  y_tikun)
             #                self.draw_lines_by_points(final_points,egdeim_copy)
-            gui_img_manager.add_img(self.get_line_image(final_points,edgeim))
+#           gui_img_manager.add_img(self.get_line_image(final_points,edgeim))
             img = self.projection(final_points, real_img, RESIZE_WIDTH,
                                   RESIZE_HEIGHT)
             edgeim = self.projection(final_points, edgeim, RESIZE_WIDTH,
                                   RESIZE_HEIGHT)
-            gui_img_manager.add_img(img)
+#            gui_img_manager.add_img(img)
             return img, edgeim
         except:
             print("identify board has failed")
             return real_img, edgeim
 
 a = identify_board()
-img = cv2.imread("images/0.jpg", cv2.IMREAD_COLOR)
-new = a.main(img)
-
+#img = cv2.imread("images/cam0.jpg", cv2.IMREAD_COLOR)
+#new , edg_new = a.main(img)
 
 # if you want to see the image:
+#new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
+#a.draw_lines([],new)
 
-new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
-a.draw_lines([],new)
+a.test('images\\source')
