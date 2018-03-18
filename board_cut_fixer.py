@@ -7,7 +7,7 @@ import bisect
 #import gui_img_manager
 
 ### DEBUG FLAG ###
-DEBUG = True
+DEBUG = False
 
 ##### Gaussian Threshold parameters #####
 GAUSS_MAX_VALUE = 255
@@ -21,7 +21,7 @@ EDGE_SCALE = 10
 
 
 
-MIN_GRID_SIZE = 1.0 / 15
+MIN_GRID_SIZE = 1.0 / 20
 MAX_GRID_SIZE = 1.0 / 7
 MAX_LINE_DIST_RATIO = 1.0 / 15
 RESIZE_HEIGHT = identify_board.RESIZE_HEIGHT
@@ -269,7 +269,9 @@ class board_cut_fixer:
             new_img = cv2.cvtColor(new_img, cv2.COLOR_GRAY2BGR)
             for i in range(0, len(lineslst)):
                 l = lineslst[i]
-                cv2.line(new_img, (l[0], l[1]), (l[2], l[3]), (255, 0, 0), 3, cv2.LINE_AA)
+                cv2.line(new_img, (l[0], l[1]), (l[2], l[3]), (255, 255,
+                                                               0), 3,
+                         cv2.LINE_AA)
             #        img = cv2.resize(img, (0, 0), fx=1, fy=1)
             cv2.imshow('image', new_img)
             k = cv2.waitKey(0)
@@ -853,16 +855,16 @@ def test(foldername):
     # get lines from image, and edge-image
     id = identify_board.identify_board()
     fixer = board_cut_fixer()
-    for j in range(26,56):
-    #try:
-        edgeim, realim = id.get_image_from_filename(
-            foldername+"\\projected\\"+str(j)+".jpg",False)
-        fixed_im, edgeim = fixer.main(realim, edgeim)
+    for j in range(0,56):
+        try:
+            edgeim, realim = id.get_image_from_filename(
+                foldername+"\\projected\\"+str(j)+".jpg",False)
+            fixed_im, edgeim = fixer.main(realim, edgeim)
 
-        cv2.imwrite(foldername+"\\fixed\\"+str(j)+".jpg",fixed_im)
-        print(j)
-    #except:
-        print(str(j)+" failed")
+            cv2.imwrite(foldername+"\\fixed\\"+str(j)+".jpg",fixed_im)
+            print(j)
+        except:
+            print(str(j)+" failed")
 
 
 test('pics')
