@@ -106,7 +106,7 @@ class chess_helper_2:
         sources = self.get_sources()
         dests = self.get_destinations()
         return [sources, dests]
-
+#f
     def get_square_below(self, square):
         """
         :param square:
