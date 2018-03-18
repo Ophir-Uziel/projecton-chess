@@ -15,6 +15,9 @@ BLACK_NUM = 1
 WHITE_NUM = 2
 USER = True
 RIVAL = False
+TEST = True
+BLACK_TEST = (0.0, 0.0, 0.0)
+WHITE_TEST = (1.0, 1.0, 1.0)
 
 
 class filter_colors_2:
@@ -147,6 +150,17 @@ class filter_colors_2:
         self.U2R = self.RIVAL_NUM - self.USER_NUM
         self.B2R = self.RIVAL_NUM - BLACK_NUM
         self.W2R = self.RIVAL_NUM - WHITE_NUM
+        if TEST:
+            self.user_color_test = (0.6, 0.8, 0.8)
+            self.rival_color_test = (0.5, 0.2, 0.2)
+            if self.cmpT(main_colors[2], main_colors[0]):
+                self.user_color_test = BLACK_TEST
+            elif self.cmpT(main_colors[2], main_colors[1]):
+                self.user_color_test = WHITE_TEST
+            if self.cmpT(main_colors[3], main_colors[0]):
+                self.user_color_test = BLACK_TEST
+            elif self.cmpT(main_colors[3], main_colors[1]):
+                self.user_color_test = WHITE_TEST
         return
 
     ###########################################################################
@@ -175,27 +189,46 @@ class filter_colors_2:
         :param im:
         :return image fit to 4 main colors:
         """
-        new_im = []
-        for rowidx in range(len(im)):
-            i = 0
-            row = im[rowidx]
-            new_im.append([])
-            for pix in row:
-                min_dist = self.color_dist(pix, self.main_colors[0])
-                new_im[rowidx].append(BLACK_NUM)
-                dist = self.color_dist(pix, self.main_colors[1])
-                if dist < min_dist:
-                    min_dist = dist
-                    new_im[rowidx][i] = WHITE_NUM
-                dist = self.color_dist(pix, self.main_colors[2])
-                if dist < min_dist:
-                    min_dist = dist
-                    new_im[rowidx][i] = self.USER_NUM
-                dist = self.color_dist(pix, self.main_colors[3])
-                if dist < min_dist:
-                    new_im[rowidx][i] = self.RIVAL_NUM
-                i += 1
-        return new_im
+        im_sz = len(im)
+        new_im = np.ones((im_sz,im_sz),dtype=int)
+        if not TEST:
+            for rowidx in range(im_sz):
+                for pixidx in range(im_sz):
+                    pix = im[rowidx][pixidx]
+                    min_dist = self.color_dist(pix, self.main_colors[0])
+                    dist = self.color_dist(pix, self.main_colors[1])
+                    if dist < min_dist:
+                        min_dist = dist
+                        new_im[rowidx][pixidx] = WHITE_NUM
+                    dist = self.color_dist(pix, self.main_colors[2])
+                    if dist < min_dist:
+                        min_dist = dist
+                        new_im[rowidx][pixidx] = self.USER_NUM
+                    dist = self.color_dist(pix, self.main_colors[3])
+                    if dist < min_dist:
+                        new_im[rowidx][pixidx] = self.RIVAL_NUM
+            return [new_im]
+        else:
+            test_im = np.zeros((im_sz,im_sz),dtype='d,d,d').tolist()
+            for rowidx in range(im_sz):
+                for pixidx in range(im_sz):
+                    pix = im[rowidx][pixidx]
+                    min_dist = self.color_dist(pix, self.main_colors[0])
+                    dist = self.color_dist(pix, self.main_colors[1])
+                    if dist < min_dist:
+                        min_dist = dist
+                        new_im[rowidx][pixidx] = WHITE_NUM
+                        test_im[rowidx][pixidx] = WHITE_TEST
+                    dist = self.color_dist(pix, self.main_colors[2])
+                    if dist < min_dist:
+                        min_dist = dist
+                        new_im[rowidx][pixidx] = self.USER_NUM
+                        test_im[rowidx][pixidx] = self.user_color_test
+                    dist = self.color_dist(pix, self.main_colors[3])
+                    if dist < min_dist:
+                        new_im[rowidx][pixidx] = self.RIVAL_NUM
+                        test_im[rowidx][pixidx] = self.rival_color_test
+            return [new_im,test_im]
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
         is_white = self.chess_helper_2.square_color(square)
@@ -205,7 +238,7 @@ class filter_colors_2:
                 RC.append(self.R2W)
             else:
                 RC.append(self.R2B)
-            if self.chess_helper_2.piece_color(square):
+            if self.chess_helper_2.piece_color(square): # if user piece is in this square
                 # TODO correct chess_helper - change the colors of pieces to User and Rival
                 RC.append(self.R2U)
         else:
@@ -214,18 +247,16 @@ class filter_colors_2:
             else:
                 RC.append(self.B2R)
             if self.delayed_chess_helper.piece_color(square) or \
-                    self.delayed_chess_helper.piece_color(self.chess_helper_2.get_square_bellow(square)):
+                    self.delayed_chess_helper.piece_color(self.chess_helper_2.get_square_below(square)):
                 RC.append(self.U2R)
         while 0 in RC:
             RC.remove(0)
-        binary_im = []
-        for rowidx in range(len(im1)):
-            binary_im.append([])
-            for pixidx in range(len(im1[0])):
+        im_sz = len(im1)
+        binary_im = np.zeros((im_sz,im_sz),dtype=int)
+        for rowidx in range(im_sz):
+            for pixidx in range(im_sz):
                 if im2[rowidx][pixidx] - im1[rowidx][pixidx] in RC:
-                    binary_im[rowidx].append(1)
-                else:
-                    binary_im[rowidx].append(0)
+                    binary_im[rowidx][pixidx] = 1
         return binary_im
 
     def get_square_diff(self, im, square_loc, is_source):
@@ -249,3 +280,5 @@ class filter_colors_2:
         self.board[row][colon] = after_square
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
         return square_diff
+
+    ###########################################################################

@@ -106,3 +106,31 @@ class chess_helper_2:
         sources = self.get_sources()
         dests = self.get_destinations()
         return [sources, dests]
+
+    def get_square_below(self, square):
+        """
+        :param square:
+        :return the square below the square given to us, -1 if illegal:
+        """
+        flag = self.user_starts
+        col = square[0]
+        if flag:
+            row = int(square[1]) - 1
+        else:
+            row = int(square[1]) + 1
+        if row == 0 or row == 9: return -1
+        return square[0] + str(row)
+
+    def get_square_above(self, square):
+        """
+        :param square:
+        :return the square above the square given to us, -1 if illegal:
+        """
+        flag = self.user_starts
+        col = square[0]
+        if flag:
+            row = int(square[1]) + 1
+        else:
+            row = int(square[1]) - 1
+        if row == 9 or row == 0: return -1
+        return square[0] + str(row)
