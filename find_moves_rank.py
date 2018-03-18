@@ -6,6 +6,7 @@ import cv2
 import os
 from scipy import misc
 import numpy as np
+import errno
 
 
 """
@@ -35,14 +36,17 @@ WINDOW_RT = 10
 WHITE_DEF_RT = 2
 MIN_WHITE_RT = 5
 
-
 class find_moves_rank:
 
 
     def __init__(self, chess_helper):
+        self.neuron_counter = 0
         self.chess_helper = chess_helper
         self.mistake_idxes = []
-
+        make_dir('self_y_dir')
+        make_dir('self_n_dir')
+        make_dir('abv_y_dir')
+        make_dir('abv_n_dir')
     """
     :arg square_im a binary image of changes in the square
     :return whether there's been a move on the square, below it, or none,
@@ -73,6 +77,23 @@ class find_moves_rank:
                 cv2.imwrite(angle_dir + sources_place[idx] + '_abv.jpg',
                             np.array(sources_above[idx]))
 
+            #save neuron's images:
+            cv2.imwrite('self_y_dir/im'+str(self.neuron_counter)+'.jpg', sources_self[real_idx_source])
+            cv2.imwrite('abv_y_dir/im'+str(self.neuron_counter)+'.jpg', sources_above[real_idx_source])
+            n_source_idx = real_idx_source
+            while n_source_idx == real_idx_source:
+                n_source_idx = np.random.randint(0, len(sources_self))
+            cv2.imwrite('self_n_dir/im' + str(self.neuron_counter) + '.jpg', sources_self[n_source_idx])
+            cv2.imwrite('abv_n_dir/im' + str(self.neuron_counter) + '.jpg', sources_above[n_source_idx])
+
+            cv2.imwrite('self_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', targets_self[real_idx_target])
+            cv2.imwrite('abv_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', targets_above[real_idx_target])
+            n_target_idx = real_idx_target
+            while n_target_idx == real_idx_target:
+                n_target_idx = np.random.randint(0, len(targets_self))
+            cv2.imwrite('self_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', targets_self[n_target_idx])
+            cv2.imwrite('abv_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', targets_above[n_target_idx])
+            self.neuron_counter += 2
 
         targets_rank = self.check_squares(targets_self,
                                      targets_above,real_change_t, real_idx_target)
@@ -317,7 +338,12 @@ class find_moves_rank:
 
         return self.checkDensity(imgOneZero) * yahasmetrics
 
-
+def make_dir(dir_name):
+    try:
+        os.makedirs(dir_name)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 
 def test_find_move():
