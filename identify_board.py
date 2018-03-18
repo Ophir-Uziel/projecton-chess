@@ -67,7 +67,7 @@ FOURTH_LINE_MIN_LENGTH = 115
 FOURTH_LINE_MAX_GAP = 30
 PROJECTION_IMAGE_PADDING_RATIO = 1.0 / 7
 
-DEBUG = True
+DEBUG = False
 
 
 class identify_board:
@@ -669,40 +669,12 @@ class identify_board:
         # get lines from image, and edge-image
         for j in range(1, 70,2):
             try:
+
                 edgeim, real_img = self.get_image_from_filename(
                     foldername + "\\" + str(j) + '.jpg', True)
-                egdeim_copy = copy.deepcopy(edgeim)
-                ver, her = self.lines_filter(edgeim)
-                if(DEBUG):
-                    self.draw_lines(ver,egdeim_copy)
-                    self.draw_lines(her,egdeim_copy)
 
-                lines = self.lines_filter2(ver, her)
-                if (DEBUG):
-                    self.draw_lines(lines,egdeim_copy)
-
-                points = self.get_point_for_rect_cut(lines)
-
-                # find exectly the forth line
-                croped_img, x_tikun, y_tikun = self.rect_cutter(egdeim_copy,
-                                                                [points[0], points[1]])
-                #self.draw_lines([],croped_img)
-
-                forth_line = self.find_specific_line(croped_img,
-                                                     self.get_theta(lines[1]),
-                                                     lines, x_tikun, y_tikun)
-                #                self.draw_lines(forth_line,croped_img)
-
-                # get final points
-                final_points = self.get_final_points(lines, forth_line, x_tikun, y_tikun)
-
-                #                self.draw_lines_by_points(final_points,egdeim_copy)
-                img = self.projection(final_points, real_img, RESIZE_WIDTH,
-                                      RESIZE_HEIGHT)
-                if(DEBUG):
-                    cv2.imshow('sss',img)
-                    cv2.waitKey(0)
-                cv2.imwrite('img\\' + str(j) + '.jpg', img)
+                img , edgiem = self.main(real_img)
+                cv2.imwrite('imgs\\' + str(j) + '.jpg', img)
                 print (j)
             except:
                 print(str(j) + " failed")
@@ -716,29 +688,35 @@ class identify_board:
         try:
             egdeim_copy = copy.deepcopy(edgeim)
             ver, her = self.lines_filter(edgeim)
-            if(DEBUG):
-                self.draw_lines(ver,edgeim)
-                self.draw_lines(her,edgeim)
+            if (DEBUG):
+                self.draw_lines(ver, egdeim_copy)
+                self.draw_lines(her, egdeim_copy)
+
             lines = self.lines_filter2(ver, her)
+            if (DEBUG):
+                self.draw_lines(lines, egdeim_copy)
+
             points = self.get_point_for_rect_cut(lines)
 
             # find exectly the forth line
             croped_img, x_tikun, y_tikun = self.rect_cutter(egdeim_copy,
                                                             [points[0], points[1]])
+            # self.draw_lines([],croped_img)
 
             forth_line = self.find_specific_line(croped_img,
                                                  self.get_theta(lines[1]),
                                                  lines, x_tikun, y_tikun)
+            #                self.draw_lines(forth_line,croped_img)
+
             # get final points
-            final_points = self.get_final_points(lines, forth_line, x_tikun,
-                                                 y_tikun)
+            final_points = self.get_final_points(lines, forth_line, x_tikun, y_tikun)
+
             #                self.draw_lines_by_points(final_points,egdeim_copy)
-#           gui_img_manager.add_img(self.get_line_image(final_points,edgeim))
             img = self.projection(final_points, real_img, RESIZE_WIDTH,
                                   RESIZE_HEIGHT)
-            edgeim = self.projection(final_points, edgeim, RESIZE_WIDTH,
-                                  RESIZE_HEIGHT)
-#            gui_img_manager.add_img(img)
+            if (DEBUG):
+                cv2.imshow('sss', img)
+                cv2.waitKey(0)
             return img, edgeim
         except:
             print("identify board has failed")
@@ -751,5 +729,4 @@ a = identify_board()
 # if you want to see the image:
 #new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
 #a.draw_lines([],new)
-
 a.test('images\\source')
