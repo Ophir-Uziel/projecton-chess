@@ -22,7 +22,7 @@ VibTime = 0.5
 save_and_print=True
 IS_PI = False
 ENABLE_VIBRATIONS = False# disable vibrations
-RESIZE_SIZE = 1000
+RESIZE_SIZE = 600
 
 class hardware:
 
@@ -37,7 +37,8 @@ class hardware:
                 img_array = []
                 for j in range(len(sorted_img_names)):
                     img_array.append(cv2.imread(imgs_if_tester[i] +'/'+
-                                              sorted_img_names[j]))
+                                              sorted_img_names[j], cv2.IMREAD_COLOR))
+
                 print(sorted_img_names)
                 self.angles_imgs_lst.append(img_array)
                 self.angles_imgs_counter.append(-1)

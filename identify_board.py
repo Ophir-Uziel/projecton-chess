@@ -597,8 +597,11 @@ class identify_board:
 
 
 
-    def get_image_from_filename(self, imgFileName, should_cut):
+    def get_image_from_filename(self, imgFileName):
         real_img = cv2.imread(imgFileName, cv2.IMREAD_COLOR)
+        return real_img
+
+    def process_im(self,real_img, should_cut):
         img = cv2.cvtColor(real_img, cv2.COLOR_RGB2GRAY)
         fy_shrink = 500 / len(img)
         fx_shrink = 500 / len(img[0])
@@ -670,7 +673,7 @@ class identify_board:
         for j in range(1, 70,2):
             try:
 
-                edgeim, real_img = self.get_image_from_filename(
+                real_img = self.get_image_from_filename(
                     foldername + "\\" + str(j) + '.jpg', True)
 
                 img , edgiem = self.main(real_img)
@@ -681,7 +684,7 @@ class identify_board:
 
     def main(self, img):
 
-        edgeim, real_img = self.get_image_from_img(img, True)
+        edgeim, real_img = self.process_im(img, should_cut=True)
         
 #        gui_img_manager.add_img(edgeim)
 
@@ -722,12 +725,12 @@ class identify_board:
             print("identify board has failed")
             return real_img, edgeim
 
-a = identify_board()
+#a = identify_board()
 #img = cv2.imread("images/cam0.jpg", cv2.IMREAD_COLOR)
 #new , edg_new = a.main(img)
 
 # if you want to see the image:
 #new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
 #a.draw_lines([],new)
-a.test('images\\source')
+#a.test('images\\source')
 #check
