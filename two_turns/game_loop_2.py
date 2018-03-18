@@ -29,7 +29,6 @@ class game_loop_2:
             self.is_test = False
 
         #self.hardware = hw.hardware(angles_num, imgs_if_test)
-
         self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.ME)
 
         self.ph_angles = []
@@ -37,7 +36,7 @@ class game_loop_2:
 
         for i in range(angles_num):
             gui_img_manager.set_camera(i)
-            self.ph_angles.append(photos_angle.photos_angle(self.hardware, self.chesshelper, i))
+            self.ph_angles.append(photos_angle.photos_angle(self.hardware, self.chesshelper,self.delay_chesshelper, i))
             self.ph_angles[i].prep_img()
 
         for ang in self.ph_angles:
@@ -93,8 +92,6 @@ class game_loop_2:
         if self.is_test:
             move = real_move
         self.last_move = move
-        self.chesshelper.do_turn(move[0], move[1])
-        # TODO get it out of here
         return move
 
     def check_one_direction(self, sources, dests, angle_idx):
@@ -179,6 +176,7 @@ class game_loop_2:
             self.best_move = self.chess_engine.get_best_move(last_move)
             print("I recommend: " + self.best_move)
             self.hardware.player_indication(self.best_move)
+            self.delay_chesshelper = self.chesshelper
             self.chesshelper.do_turn(self.best_move[0], self.best_move[1])
             last_move = self.get_new_move()
             self.chesshelper.do_turn(last_move[0], last_move[1])
