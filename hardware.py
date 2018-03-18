@@ -8,9 +8,7 @@ import connection
 This file is for user communication and hardware.
 """
 
-
-
-save_and_print=True
+save_and_print = True
 RESIZE_SIZE = 600
 
 class hardware:

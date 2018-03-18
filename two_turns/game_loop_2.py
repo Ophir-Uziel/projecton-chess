@@ -1,6 +1,6 @@
 import os
 import errno
-# import hardware as hw
+import hardware as hw
 import chess_helper_2 as ch
 import find_moves_rank as fm
 import photos_angle_2
@@ -18,6 +18,7 @@ ROWS_NUM = 8
 
 class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True):
+
         self.if_save_and_print = if_save_and_print
         self.moves_counter = -1
         self.black_im = self.create_black_im()
@@ -28,9 +29,9 @@ class game_loop_2:
         else:
             self.is_test = False
 
-        #self.hardware = hw.hardware(angles_num, imgs_if_test)
+        self.hardware = hw.hardware(angles_num, imgs_if_test)
         self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.ME)
-
+        self.delay_chesshelper = self.chesshelper
         self.ph_angles = []
         if not self.is_test:
             gui_img_manager.set_finished(False)

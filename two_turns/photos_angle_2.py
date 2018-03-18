@@ -7,8 +7,9 @@ print_and_save = True
 
 
 class photos_angle_2:
-    def __init__(self, hardware1, chess_helper_21, self_idx):
-        self.chess_helper_2 = chess_helper_21
+    def __init__(self, hardware1, chess_helper,delay_chess_helper, self_idx):
+        self.chess_helper = chess_helper
+        self.delay_chess_helper = delay_chess_helper
         self.hardware = hardware1
         self.idx = self_idx
         self.boardid = identify_board.identify_board()
@@ -16,7 +17,7 @@ class photos_angle_2:
 
     def init_colors(self):
         cut_board_im = self.get_new_img()
-        self.color_filter = filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper_2)
+        self.color_filter = filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper, self.delay_chess_helper)
 
     def prep_img(self):
         self.prep_im = self.hardware.get_image(self.idx)

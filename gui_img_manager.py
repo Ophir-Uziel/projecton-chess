@@ -19,7 +19,8 @@ def reset_images(camnum):
 
 def add_img(img):
     global images
-    images[-1].append(img)
+    if len(images)>0:
+        images[-1].append(img)
 
 def set_move(mv):
     global move

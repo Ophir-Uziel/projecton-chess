@@ -8,7 +8,7 @@ import cv2
 import math
 
 BLACK = (0.0, 0.0, 0.0)
-MINIMAL_PLAYER_BOARD_RATIO = 0.2
+MINIMAL_PLAYER_BOARD_RATIO = 1
 PIXELS_FOR_MAIN_COLORS = (200, 200)
 PIXELS_SQUARE = (20, 20)
 BLACK_NUM = 1
@@ -26,10 +26,10 @@ class filter_colors_2:
     picture.
     """
 
-    def __init__(self, im, chess_helper_2):
+    def __init__(self, im, chess_helper_2, delay_chess_helper_2):
         self.chess_helper_2 = chess_helper_2
-        self.initialize_colors(im, chess_helper_2.user_starts)
-        self.initialize_board()
+        self.delay_chess_helper_2 = delay_chess_helper_2
+        self.initialize_colors(im)
 
     def color_dist(self, color1, color2):
         return abs(max(color1) - max(color2) - min(color2) + min(color1))
