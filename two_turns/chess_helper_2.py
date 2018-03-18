@@ -3,22 +3,18 @@ import chess
 This file is responsible for all chess logic that isn't Stockfish.
 """
 
-class chess_helper:
+class chess_helper_2:
 
     RIVAL = False
     ME = True
 
-    def __init__(self, start_player):
+    def __init__(self, start_player = True):
         """
 
         :param start_player:
         """
         self.board = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-        self.curr_player = start_player
-        if(True):
-            self.user_starts = True
-        else:
-            self.user_starts = False
+        self.user_starts = start_player
 
     """
     updates the board.
@@ -30,10 +26,6 @@ class chess_helper:
         if (move2do not in self.board.legal_moves):
             return False
         self.board.push(move2do)
-        if(self.curr_player == chess_helper.ME):
-            self.curr_player = chess_helper.RIVAL
-        else:
-            self.curr_player = chess_helper.ME
         return True
 
     """
@@ -115,6 +107,30 @@ class chess_helper:
         dests = self.get_destinations()
         return [sources, dests]
 
+    def get_square_below(self, square):
+        """
+        :param square:
+        :return the square below the square given to us, -1 if illegal:
+        """
+        flag = self.user_starts
+        col = square[0]
+        if flag:
+            row = int(square[1]) - 1
+        else:
+            row = int(square[1]) + 1
+        if row == 0 or row == 9: return -1
+        return square[0] + str(row)
 
-    def get_current_player(self):
-        return self.curr_player
+    def get_square_above(self, square):
+        """
+        :param square:
+        :return the square above the square given to us, -1 if illegal:
+        """
+        flag = self.user_starts
+        col = square[0]
+        if flag:
+            row = int(square[1]) + 1
+        else:
+            row = int(square[1]) - 1
+        if row == 9 or row == 0: return -1
+        return square[0] + str(row)

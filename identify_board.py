@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import math
 import copy
-import gui_img_manager
+#import gui_img_manager
 
 # import filter_colors
 # import chess_helper
@@ -75,21 +75,190 @@ class identify_board:
         self.first = False
 
     """
-    :return image of board, including an extra line above the board.
+    :return image of board, including an extra line above the board
     """
-
-    def get_board_image(self, img):
+    def get_image_from_img(self, image, should_cut):
+        real_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        img = cv2.cvtColor(real_img, cv2.COLOR_RGB2GRAY)
         fy_shrink = 500 / len(img)
         fx_shrink = 500 / len(img[0])
+        if should_cut:
+            resizeImg = cv2.resize(img, (len(img[0]), len(img)), fx=fx_shrink,
+                                   fy=fy_shrink)
+            resizeImg = resizeImg[CUT_UP:CUT_DOWN, :]
+            real_img = cv2.resize(real_img, (len(img[0]), len(img)), fx=fx_shrink,
+                                  fy=fy_shrink)
+            real_img \
+                = real_img[CUT_UP:CUT_DOWN, :]
+        else:
+            resizeImg = img
+        # cv2.imshow('ss', resizeImg)
+        # cv2.waitKey(0)
+        '''
+        points = []
+        p1 = [int(0.05 * len(resizeImg[0])), 0]
+        p2 = [int(0.95*len(resizeImg)), 0]
+        p3 = [0, len(resizeImg)]
+        p4 = [len(resizeImg[0]), len(resizeImg)]
+        points.append(p1)
+        points.append(p2)
+        points.append(p3)
+        points.append(p4)
+        resizeImg = self.projection(points, resizeImg,len(resizeImg[0]),
+                                    len(resizeImg) )
+
+        #cv2.imshow('sss', resizeImg)
+        #cv2.waitKey(0)
+        '''
+        threshim = self.gausThresholdChess(resizeImg)
+        edgeim = self.edgeDetectionChess(threshim)
+        edgeim = cv2.convertScaleAbs(edgeim)
+        if(DEBUG):
+            cv2.imshow("sahar", edgeim)
+            cv2.waitKey(0)
+        return edgeim, real_img
+
+    def gausThresholdChess(self, img):#use
+        gaus = cv2.adaptiveThreshold(img, GAUSS_MAX_VALUE,
+                                     cv2.ADAPTIVE_THRESH_MEAN_C,
+                                     cv2.THRESH_BINARY, GAUSS_BLOCK_SIZE, GAUSS_C)
+        # cv2.imshow("saharur",gaus)
+        # k =  cv2.waitKey(0)
+        return gaus
+
+    def edgeDetectionChess(self, img):
+        lapalacian = cv2.Laplacian(img, cv2.CV_64F, EDGE_DST, EDGE_KSIZE, EDGE_SCALE)
+
+        return lapalacian
+
+    def lines_filter(self, img):
+        ver, hor = self.find_lines(img)
+        rank_ver = [self.num_of_cutting(item, hor) for item in ver]
+        rank_hor = [self.num_of_cutting(item, ver) for item in hor]
+        for i in range(len(rank_ver)):
+            i2 = len(rank_ver) - 1 - i
+            if (rank_ver[i2] < VER_MIN_INTERSECT):
+                ver = ver[:i2] + ver[i2 + 1:]
+        for i in range(len(rank_hor)):
+            i2 = len(rank_hor) - 1 - i
+            if (rank_hor[i2] < HOR_MIN_INTERSECT):
+                hor = hor[:i2] + hor[i2 + 1:]
+        #        self.draw_lines(ver,img)
+        #        self.draw_lines(hor,img)
+        return ver, hor
+
+    def find_lines(self, img):
+        linesP = cv2.HoughLinesP(img, RHO_RES, THETA_RES,
+                                 MIN_VOTES, None, MIN_LENGTH, MAX_GAP)
+        up_down = []
+        left_right = []
+        for line in linesP:
+            for l in line:
+                if self.get_theta(l) < VER_MAX_ANGLE and self.get_theta(
+                        l) > VER_MIN_ANGLE:
+                    up_down.append(l)
+                if self.get_theta(l) < HOR_MIN_ANGLE or self.get_theta(
+                        l) > HOR_MAX_ANGLE:  # WTF
+                    left_right.append(l)
+
+        # self.draw_lines(up_down,img)
+        # self.draw_lines(left_right,img)
+        return up_down, left_right
+
+    def num_of_cutting(self, line, lines):
+        count = 0
+        for l in lines:
+            point = self.get_cutoff_point(line, l)
+            if self.is_in_line(point, l) and self.is_in_line(point, line):
+                count += 1
+        return count
+
+    def lines_filter2(self, verticel_lines_lst, horizontal_lines_lst):
+        left_lines_lst = []
+        right_lines_lst = []
+        final_lines = []
+
+        for line in verticel_lines_lst:
+            theta = self.get_theta(line)
+            if theta > VER_LEFT_MIN_ANGLE and theta < VER_LEFT_MAX_ANGLE:
+                left_lines_lst.append(line)
+            if theta > VER_RIGHT_MIN_ANGLE and theta < VER_RIGHT_MAX_ANGLE:
+                right_lines_lst.append(line)
+
+        min_x = left_lines_lst[0]
+        for line in left_lines_lst:
+            y1 = min(line[1], line[3])
+            y2 = min(min_x[1], min_x[3])
+            y = max(y1, y2)
+            m1, n1 = self.find_m_n(line)
+            x_line = float(float(y - n1) / float(m1))
+            m2, n2 = self.find_m_n(min_x)
+            x_min = float((float(y - n2)) / float(m2))
+            if x_line < x_min:
+                min_x = line
+        final_lines.append(min_x)
+
+        max_y = horizontal_lines_lst[0]
+        for line in horizontal_lines_lst:
+            x1 = min(line[0], line[2])
+            x2 = min(max_y[0], max_y[2])
+            x = max(x1, x2)
+            m1, n1 = self.find_m_n(line)
+            y_line = x * m1 + n1
+            m2, n2 = self.find_m_n(max_y)
+            y_max = x * m2 + n2
+            if y_line > y_max:
+                max_y = line
+        final_lines.append(max_y)
+
+        max_x = right_lines_lst[0]
+        for line in right_lines_lst:
+            y1 = min(line[1], line[3])
+            y2 = min(max_x[1], max_x[3])
+            y = max(y1, y2)
+            m1, n1 = self.find_m_n(line)
+            x_line = (y - n1) / m1
+            m2, n2 = self.find_m_n(max_x)
+            x_max = (y - n2) / m2
+            if x_line > x_max:
+                max_x = line
+        final_lines.append(max_x)
+
+        return final_lines
+
+    def get_theta(self, line):
+        if line[2] == line[0]:
+            theta = math.pi / 2
+        else:
+            theta = (float)(math.atan2(float(line[3] - line[1]), float(line[2] - line[0])))
+        return (theta % math.pi);
+
+    def find_m_n(self, line):
+        x1 = line[0]
+        y1 = line[1]
+        x2 = line[2]
+        y2 = line[3]
+        if x1 == x2:
+            m1 = 10000000000
+        else:
+            m1 = float(float(y2 - y1) / float(x2 - x1))
+        n1 = y1 - m1 * x1
+
+        return m1, n1
+
+
+    def get_board_image(self, img):
+        fy_shrink = RESIZE_HEIGHT / len(img)
+        fx_shrink = RESIZE_WIDTH / len(img[0])
         resizeImg = cv2.resize(img, (len(img[0]), len(img)), fx=fx_shrink,
                                fy=fy_shrink)
-        resizeImg = resizeImg[CUT_UP:CUT_DOWN, :]
+        resizeImg = resizeImg[CUT_UP:CUT_DOWN,:]
         resizeImgGrey = cv2.cvtColor(resizeImg, cv2.COLOR_RGB2GRAY)
         # get lines from image, and edge-image
         edgeim = self.get_edge_image(resizeImgGrey)
         egdeim_copy = copy.deepcopy(edgeim)
-        ver, her = self.amen_yaavod(edgeim)
-        lines = self.filter_lines3(ver, her)
+        ver, her = self.lines_filter(edgeim)
+        lines = self.lines_filter2(ver, her)
         # self.draw_lines(lines,egdeim_copy)
         points = self.get_point_for_rect_cut(lines)
 
@@ -111,23 +280,6 @@ class identify_board:
 
         return board_img
 
-    def find_lines2(self, img):
-        linesP = cv2.HoughLinesP(img, RHO_RES, THETA_RES,
-                                 MIN_VOTES, None, MIN_LENGTH, MAX_GAP)
-        up_down = []
-        left_right = []
-        for line in linesP:
-            for l in line:
-                if self.get_theta(l) < VER_MAX_ANGLE and self.get_theta(
-                        l) > VER_MIN_ANGLE:
-                    up_down.append(l)
-                if self.get_theta(l) < HOR_MIN_ANGLE or self.get_theta(
-                        l) > HOR_MAX_ANGLE:  # WTF
-                    left_right.append(l)
-
-        # self.draw_lines(up_down,img)
-        # self.draw_lines(left_right,img)
-        return up_down, left_right
 
     def is_in_line(self, point, line):
         if line[0] >= point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and line[2] <= point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and \
@@ -148,29 +300,7 @@ class identify_board:
             return True
         return False
 
-    def num_of_cutting(self, line, lines):
-        count = 0
-        for l in lines:
-            point = self.get_cutoff_point(line, l)
-            if self.is_in_line(point, l) and self.is_in_line(point, line):
-                count += 1
-        return count
 
-    def amen_yaavod(self, img):
-        ver, hor = self.find_lines2(img)
-        rank_ver = [self.num_of_cutting(item, hor) for item in ver]
-        rank_hor = [self.num_of_cutting(item, ver) for item in hor]
-        for i in range(len(rank_ver)):
-            i2 = len(rank_ver) - 1 - i
-            if (rank_ver[i2] < VER_MIN_INTERSECT):
-                ver = ver[:i2] + ver[i2 + 1:]
-        for i in range(len(rank_hor)):
-            i2 = len(rank_hor) - 1 - i
-            if (rank_hor[i2] < HOR_MIN_INTERSECT):
-                hor = hor[:i2] + hor[i2 + 1:]
-        #        self.draw_lines(ver,img)
-        #        self.draw_lines(hor,img)
-        return ver, hor
 
     def get_lines_theta(self, lines):
         new_lines = []
@@ -180,25 +310,8 @@ class identify_board:
             new_lines.append(theta)
         return new_lines
 
-    def gausThresholdChess(self, img):
-        gaus = cv2.adaptiveThreshold(img, GAUSS_MAX_VALUE,
-                                     cv2.ADAPTIVE_THRESH_MEAN_C,
-                                     cv2.THRESH_BINARY, GAUSS_BLOCK_SIZE, GAUSS_C)
-        # cv2.imshow("saharur",gaus)
-        # k =  cv2.waitKey(0)
-        return gaus
 
-    def edgeDetectionChess(self, img):
-        lapalacian = cv2.Laplacian(img, cv2.CV_64F, EDGE_DST, EDGE_KSIZE, EDGE_SCALE)
 
-        return lapalacian
-
-    def get_theta(self, line):
-        if line[2] == line[0]:
-            theta = math.pi / 2
-        else:
-            theta = (float)(math.atan2(float(line[3] - line[1]), float(line[2] - line[0])))
-        return (theta % math.pi);
 
     def get_cutoff_point(self, line1, line2):
         x1 = line1[0]
@@ -380,71 +493,7 @@ class identify_board:
 
         return crop_img, x_tikun, y_tikun
 
-    def filter_lines3(self, verticel_lines_lst, horizontal_lines_lst):
-        left_lines_lst = []
-        right_lines_lst = []
-        final_lines = []
 
-        for line in verticel_lines_lst:
-            theta = self.get_theta(line)
-            if theta > VER_LEFT_MIN_ANGLE and theta < VER_LEFT_MAX_ANGLE:
-                left_lines_lst.append(line)
-            if theta > VER_RIGHT_MIN_ANGLE and theta < VER_RIGHT_MAX_ANGLE:
-                right_lines_lst.append(line)
-
-        min_x = left_lines_lst[0]
-        for line in left_lines_lst:
-            y1 = min(line[1], line[3])
-            y2 = min(min_x[1], min_x[3])
-            y = max(y1, y2)
-            m1, n1 = self.find_m_n(line)
-            x_line = float(float(y - n1) / float(m1))
-            m2, n2 = self.find_m_n(min_x)
-            x_min = float((float(y - n2)) / float(m2))
-            if x_line < x_min:
-                min_x = line
-        final_lines.append(min_x)
-
-        max_y = horizontal_lines_lst[0]
-        for line in horizontal_lines_lst:
-            x1 = min(line[0], line[2])
-            x2 = min(max_y[0], max_y[2])
-            x = max(x1, x2)
-            m1, n1 = self.find_m_n(line)
-            y_line = x * m1 + n1
-            m2, n2 = self.find_m_n(max_y)
-            y_max = x * m2 + n2
-            if y_line > y_max:
-                max_y = line
-        final_lines.append(max_y)
-
-        max_x = right_lines_lst[0]
-        for line in right_lines_lst:
-            y1 = min(line[1], line[3])
-            y2 = min(max_x[1], max_x[3])
-            y = max(y1, y2)
-            m1, n1 = self.find_m_n(line)
-            x_line = (y - n1) / m1
-            m2, n2 = self.find_m_n(max_x)
-            x_max = (y - n2) / m2
-            if x_line > x_max:
-                max_x = line
-        final_lines.append(max_x)
-
-        return final_lines
-
-    def find_m_n(self, line):
-        x1 = line[0]
-        y1 = line[1]
-        x2 = line[2]
-        y2 = line[3]
-        if x1 == x2:
-            m1 = 10000000000
-        else:
-            m1 = float(float(y2 - y1) / float(x2 - x1))
-        n1 = y1 - m1 * x1
-
-        return m1, n1
 
     """
     returns perpendicular line that bisects given line.
@@ -539,47 +588,6 @@ class identify_board:
         return bin
 
 
-    def get_image_from_img(self, image, should_cut):
-        real_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        img = cv2.cvtColor(real_img, cv2.COLOR_RGB2GRAY)
-        fy_shrink = 500 / len(img)
-        fx_shrink = 500 / len(img[0])
-        if should_cut:
-            resizeImg = cv2.resize(img, (len(img[0]), len(img)), fx=fx_shrink,
-                                   fy=fy_shrink)
-            resizeImg = resizeImg[CUT_UP:CUT_DOWN, :]
-            real_img = cv2.resize(real_img, (len(img[0]), len(img)), fx=fx_shrink,
-                                  fy=fy_shrink)
-            real_img \
-                = real_img[CUT_UP:CUT_DOWN, :]
-        else:
-            resizeImg = img
-
-        # cv2.imshow('ss', resizeImg)
-        # cv2.waitKey(0)
-        '''
-        points = []
-        p1 = [int(0.05 * len(resizeImg[0])), 0]
-        p2 = [int(0.95*len(resizeImg)), 0]
-        p3 = [0, len(resizeImg)]
-        p4 = [len(resizeImg[0]), len(resizeImg)]
-        points.append(p1)
-        points.append(p2)
-        points.append(p3)
-        points.append(p4)
-        resizeImg = self.projection(points, resizeImg,len(resizeImg[0]),
-                                    len(resizeImg) )
-
-        #cv2.imshow('sss', resizeImg)
-        #cv2.waitKey(0)
-        '''
-        threshim = self.gausThresholdChess(resizeImg)
-        edgeim = self.edgeDetectionChess(threshim)
-        edgeim = cv2.convertScaleAbs(edgeim)
-        if(DEBUG):
-            cv2.imshow("sahar", edgeim)
-            cv2.waitKey(0)
-        return edgeim, real_img
 
     def get_image_from_filename(self, imgFileName, should_cut):
         real_img = cv2.imread(imgFileName, cv2.IMREAD_COLOR)
@@ -656,11 +664,11 @@ class identify_board:
                 edgeim, real_img = self.get_image_from_filename(
                     foldername + "/" + str(j) + '.jpg', True)
                 egdeim_copy = copy.deepcopy(edgeim)
-                ver, her = self.amen_yaavod(edgeim)
+                ver, her = self.lines_filter(edgeim)
                 self.draw_lines(ver,egdeim_copy)
                 self.draw_lines(her,egdeim_copy)
 
-                lines = self.filter_lines3(ver, her)
+                lines = self.lines_filter2(ver, her)
                 self.draw_lines(lines,egdeim_copy)
 
                 points = self.get_point_for_rect_cut(lines)
@@ -693,15 +701,15 @@ class identify_board:
 
         edgeim, real_img = self.get_image_from_img(img, True)
         
-        gui_img_manager.add_img(edgeim)
+#        gui_img_manager.add_img(edgeim)
 
         try:
             egdeim_copy = copy.deepcopy(edgeim)
-            ver, her = self.amen_yaavod(edgeim)
+            ver, her = self.lines_filter(edgeim)
             if(DEBUG):
                 self.draw_lines(ver,edgeim)
                 self.draw_lines(her,edgeim)
-            lines = self.filter_lines3(ver, her)
+            lines = self.lines_filter2(ver, her)
             points = self.get_point_for_rect_cut(lines)
 
             # find exectly the forth line
@@ -726,12 +734,12 @@ class identify_board:
             print("identify board has failed")
             return real_img, edgeim
 
-# a = identify_board()
-# img = cv2.imread("images/0.jpg", cv2.IMREAD_COLOR)
-# new = a.main(img)
+a = identify_board()
+img = cv2.imread("images/0.jpg", cv2.IMREAD_COLOR)
+new = a.main(img)
 
 
 # if you want to see the image:
 
-# new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
-# a.draw_lines([],new)
+new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
+a.draw_lines([],new)
