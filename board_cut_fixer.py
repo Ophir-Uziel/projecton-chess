@@ -81,7 +81,7 @@ PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
 BOTTOM_LINE_INDEX_VARIATION = 2
 
 ## for image diff area
-IM_DIFF_AREA_SKIP = 4
+IM_DIFF_AREA_SKIP = 14
 
 class board_cut_fixer:
 
@@ -703,19 +703,21 @@ class board_cut_fixer:
         idx_range = range(-BOTTOM_LINE_INDEX_VARIATION,
                           BOTTOM_LINE_INDEX_VARIATION+1)
         bwims = [self.projection(pts,bwim,[frame[0]+i,
-                                                      frame[1],
+                                                      frame[1]+j,
                                                       frame[2]+i,
-                                                      frame[3]],False)
-                                                  for i in idx_range]
+                                                      frame[3]+j],False)
+                                                  for i in idx_range for j
+                                                    in idx_range]
         mindiff = 999999999999
         minidx = 0
-
-        for i in idx_range:
-            diff = self.get_diff_area(bwims[i+BOTTOM_LINE_INDEX_VARIATION],
-                                      self.last_image_bw)
-            if diff<mindiff:
-                mindiff = diff
-                minidx = i
+        for j in idx_range:
+            for i in idx_range:
+                diff = self.get_diff_area(bwims[(
+                    i+BOTTOM_LINE_INDEX_VARIATION)*len(idx_range)+(j+BOTTOM_LINE_INDEX_VARIATION)],
+                                          self.last_image_bw)
+                if diff<mindiff:
+                    mindiff = diff
+                    minidx = i
 
         edgeim = self.projection(pts,edgeim,[frame[0]+minidx,
                                                       frame[1],
