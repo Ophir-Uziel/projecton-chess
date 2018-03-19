@@ -112,7 +112,7 @@ class filter_colors_2:
                     max_dist = dist_i
                     max_dist_index = i
         player_color = codes[max_dist_index]
-        num_of_player_pix = 0
+        num_of_player_pix = 0.0
         for rowidx in range(len(ar)):
             row = ar[rowidx]
             for pix in row:

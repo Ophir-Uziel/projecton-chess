@@ -15,21 +15,20 @@ class chess_helper_2:
         """
         self.board = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         self.user_starts = start_player
-
+        self.curr_player = start_player
 
     def do_turn(self, src, dest):
-        """
-        updates the board.
-        :param src:
-        :param dest:
-        :returnwhether turn is legal:
-        """
         stringmove = src+dest
         move2do = chess.Move.from_uci(stringmove)
         if (move2do not in self.board.legal_moves):
             return False
         self.board.push(move2do)
+        if(self.curr_player == chess_helper_2.ME):
+            self.curr_player = chess_helper_2.RIVAL
+        else:
+            self.curr_player = chess_helper_2.ME
         return True
+
 
     """
         :src source square

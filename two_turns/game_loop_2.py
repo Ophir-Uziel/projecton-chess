@@ -20,7 +20,7 @@ class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True):
 
         self.if_save_and_print = if_save_and_print
-        self.moves_counter = -1
+        self.moves_counter = 0
         self.black_im = self.create_black_im()
         if user_moves_if_test is not None:
             self.is_test = True
@@ -57,8 +57,7 @@ class game_loop_2:
         self.last_move = None
         # TODO delete upper row
 
-    def get_new_move(self):
-        self.moves_counter += 1
+    def get_rival_move(self):
         print("move num" + str(self.moves_counter))
         # for angle in self.ph_angles:
         #    angle.update_board(self.last_move)
@@ -98,6 +97,8 @@ class game_loop_2:
         if self.is_test:
             move = rival_move
         self.last_move = move
+        self.chesshelper.do_turn(move[0], move[1])
+        self.moves_counter += 1
         return move
 
     def check_one_direction(self, sources, dests, angle_idx):
@@ -161,22 +162,24 @@ class game_loop_2:
             for j in range(20):
                 black_im[i].append(0)
         return black_im
+    
+    def play_user_turn(self,last_move):
+        self.best_move = self.chess_engine.get_best_move(last_move)
+        print("I recommend: " + self.best_move)
+        if not self.is_test:
+            self.hardware.player_indication(self.best_move)
+        else:
+            self.best_move = self.user_moves[self.moves_counter]
+            print("sorry, I changed my mind. play" + str(self.best_move))
+        self.delay_chesshelper = self.chesshelper
+        self.chesshelper.do_turn(self.best_move[0], self.best_move[1])
 
     def main(self):
         last_move = None
         while True:
             gui_img_manager.set_finished(False)
-            self.best_move = self.chess_engine.get_best_move(last_move)
-            print("I recommend: " + self.best_move)
-            if not self.is_test:
-                self.hardware.player_indication(self.best_move)
-            self.delay_chesshelper = self.chesshelper
-            if self.is_test:
-                self.best_move = self.user_moves[self.moves_counter]
-                print("sorry, I changed my mind. play" + self.best_move)
-            self.chesshelper.do_turn(self.best_move[0], self.best_move[1])
-            last_move = self.get_new_move()
-            self.chesshelper.do_turn(last_move[0], last_move[1])
+            self.play_user_turn(last_move)
+            last_move = self.get_rival_move()
             gui_img_manager.set_finished(True)
 
 def make_dir(dir_name):
