@@ -669,8 +669,8 @@ class identify_board:
             print("identify board has failed")
             return real_img, edgeim
 
-# a = identify_board()
-# a.test('game1')
+a = identify_board()
+a.test('game1')
 
 
             #a = identify_board()
