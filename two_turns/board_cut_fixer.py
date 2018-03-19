@@ -7,7 +7,7 @@ import bisect
 #import gui_img_manager
 
 ### DEBUG FLAG ###
-DEBUG = False
+DEBUG = True
 
 ##### Gaussian Threshold parameters #####
 GAUSS_MAX_VALUE = 255

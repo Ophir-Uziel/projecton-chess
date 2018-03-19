@@ -67,7 +67,7 @@ FOURTH_LINE_MIN_LENGTH = 115
 FOURTH_LINE_MAX_GAP = 30
 PROJECTION_IMAGE_PADDING_RATIO = 1.0 / 7
 
-DEBUG = False
+DEBUG = True
 
 
 class identify_board:
@@ -720,6 +720,7 @@ class identify_board:
             if (DEBUG):
                 cv2.imshow('sss', img)
                 cv2.waitKey(0)
+            edgeim, img = self.process_im(img, should_cut=True)
             return img, edgeim
         except:
             print("identify board has failed")
