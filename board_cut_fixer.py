@@ -15,6 +15,7 @@ GAUSS_MAX_VALUE = 255
 GAUSS_BLOCK_SIZE = 115
 GAUSS_C = 13
 
+
 ##### Edge detection parameters #####
 EDGE_DST = 10
 EDGE_KSIZE = 3
