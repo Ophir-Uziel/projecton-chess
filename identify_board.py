@@ -346,6 +346,7 @@ class identify_board:
 
 
 
+
     def get_board_image(self, img):
         fy_shrink = RESIZE_HEIGHT / len(img)
         fx_shrink = RESIZE_WIDTH / len(img[0])
