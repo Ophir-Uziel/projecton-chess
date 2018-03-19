@@ -2,7 +2,7 @@ import cv2
 
 import filter_colors
 import identify_board
-from two_turns import board_cut_fixer
+import board_cut_fixer
 
 print_and_save = True
 class photos_angle:

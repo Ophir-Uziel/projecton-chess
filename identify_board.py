@@ -612,7 +612,7 @@ class identify_board:
 
     def test(self, foldername):
         # get lines from image, and edge-image
-        for j in range(1, 70,2):
+        for j in range(59):
             try:
 
                 real_img = self.get_image_from_filename(
@@ -669,8 +669,8 @@ class identify_board:
             print("identify board has failed")
             return real_img, edgeim
 
-a = identify_board()
-a.test('game7\\angle2')
+# a = identify_board()
+# a.test('game1')
 
 
             #a = identify_board()
