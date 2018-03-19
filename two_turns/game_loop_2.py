@@ -6,6 +6,8 @@ import find_moves_rank as fm
 import photos_angle_2
 import chess_engine_wrapper
 import gui_img_manager
+import cv2
+import numpy as np
 
 """
 Main logic file.
@@ -14,12 +16,15 @@ SOURCE = True
 LEFT = 0
 RIGHT = 1
 ROWS_NUM = 8
+SAVE_IMAGES = True
+RESULTS_DIR = 'super_tester_results'
 
 
 class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True):
 
         self.if_save_and_print = if_save_and_print
+        self.make_squares_dirs()
         self.moves_counter = 0
         self.black_im = self.create_black_im()
         if user_moves_if_test is not None:
@@ -30,7 +35,7 @@ class game_loop_2:
             self.is_test = False
 
         self.hardware = hw.hardware(angles_num, imgs_if_test)
-        self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.ME)
+        self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.USER)
         self.delay_chesshelper = self.chesshelper
         self.ph_angles = []
         if not self.is_test:
@@ -56,6 +61,12 @@ class game_loop_2:
         self.chess_engine = chess_engine_wrapper.chess_engine_wrapper()
         self.last_move = None
         # TODO delete upper row
+
+    def make_squares_dirs(self):
+        make_dir(RESULTS_DIR + 'by_move')
+        for i in range(ROWS_NUM):
+            for j in range(ROWS_NUM):
+                make_dir(RESULTS_DIR + '\\' + chr(ord('a')+i)+str(j+1))
 
     def get_rival_move(self):
         print("move num" + str(self.moves_counter))
@@ -113,17 +124,14 @@ class game_loop_2:
         return move
 
     def check_one_direction(self, sources, dests, angle_idx):
-        make_dir('super tester results/move_num_' + str(self.moves_counter-1) + '/angle_num_' + str(angle_idx))
-        angle_dir = 'super tester results/move_num_' + str(self.moves_counter-1) + '/angle_num_' + str(angle_idx) + '/'
+        make_dir('super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
+
+
         rival_move = None
         angle = self.ph_angles[angle_idx]
         cut_board_im = angle.get_new_img(angle_dir)
         if self.if_save_and_print:
             print("angle_num_" + str(angle_idx))
-
-        else:
-            rival_move = None
-            angle_dir = None
 
         if (self.is_test):
             rival_move = self.rival_moves[self.moves_counter]
@@ -133,8 +141,8 @@ class game_loop_2:
         destsims, destsabvims = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                      not SOURCE)
 
-        pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims,
-                                                     dests, destsims, destsabvims, rival_move, angle_dir)
+        pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
+                                                     tester_info = (rival_move, self.moves_counter,angle_idx))
 
         ### save prev picture ###
         angle.set_prev_im(cut_board_im)
@@ -145,15 +153,18 @@ class game_loop_2:
         angle_dir = 'super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle.idx) + '/'
         locssims = []
         locsabvims = []
+        if SAVE_IMAGES:
+            make_dir(angle_dir + 'filter_tester')
         for loc in locs:
             abv_loc = self.chesshelper.get_square_above(loc)
-            bel_loc = self.chesshelper.get_square_below(loc)
             diff_im, im2save = angle.get_square_diff(cut_board_im, loc, is_source)
-
+            cv2.imwrite(angle_dir + 'filter_tester/' + str(loc) + '.jpg',np.array(im2save))
             if abv_loc:
                 diff_abv_im, im_above2save = angle.get_square_diff(cut_board_im, abv_loc, is_source)
+                cv2.imwrite(angle_dir + 'filter_tester/' + str(loc) + '_above.jpg',np.array(im_above2save))
             else:
                 diff_abv_im = self.black_im
+
                 # if self.if_save_and_print:
                 #   if loc == rival_move[0] or loc == rival_move[1] or bel_loc == rival_move[0] or bel_loc == rival_move[1]:
                 #      cv2.imwrite(angle_dir + loc + '.jpg', diff_im)

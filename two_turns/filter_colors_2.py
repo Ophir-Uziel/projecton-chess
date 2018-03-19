@@ -8,7 +8,7 @@ import cv2
 import math
 
 BLACK = (0.0, 0.0, 0.0)
-MINIMAL_PLAYER_BOARD_RATIO = 1
+MINIMAL_PLAYER_BOARD_RATIO = 0.2
 PIXELS_FOR_MAIN_COLORS = (200, 200)
 PIXELS_SQUARE = (20, 20)
 BLACK_NUM = 1
@@ -16,8 +16,8 @@ WHITE_NUM = 2
 USER = True
 RIVAL = False
 TEST = True
-BLACK_TEST = (0.0, 0.0, 0.0)
-WHITE_TEST = (1.0, 1.0, 1.0)
+BLACK_TEST = (0, 0, 0)
+WHITE_TEST = (255, 255, 255)
 
 
 class filter_colors_2:
@@ -151,8 +151,8 @@ class filter_colors_2:
         self.B2R = self.RIVAL_NUM - BLACK_NUM
         self.W2R = self.RIVAL_NUM - WHITE_NUM
         if TEST:
-            self.user_color_test = (0.6, 0.8, 0.8)
-            self.rival_color_test = (0.5, 0.2, 0.2)
+            self.user_color_test = (150, 200, 200)
+            self.rival_color_test = (130, 50, 50)
             if self.cmpT(main_colors[2], main_colors[0]):
                 self.user_color_test = BLACK_TEST
             elif self.cmpT(main_colors[2], main_colors[1]):
@@ -194,7 +194,7 @@ class filter_colors_2:
         """
         im_sz = len(im)
         new_im = np.ones((im_sz,im_sz),dtype=int)
-        test_im = np.zeros((im_sz, im_sz), dtype='d,d,d').tolist()
+        test_im = np.zeros((im_sz, im_sz), dtype='i,i,i').tolist()
         if not TEST:
             for rowidx in range(im_sz):
                 for pixidx in range(im_sz):
@@ -233,6 +233,8 @@ class filter_colors_2:
         return new_im,test_im
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
+        if square == 'e8':
+            print('hello')
         is_white = self.chess_helper_2.square_color(square)
         RC = []
         if is_source:
@@ -240,7 +242,7 @@ class filter_colors_2:
                 RC.append(self.R2W)
             else:
                 RC.append(self.R2B)
-            if self.chess_helper_2.piece_color(square): # if user piece is in this square
+            if self.chess_helper_2.piece_color(square) == self.chess_helper_2.USER : # if user piece is in this square
                 RC.append(self.R2U)
         else:
             if is_white:
@@ -257,7 +259,7 @@ class filter_colors_2:
         for rowidx in range(im_sz):
             for pixidx in range(im_sz):
                 if im2[rowidx][pixidx] - im1[rowidx][pixidx] in RC:
-                    binary_im[rowidx][pixidx] = 1
+                    binary_im[rowidx][pixidx] = 255
         return binary_im
 
     def get_square_diff(self, im, square_loc, is_source):

@@ -6,7 +6,7 @@ This file is responsible for all chess logic that isn't Stockfish.
 class chess_helper_2:
 
     RIVAL = False
-    ME = True
+    USER = True
 
     def __init__(self, start_player = True):
         """
@@ -23,10 +23,10 @@ class chess_helper_2:
         if (move2do not in self.board.legal_moves):
             return False
         self.board.push(move2do)
-        if(self.curr_player == chess_helper_2.ME):
+        if(self.curr_player == chess_helper_2.USER):
             self.curr_player = chess_helper_2.RIVAL
         else:
-            self.curr_player = chess_helper_2.ME
+            self.curr_player = chess_helper_2.USER
         return True
 
 
