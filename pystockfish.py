@@ -14,6 +14,7 @@
 import re
 import subprocess
 from random import randint
+
 MAX_MOVES = 200
 UCI_MOVE_REGEX = "[a-h]\d[a-h]\d[qrnb]?"
 PV_REGEX = " pv (?P<move_list>{0}( {0})*)".format(UCI_MOVE_REGEX)
@@ -130,15 +131,11 @@ class Engine(subprocess.Popen):
 
     def __init__(self, depth=2, ponder=False, param={}, rand=False,
                  rand_min=-10, rand_max=10, movetime=1000):
-        subprocess.Popen.__init__(self,
-                                  'stockfish',
-                                  universal_newlines=True,
-                                  stdin=subprocess.PIPE,
-                                  stdout=subprocess.PIPE, )
+        subprocess.Popen.__init__(self, 'stockfish', universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, )
         self.depth = str(depth)
         self.ponder = ponder
         self.put('uci')
-        self.movetime=str(movetime)
+        self.movetime = str(movetime)
         if not ponder:
             self.setoption('Ponder', False)
 
@@ -201,7 +198,7 @@ class Engine(subprocess.Popen):
         self.isready()
 
     def go(self):
-        self.put('go depth %s movetime %s' % (self.depth,self.movetime))
+        self.put('go depth %s movetime %s' % (self.depth, self.movetime))
 
     @staticmethod
     def _movelisttostr(moves):

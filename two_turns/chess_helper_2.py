@@ -134,5 +134,6 @@ class chess_helper_2:
             row = int(square[1]) + 1
         else:
             row = int(square[1]) - 1
-        if row == 9 or row == 0: return -1
+        if row == 9 or row == 0:
+            return None
         return square[0] + str(row)

@@ -163,6 +163,9 @@ class filter_colors_2:
                 self.user_color_test = WHITE_TEST
         return
 
+    def set_prev_im(self, img):
+        self.prev_im = img
+
     ###########################################################################
 
     def get_square_image(self, im, loc):
@@ -246,8 +249,8 @@ class filter_colors_2:
                 RC.append(self.W2R)
             else:
                 RC.append(self.B2R)
-            if self.delayed_chess_helper.piece_color(square) or \
-                    self.delayed_chess_helper.piece_color(self.chess_helper_2.get_square_below(square)):
+            if self.delay_chess_helper_2.piece_color(square) or \
+                    self.delay_chess_helper_2.piece_color(self.chess_helper_2.get_square_below(square)):
                 RC.append(self.U2R)
         while 0 in RC:
             RC.remove(0)
@@ -266,18 +269,15 @@ class filter_colors_2:
         :param is_source:
         :return binary image of relevant changes only (according alot of parameters):
         """
-        row = ord(square_loc[0]) - ord('a')
-        colon = int(square_loc[1]) - 1
-        after_square = cv2.resize(self.get_square_image(im, square_loc, self.chess_helper_2.user_starts), PIXELS_SQUARE)
-        after_square = self.fit_colors(after_square)
+        after_square = cv2.resize(self.get_square_image(im, square_loc), PIXELS_SQUARE)
+        after_square = self.fit_colors(after_square)[0]
         maybe_before_square = None
         if maybe_before_square == None:
-            before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc, self.chess_helper_2.user_starts),
+            before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc),
                                        PIXELS_SQUARE)
-            before_square = self.fit_colors(before_square)
+            before_square = self.fit_colors(before_square)[0]
         else:
             before_square = maybe_before_square
-        self.board[row][colon] = after_square
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
         return square_diff
 

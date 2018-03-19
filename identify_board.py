@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import math
 import copy
+import os
+import errno
 #import gui_img_manager
 
 # import filter_colors
@@ -73,6 +75,13 @@ PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
 
 
 DEBUG = False
+
+def make_dir(dir_name):
+    try:
+        os.makedirs(dir_name)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 
 class identify_board:
@@ -612,18 +621,23 @@ class identify_board:
 
     def test(self, foldername):
         # get lines from image, and edge-image
-        for j in range(59):
+
+        make_dir(foldername + '\\projected')
+        make_dir(foldername + '\\fixed')
+
+        imgs_names = os.listdir(foldername)
+
+        for img_name in imgs_names:
             try:
 
                 real_img = self.get_image_from_filename(
-                    foldername + "\\" + str(j) + '.jpg')
+                    foldername +'\\' +img_name)
 
                 img , edgiem = self.main(real_img)
-                cv2.imwrite(foldername + "\\" +'projected\\' + str(j) +
-                            '.jpg', img)
-                print (j)
+                cv2.imwrite(foldername + "\\" +'projected\\' + img_name, img)
+                print (img_name + ' sucsseed!!')
             except:
-                print(str(j) + " failed")
+                print(img_name + " failed")
 
     def main(self, img):
 
@@ -669,8 +683,8 @@ class identify_board:
             print("identify board has failed")
             return real_img, edgeim
 
-a = identify_board()
-a.test('game1')
+# a = identify_board()
+# a.test('two_turns\\angle1')
 
 
             #a = identify_board()
