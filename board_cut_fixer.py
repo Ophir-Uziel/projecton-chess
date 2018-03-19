@@ -4,6 +4,7 @@ import identify_board
 import copy
 import numpy as np
 import bisect
+import board_c
 
 # import gui_img_manager
 
