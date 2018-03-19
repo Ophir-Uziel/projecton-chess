@@ -26,8 +26,8 @@ HOR_MIN_INTERSECT = 6
 VER_MIN_ANGLE = 0.9
 VER_MAX_ANGLE = 2.3
 VER_LEFT_MIN_ANGLE = 1.5
-VER_LEFT_MAX_ANGLE = 2.2
-VER_RIGHT_MIN_ANGLE = 1
+VER_LEFT_MAX_ANGLE = 2.3
+VER_RIGHT_MIN_ANGLE = 0.9
 VER_RIGHT_MAX_ANGLE = 1.5
 HOR_MIN_ANGLE = 0.15
 HOR_MAX_ANGLE = 3.0
@@ -67,7 +67,12 @@ FOURTH_LINE_MIN_LENGTH = 115
 FOURTH_LINE_MAX_GAP = 30
 PROJECTION_IMAGE_PADDING_RATIO = 1.0 / 7
 
-DEBUG = True
+
+PROJECTION_SPARE_GRID_SIZE = 12
+PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
+
+
+DEBUG = False
 
 
 class identify_board:
@@ -93,24 +98,7 @@ class identify_board:
                 = real_img[CUT_UP:CUT_DOWN, :]
         else:
             resizeImg = img
-        # cv2.imshow('ss', resizeImg)
-        # cv2.waitKey(0)
-        '''
-        points = []
-        p1 = [int(0.05 * len(resizeImg[0])), 0]
-        p2 = [int(0.95*len(resizeImg)), 0]
-        p3 = [0, len(resizeImg)]
-        p4 = [len(resizeImg[0]), len(resizeImg)]
-        points.append(p1)
-        points.append(p2)
-        points.append(p3)
-        points.append(p4)
-        resizeImg = self.projection(points, resizeImg,len(resizeImg[0]),
-                                    len(resizeImg) )
 
-        #cv2.imshow('sss', resizeImg)
-        #cv2.waitKey(0)
-        '''
         threshim = self.gausThresholdChess(resizeImg)
         edgeim = self.edgeDetectionChess(threshim)
         edgeim = cv2.convertScaleAbs(edgeim)
@@ -123,8 +111,7 @@ class identify_board:
         gaus = cv2.adaptiveThreshold(img, GAUSS_MAX_VALUE,
                                      cv2.ADAPTIVE_THRESH_MEAN_C,
                                      cv2.THRESH_BINARY, GAUSS_BLOCK_SIZE, GAUSS_C)
-        # cv2.imshow("saharur",gaus)
-        # k =  cv2.waitKey(0)
+
         return gaus
 
     def edgeDetectionChess(self, img):
@@ -144,8 +131,6 @@ class identify_board:
             i2 = len(rank_hor) - 1 - i
             if (rank_hor[i2] < HOR_MIN_INTERSECT):
                 hor = hor[:i2] + hor[i2 + 1:]
-        #        self.draw_lines(ver,img)
-        #        self.draw_lines(hor,img)
         return ver, hor
 
     def find_lines(self, img):
@@ -162,8 +147,7 @@ class identify_board:
                         l) > HOR_MAX_ANGLE:  # WTF
                     left_right.append(l)
 
-        # self.draw_lines(up_down,img)
-        # self.draw_lines(left_right,img)
+
         return up_down, left_right
 
     def num_of_cutting(self, line, lines):
@@ -444,29 +428,6 @@ class identify_board:
         color[2] = (color[2] / (x_max - x_min)) / (y_max - y_min)
         return color
 
-    '''
-    def remove_lines_colors(self,lines, real_img):
-        real_img = cv2.cvtColor(real_img, cv2.COLOR_RGB2BGR)
-        chessh = chess_helper.chess_helper(chess_helper.chess_helper.ME)
-        width = len(real_img[0])
-        height = len(real_img)
-        cut_im = real_img[int(4 * height / 10):int(4 * height / 5), int(5 * width / 10):int(7 * width / 10)]
-        #    cv2.imshow('s', cut_im)
-        #    cv2.waitKey(0)
-        colorf = filter_colors.filter_colors(cut_im, chessh)
-        colors = filter_colors.filter_colors.get_main_colors(colorf, cut_im)
-
-        range = 18
-        new_lines = []
-        for line in lines:
-            added = False
-            color2 = self.find_avg_line_color(line, real_img)
-            for color in colors:
-                if filter_colors.filter_colors.color_dist(colorf, color2, color) < range and added == False:
-                    added = True
-                    new_lines.append(line)
-        return new_lines
-    '''
 
 
     def get_real_theta_right(self, line1, line2):
@@ -517,25 +478,24 @@ class identify_board:
         p4[0] += fix_point
         p4[1] += fix_point
 
-    def projection(self, pointslst, img, width, height):
+    def projection_with_spare(self, pointslst, img):
         pts1 = np.float32(pointslst)
-        pts2 = np.float32([[int(width * PROJECTION_IMAGE_PADDING_RATIO),
-                            int(height * PROJECTION_IMAGE_PADDING_RATIO)],
-                           [int(width * (1 - PROJECTION_IMAGE_PADDING_RATIO)),
-                            int(height * PROJECTION_IMAGE_PADDING_RATIO)],
-                           [int(width * PROJECTION_IMAGE_PADDING_RATIO),
-                            int(height * (1 - PROJECTION_IMAGE_PADDING_RATIO))],
-                           [int(width * (1 - PROJECTION_IMAGE_PADDING_RATIO)),
-                            int(height * (1 - PROJECTION_IMAGE_PADDING_RATIO))]])
-        #        self.fix_points_for_projection(pts1)
+        x_hi = (PROJECTION_SPARE_DIFF + 8) * RESIZE_WIDTH \
+               / PROJECTION_SPARE_GRID_SIZE
+        x_lo = (PROJECTION_SPARE_DIFF + 0) * RESIZE_WIDTH \
+               / PROJECTION_SPARE_GRID_SIZE
+        y_hi = (PROJECTION_SPARE_DIFF) * RESIZE_HEIGHT / \
+               PROJECTION_SPARE_GRID_SIZE
+        y_lo = (PROJECTION_SPARE_DIFF + 8
+                ) * RESIZE_HEIGHT / PROJECTION_SPARE_GRID_SIZE
+        pts2 = np.float32([[x_lo, y_hi], [x_hi, y_hi],
+                           [x_lo, y_lo], [x_hi, y_lo]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
-        dst = cv2.warpPerspective(img, M, (width, height))
-        # cv2.imshow("ss",dst)
-        # k = cv2.waitKey(0)
+        dst = cv2.warpPerspective(img, M, (RESIZE_WIDTH, RESIZE_HEIGHT))
+        if (DEBUG):
+            cv2.imshow("image", dst)
+            k = cv2.waitKey(0)
         return dst
-
-
-
 
     """
     returns perpendicular line that bisects given line.
@@ -616,24 +576,6 @@ class identify_board:
         else:
             resizeImg = img
 
-        # cv2.imshow('ss', resizeImg)
-        # cv2.waitKey(0)
-        '''
-        points = []
-        p1 = [int(0.05 * len(resizeImg[0])), 0]
-        p2 = [int(0.95*len(resizeImg)), 0]
-        p3 = [0, len(resizeImg)]
-        p4 = [len(resizeImg[0]), len(resizeImg)]
-        points.append(p1)
-        points.append(p2)
-        points.append(p3)
-        points.append(p4)
-        resizeImg = self.projection(points, resizeImg,len(resizeImg[0]),
-                                    len(resizeImg) )
-
-        #cv2.imshow('sss', resizeImg)
-        #cv2.waitKey(0)
-        '''
         threshim = self.gausThresholdChess(resizeImg)
         edgeim = self.edgeDetectionChess(threshim)
         edgeim = cv2.convertScaleAbs(edgeim)
@@ -674,10 +616,11 @@ class identify_board:
             try:
 
                 real_img = self.get_image_from_filename(
-                    foldername + "\\" + str(j) + '.jpg', True)
+                    foldername + "\\" + str(j) + '.jpg')
 
                 img , edgiem = self.main(real_img)
-                cv2.imwrite('imgs\\' + str(j) + '.jpg', img)
+                cv2.imwrite(foldername + "\\" +'projected\\' + str(j) +
+                            '.jpg', img)
                 print (j)
             except:
                 print(str(j) + " failed")
@@ -687,6 +630,7 @@ class identify_board:
         edgeim, real_img = self.process_im(img, should_cut=True)
         
 #        gui_img_manager.add_img(edgeim)
+
 
         try:
             egdeim_copy = copy.deepcopy(edgeim)
@@ -715,18 +659,21 @@ class identify_board:
             final_points = self.get_final_points(lines, forth_line, x_tikun, y_tikun)
 
             #                self.draw_lines_by_points(final_points,egdeim_copy)
-            img = self.projection(final_points, real_img, RESIZE_WIDTH,
-                                  RESIZE_HEIGHT)
+            img = self.projection_with_spare(final_points, real_img)
+            edgeim = self.projection_with_spare(final_points, edgeim)
             if (DEBUG):
                 cv2.imshow('sss', img)
                 cv2.waitKey(0)
-            edgeim, img = self.process_im(img, should_cut=True)
             return img, edgeim
         except:
             print("identify board has failed")
             return real_img, edgeim
 
-#a = identify_board()
+a = identify_board()
+a.test('game7\\angle2')
+
+
+            #a = identify_board()
 #img = cv2.imread("images/cam0.jpg", cv2.IMREAD_COLOR)
 #new , edg_new = a.main(img)
 
