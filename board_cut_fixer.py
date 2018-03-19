@@ -842,7 +842,7 @@ class board_cut_fixer:
                 # left_line, right_line, down_line], edgeim))
                 #gui_img_manager.add_img(proim)
 
-        return real_img, edgeim
+        return real_img
 
     def get_line_image(self, lines, img):
         bin = copy.deepcopy(img)

@@ -39,7 +39,7 @@ def super_tester_2(user_moves_file, rival_moves_file, img_dir_lst, with_saves):
 
 # gameloop = game_loop_2.game_loop_2(angles_num = 2)
 # gameloop.main()
-super_tester_2("game_9_user_moves.txt","game_9_rival_moves.txt",["angle1","angle2"],True)
+super_tester_2("user_moves.txt","rival_moves.txt",["angle1","angle2"],WITH_SAVES)
 
 
 

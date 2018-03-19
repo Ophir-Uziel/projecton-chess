@@ -2,8 +2,8 @@ import cv2
 
 import filter_colors_2
 import identify_board
-from two_turns import board_cut_fixer
-
+import board_cut_fixer
+import numpy as np
 print_and_save = True
 
 
@@ -28,9 +28,9 @@ class photos_angle_2:
         cut_board_im, edges = self.boardid.main(new_board_im)
         if print_and_save:
             if dir_if_test is not None:
-                cv2.imwrite(dir_if_test + 'first_cut_img.jpg', cut_board_im)
+                cv2.imwrite(dir_if_test + 'first_cut_img' + str(self.idx) + '.jpg', cut_board_im)
             else:
-                cv2.imwrite('first_cut_img.jpg', cut_board_im)
+                cv2.imwrite('first_cut_img' + str(self.idx) + '.jpg', cut_board_im)
         better_cut_board_im = self.fixer.main(cut_board_im, edges)
         if dir_if_test is not None:
             cv2.imwrite(dir_if_test + 'second_cut_img' + str(self.idx) + '.jpg', better_cut_board_im)

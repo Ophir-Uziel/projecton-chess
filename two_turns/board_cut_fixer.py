@@ -22,7 +22,7 @@ EDGE_SCALE = 10
 
 
 MIN_GRID_SIZE = 1.0 / 20
-MAX_GRID_SIZE = 1.0 / 7
+MAX_GRID_SIZE = 1.0 / 8
 MAX_LINE_DIST_RATIO = 1.0 / 15
 RESIZE_HEIGHT = identify_board.RESIZE_HEIGHT
 RESIZE_WIDTH = identify_board.RESIZE_WIDTH
@@ -64,7 +64,7 @@ GAUSS_BLOCK_SIZE = 109
 GAUSS_C = 13
 
 ##### nuber of iterations for the board cut fixer#####
-NUM_ITERATIONS = 3
+NUM_ITERATIONS = 2
 
 BOTTOM_HOR_LINE_VARIATION = RESIZE_HEIGHT//16
 
@@ -74,14 +74,14 @@ VER_ANGLE_RANGE = 0.1
 HOR_ANGLE_RANGE = 0.18
 ANGLE_CONSTRAINT_DECAY_FACTOR = 0.3
 
-PROJECTION_SPARE_GRID_SIZE = 11
+PROJECTION_SPARE_GRID_SIZE = 14
 PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
 
 ## for getting best bottom line - number of options to test
 BOTTOM_LINE_INDEX_VARIATION = 2
 
 ## for image diff area
-IM_DIFF_AREA_SKIP = 14
+IM_DIFF_AREA_SKIP = 7
 
 class board_cut_fixer:
 
@@ -709,7 +709,8 @@ class board_cut_fixer:
                                                   for i in idx_range for j
                                                     in idx_range]
         mindiff = 999999999999
-        minidx = 0
+        miniidx = 0
+        minjidx = 0
         for j in idx_range:
             for i in idx_range:
                 diff = self.get_diff_area(bwims[(
@@ -717,18 +718,18 @@ class board_cut_fixer:
                                           self.last_image_bw)
                 if diff<mindiff:
                     mindiff = diff
-                    minidx = i
+                    miniidx = i
+                    minjidx = j
+        edgeim = self.projection(pts,edgeim,[frame[0]+miniidx,
+                                                      frame[1] + minjidx,
+                                                      frame[2]+miniidx,
+                                                      frame[3]+minjidx],cut_spare)
 
-        edgeim = self.projection(pts,edgeim,[frame[0]+minidx,
-                                                      frame[1],
-                                                      frame[2]+minidx,
-                                                      frame[3]],cut_spare)
 
-
-        realim = self.projection(pts,realim,[frame[0]+minidx,
-                                                      frame[1],
-                                                      frame[2]+minidx,
-                                                      frame[3]],cut_spare)
+        realim = self.projection(pts,realim,[frame[0]+miniidx,
+                                                      frame[1] + minjidx,
+                                                      frame[2]+miniidx,
+                                                      frame[3]+minjidx],cut_spare)
 
         return edgeim, realim
 
@@ -841,7 +842,7 @@ class board_cut_fixer:
                 # left_line, right_line, down_line], edgeim))
                 #gui_img_manager.add_img(proim)
 
-        return real_img, edgeim
+        return real_img
 
     def get_line_image(self, lines, img):
         bin = copy.deepcopy(img)
@@ -869,7 +870,7 @@ def test(foldername):
             print(str(j)+" failed")
 
 
-#test('pics')
+test('pics')
 
 
 
