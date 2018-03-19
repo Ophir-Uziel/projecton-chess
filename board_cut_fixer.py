@@ -78,7 +78,7 @@ PROJECTION_SPARE_GRID_SIZE = 14
 PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
 
 ## for getting best bottom line - number of options to test
-BOTTOM_LINE_INDEX_VARIATION = 2
+BOTTOM_LINE_INDEX_VARIATION = 3
 
 ## for image diff area
 IM_DIFF_AREA_SKIP = 7
@@ -700,21 +700,25 @@ class board_cut_fixer:
     ### Cut image at different idxs and check which is best
     def get_best_cut_image(self, edgeim, realim, pts, frame, cut_spare):
         bwim = self.gausThresholdChess(realim)
-        idx_range = range(-BOTTOM_LINE_INDEX_VARIATION,
-                          BOTTOM_LINE_INDEX_VARIATION+1)
         bwims = [self.projection(pts,bwim,[frame[0]+i,
                                                       frame[1]+j,
                                                       frame[2]+i,
                                                       frame[3]+j],False)
-                                                  for i in idx_range for j
-                                                    in idx_range]
+                                                  for i in range(-BOTTOM_LINE_INDEX_VARIATION,
+                          BOTTOM_LINE_INDEX_VARIATION+1) for j
+                                                    in range(-BOTTOM_LINE_INDEX_VARIATION,
+                          BOTTOM_LINE_INDEX_VARIATION+1)]
         mindiff = 999999999999
         miniidx = 0
         minjidx = 0
-        for j in idx_range:
-            for i in idx_range:
+        for j in range(-BOTTOM_LINE_INDEX_VARIATION,
+                          BOTTOM_LINE_INDEX_VARIATION+1):
+            for i in range(-BOTTOM_LINE_INDEX_VARIATION,
+                          BOTTOM_LINE_INDEX_VARIATION+1):
                 diff = self.get_diff_area(bwims[(
-                    i+BOTTOM_LINE_INDEX_VARIATION)*len(idx_range)+(j+BOTTOM_LINE_INDEX_VARIATION)],
+                    i+BOTTOM_LINE_INDEX_VARIATION)*(
+                    2*BOTTOM_LINE_INDEX_VARIATION+1)+(
+                    j+BOTTOM_LINE_INDEX_VARIATION)],
                                           self.last_image_bw)
                 if diff<mindiff:
                     mindiff = diff
@@ -858,11 +862,11 @@ def test(foldername):
     # get lines from image, and edge-image
     id = identify_board.identify_board()
     fixer = board_cut_fixer()
-    for j in range(0,56):
+    for j in range(0,200):
         try:
             edgeim, realim = id.get_image_from_filename(
                 foldername+"\\projected\\"+str(j)+".jpg",False)
-            fixed_im, edgeim = fixer.main(realim, edgeim)
+            fixed_im = fixer.main(realim, edgeim)
 
             cv2.imwrite(foldername+"\\fixed\\"+str(j)+".jpg",fixed_im)
             print(j)
@@ -870,7 +874,7 @@ def test(foldername):
             print(str(j)+" failed")
 
 
-
+test('game7\\angle2')
 
 
 
