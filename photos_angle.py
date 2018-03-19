@@ -24,9 +24,8 @@ class photos_angle:
         new_board_im = self.prep_im
         cut_board_im, edges = self.boardid.main(new_board_im)
 
-
         if print_and_save:
-            if dir_if_test is not  None:
+            if dir_if_test is not None:
                 cv2.imwrite(dir_if_test + 'first_cut_img(new)' + str(self.idx) + '.jpg', cut_board_im)
             else:
                 cv2.imwrite('first_cut_img(new)' + str(self.idx) + '.jpg', cut_board_im)

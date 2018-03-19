@@ -858,12 +858,15 @@ def test(foldername):
     id = identify_board.identify_board()
     fixer = board_cut_fixer()
     for j in range(0, 200):
-        edgeim, realim = id.get_image_from_filename(foldername + "\\projected\\" + str(j) + ".jpg")
-        fixed_im = fixer.main(realim, edgeim)
+        try:
+            realim = id.get_image_from_filename(foldername + "\\projected\\" + str(j) + ".jpg")
+            edgeim, realim = id.process_im(realim, should_cut=True)
+            fixed_im = fixer.main(realim, edgeim)
 
-        cv2.imwrite(foldername + '/fixed/' + str(j) + '.jpg', fixed_im)
-        print(j)
-        print(str(j) + " failed")
+            cv2.imwrite(foldername + '/fixed/' + str(j) + '.jpg', fixed_im)
+            print(str(j)+'sucsseed!!!')
+        except:
+            print(str(j) + " failed")
 
 
-test('game1')
+#test('game1')
