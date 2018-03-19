@@ -2,6 +2,7 @@ import cv2
 import two_turns.filter_colors_2
 import identify_board
 import board_cut_fixer
+import tester_helper
 import numpy as np
 print_and_save = True
 
@@ -22,19 +23,20 @@ class photos_angle_2:
     def prep_img(self):
         self.prep_im = self.hardware.get_image(self.idx)
 
-    def get_new_img(self, dir_if_test=None):
+    def get_new_img(self, tester_info=None):
+        to_save = bool(tester_info)
+
         new_board_im = self.prep_im
+
         cut_board_im, edges = self.boardid.main(new_board_im)
-        if print_and_save:
-            if dir_if_test is not None:
-                cv2.imwrite(dir_if_test + 'first_cut_img' + str(self.idx) + '.jpg', cut_board_im)
-            else:
-                cv2.imwrite('first_cut_img' + str(self.idx) + '.jpg', cut_board_im)
         better_cut_board_im = self.fixer.main(cut_board_im, edges)
-        if dir_if_test is not None:
-            cv2.imwrite(dir_if_test + 'second_cut_img' + str(self.idx) + '.jpg', better_cut_board_im)
-        else:
-            cv2.imwrite('second_cut_img' + str(self.idx) + '.jpg', better_cut_board_im)
+
+        if to_save:
+            move_num = tester_info[0]
+            angle_idx = tester_info[1]
+            tester_helper.save(cut_board_im, 'board', move_num, angle_idx, 'first')
+            tester_helper.save(better_cut_board_im, 'board', move_num, angle_idx, 'second')
+
         return better_cut_board_im
 
     def get_square_diff(self, cut_board_im, src, is_source):

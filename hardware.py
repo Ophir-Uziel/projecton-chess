@@ -39,6 +39,8 @@ class hardware:
             img = cv2.resize(img,(RESIZE_SIZE,RESIZE_SIZE))
             gui_img_manager.add_img(img)
             self.angles_imgs_counter[angle_idx] += 1
+            cv2.imshow('image', img)
+            k = cv2.waitKey(0)
             return img
         else:
             if(angle_idx==0):

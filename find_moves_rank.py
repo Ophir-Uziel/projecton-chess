@@ -7,6 +7,7 @@ import os
 from scipy import misc
 import numpy as np
 import errno
+import tester_helper
 
 
 """
@@ -35,7 +36,6 @@ MAX_RT = 1.5
 WINDOW_RT = 10
 WHITE_DEF_RT = 2
 MIN_WHITE_RT = 5
-RESULTS_DIR = 'super_tester_results'
 
 class find_moves_rank:
 
@@ -44,10 +44,10 @@ class find_moves_rank:
         self.neuron_counter = 0
         self.chess_helper = chess_helper
         self.mistake_idxes = []
-        make_dir('self_y_dir')
-        make_dir('self_n_dir')
-        make_dir('abv_y_dir')
-        make_dir('abv_n_dir')
+        tester_helper.make_dir('self_y_dir')
+        tester_helper.make_dir('self_n_dir')
+        tester_helper.make_dir('abv_y_dir')
+        tester_helper.make_dir('abv_n_dir')
     """
     :arg square_im a binary image of changes in the square
     :return whether there's been a move on the square, below it, or none,
@@ -80,8 +80,8 @@ class find_moves_rank:
                                      sources_above,real_change_s, real_idx_source)
         if to_save:
             for idx in self.mistake_idxes:
-                self.save(img=np.array(sources_self[idx]), place=sources_place[idx], move_num=move_num, angle_idx=angle_idx)
-                self.save(img=np.array(sources_above[idx]), place=sources_place[idx], move_num=move_num, angle_idx=angle_idx, desc='abv')
+                tester_helper.save(img=np.array(sources_self[idx]), place=sources_place[idx], move_num=move_num, angle_idx=angle_idx, desc='dif')
+                tester_helper.save(img=np.array(sources_above[idx]), place=sources_place[idx], move_num=move_num, angle_idx=angle_idx, desc='dif_abv')
 
 
             #save neuron's images:
@@ -105,11 +105,11 @@ class find_moves_rank:
         targets_rank = self.check_squares(targets_self,
                                      targets_above,real_change_t, real_idx_target)
 
-        if to_save is not None:
+        if to_save:
             for idx in self.mistake_idxes:
-                self.save(img=np.array(targets_self[idx]), place=targets_place[idx], move_num=move_num,
+                tester_helper.save(img=np.array(targets_self[idx]), place=targets_place[idx], move_num=move_num,
                           angle_idx=angle_idx)
-                self.save(img=np.array(targets_above[idx]), place=targets_place[idx], move_num=move_num,
+                tester_helper.save(img=np.array(targets_above[idx]), place=targets_place[idx], move_num=move_num,
                           angle_idx=angle_idx, desc='abv')
 
             print("sources : ")
@@ -345,17 +345,6 @@ class find_moves_rank:
 
         return self.checkDensity(imgOneZero) * yahasmetrics
 
-    def save(self, img, place, move_num, angle_idx, desc = ''):
-        cv2.imwrite(RESULTS_DIR + '\\' +'by_move' + '\\' + str(move_num)+ '\\' + str(angle_idx) + '\\' + place + '_' + desc + '.jpg', img)
-        cv2.imwrite(RESULTS_DIR + '\\' +'by_square' + '\\' + place + '\\' + str(angle_idx) + '\\' + str(move_num) + '_' + desc + '.jpg', img)
-
-
-def make_dir(dir_name):
-    try:
-        os.makedirs(dir_name)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
 
 
 def test_find_move():

@@ -6,11 +6,7 @@ import errno
 WITH_SAVES = True
 
 def super_tester_2(user_moves_file, rival_moves_file, img_dir_lst, with_saves):
-    try:
-        os.makedirs('super tester results')
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+
     corrects = []
     non_corects = []
     user_moves = []

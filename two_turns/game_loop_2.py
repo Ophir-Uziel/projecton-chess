@@ -8,7 +8,7 @@ import chess_engine_wrapper
 import gui_img_manager
 import cv2
 import numpy as np
-
+import tester_helper
 """
 Main logic file.
 """
@@ -63,11 +63,19 @@ class game_loop_2:
         # TODO delete upper row
 
     def make_squares_dirs(self):
-        make_dir(RESULTS_DIR + 'by_move')
-        for i in range(ROWS_NUM):
-            for j in range(ROWS_NUM):
-                make_dir(RESULTS_DIR + '\\' + chr(ord('a')+i)+str(j+1))
-
+        make_dir(RESULTS_DIR)
+        make_dir(RESULTS_DIR + '\\' + 'by_move')
+        make_dir(RESULTS_DIR + '\\' + 'by_square')
+        for i in range(ROWS_NUM+1):
+            if i == ROWS_NUM:
+                make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board')
+                for k in range(2):
+                    make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board' + '\\' + 'angle_num_' + str(k))
+            else:
+                for j in range(ROWS_NUM):
+                    make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1))
+                    for k in range(2):
+                        make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1) + '\\' + 'angle_num_' + str(k))
     def get_rival_move(self):
         print("move num" + str(self.moves_counter))
         # for angle in self.ph_angles:
@@ -124,17 +132,18 @@ class game_loop_2:
         return move
 
     def check_one_direction(self, sources, dests, angle_idx):
-        make_dir('super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
+        make_dir(RESULTS_DIR + '\\' + 'by_move/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
 
 
         rival_move = None
         angle = self.ph_angles[angle_idx]
-        cut_board_im = angle.get_new_img(angle_dir)
+        cut_board_im = angle.get_new_img(tester_info=(self.moves_counter, angle_idx))
         if self.if_save_and_print:
             print("angle_num_" + str(angle_idx))
 
         if (self.is_test):
             rival_move = self.rival_moves[self.moves_counter]
+
 
         sourcesims, sourcesabvims = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
                                                                          SOURCE)
@@ -150,18 +159,20 @@ class game_loop_2:
         return pairs, pairs_rank
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
-        angle_dir = 'super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle.idx) + '/'
+        angle_dir = 'super_tester_results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle.idx) + '/'
         locssims = []
         locsabvims = []
-        if SAVE_IMAGES:
-            make_dir(angle_dir + 'filter_tester')
+
         for loc in locs:
             abv_loc = self.chesshelper.get_square_above(loc)
-            diff_im, im2save = angle.get_square_diff(cut_board_im, loc, is_source)
-            cv2.imwrite(angle_dir + 'filter_tester/' + str(loc) + '.jpg',np.array(im2save))
+            diff_im, before2save, after2save = angle.get_square_diff(cut_board_im, loc, is_source)
+            tester_helper.save(np.array(before2save),str(loc), self.moves_counter, angle.idx, 'org')
+            tester_helper.save(np.array(after2save),str(loc), self.moves_counter+1, angle.idx, 'org')
             if abv_loc:
-                diff_abv_im, im_above2save = angle.get_square_diff(cut_board_im, abv_loc, is_source)
-                cv2.imwrite(angle_dir + 'filter_tester/' + str(loc) + '_above.jpg',np.array(im_above2save))
+                diff_abv_im, before_above2save, after_above2save = angle.get_square_diff(cut_board_im, abv_loc, is_source)
+                tester_helper.save(np.array(before_above2save), str(loc), self.moves_counter, angle.idx, 'abv_org')
+                tester_helper.save(np.array(after_above2save), str(loc), self.moves_counter+1, angle.idx, 'abv_org')
+
             else:
                 diff_abv_im = self.black_im
 

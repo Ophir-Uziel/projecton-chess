@@ -269,12 +269,14 @@ class filter_colors_2:
         :param is_source:
         :return binary image of relevant changes only (according alot of parameters):
         """
+
+
         after_square = cv2.resize(self.get_square_image(im, square_loc), PIXELS_SQUARE)
-        after_square, im2save = self.fit_colors(after_square)
+        after_square, after2save = self.fit_colors(after_square)
         before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc),
                                    PIXELS_SQUARE)
-        before_square = self.fit_colors(before_square)[0]
+        before_square, befor2save = self.fit_colors(before_square)
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
-        return square_diff, im2save
+        return square_diff, befor2save, after2save
 
     ###########################################################################
