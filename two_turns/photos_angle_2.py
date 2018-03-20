@@ -29,14 +29,12 @@ class photos_angle_2:
 
         new_board_im = self.prep_im
 
-        cut_board_im, edges = self.boardid.main(new_board_im)
-        #edges, cut_board_im = self.boardid.process_im(cut_board_im, should_cut=True)
-        better_cut_board_im = self.fixer.main(cut_board_im, edges)
+
+        better_cut_board_im = self.fixer.main(new_board_im)
 
         if to_save:
             move_num = tester_info[0]
             angle_idx = tester_info[1]
-            tester_helper.save(cut_board_im, 'board', move_num, angle_idx, 'first')
             tester_helper.save(better_cut_board_im, 'board', move_num, angle_idx, 'second')
 
         return better_cut_board_im
