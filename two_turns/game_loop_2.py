@@ -105,10 +105,10 @@ class game_loop_2:
                 gui_img_manager.set_camera(i)
                 self.ph_angles[i].prep_img()
 
-                #try:
-                pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                #except:
-                    #pairs_and_ranks = [], []
+                try:
+                    pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                except:
+                    pairs_and_ranks = [], []
 
                 gui_img_manager.reset_images(i)
                 pairs = pairs + pairs_and_ranks[0]
