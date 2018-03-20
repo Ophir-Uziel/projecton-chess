@@ -17,6 +17,7 @@ class photos_angle_2:
         self.fixer = board_cut_fixer.board_cut_fixer()
 
     def init_colors(self):
+
         cut_board_im = self.get_new_img()
         self.color_filter = two_turns.filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper, self.delay_chess_helper)
 
@@ -29,6 +30,7 @@ class photos_angle_2:
         new_board_im = self.prep_im
 
         cut_board_im, edges = self.boardid.main(new_board_im)
+        #edges, cut_board_im = self.boardid.process_im(cut_board_im, should_cut=True)
         better_cut_board_im = self.fixer.main(cut_board_im, edges)
 
         if to_save:
@@ -42,9 +44,10 @@ class photos_angle_2:
     def get_square_diff(self, cut_board_im, src, is_source):
         return self.color_filter.get_square_diff(cut_board_im, src, is_source)
 
-    def update_board(self, last_move):
-        self.color_filter.update_board(last_move)
+
 
     def set_prev_im(self, img):
         return self.color_filter.set_prev_im(img)
 
+    def get_prev_im(self):
+        return self.color_filter.prev_im

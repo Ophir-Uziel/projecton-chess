@@ -233,8 +233,6 @@ class filter_colors_2:
         return new_im,test_im
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
-        if square == 'e8':
-            print('hello')
         is_white = self.chess_helper_2.square_color(square)
         RC = []
         if is_source:
@@ -263,13 +261,14 @@ class filter_colors_2:
         return binary_im
 
     def get_square_diff(self, im, square_loc, is_source):
+        if square_loc == 'd6':
+            print('hello')
         """
         :param im:
         :param square_loc:
         :param is_source:
         :return binary image of relevant changes only (according alot of parameters):
         """
-
 
         after_square = cv2.resize(self.get_square_image(im, square_loc), PIXELS_SQUARE)
         after_square, after2save = self.fit_colors(after_square)

@@ -96,18 +96,20 @@ class game_loop_2:
         to_continue = True
         while to_continue and (len(pairs) == 0 or len(pairs_ranks) == 0):
             if self.is_test:
+
                 to_continue = False
             for i in range(len(self.ph_angles)):
                 if cnt > 0:
                     print("id error plz take another photo k thnx")
                 gui_img_manager.set_camera(i)
+                self.ph_angles[i].prep_img()
+
                 try:
                     pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
                 except:
                     pairs_and_ranks = [], []
 
                 gui_img_manager.reset_images(i)
-                self.ph_angles[i].prep_img()
                 pairs = pairs + pairs_and_ranks[0]
                 pairs_ranks = pairs_ranks + pairs_and_ranks[1]
             cnt += 1
@@ -138,6 +140,8 @@ class game_loop_2:
         rival_move = None
         angle = self.ph_angles[angle_idx]
         cut_board_im = angle.get_new_img(tester_info=(self.moves_counter, angle_idx))
+
+
         if self.if_save_and_print:
             print("angle_num_" + str(angle_idx))
 
@@ -176,11 +180,14 @@ class game_loop_2:
             else:
                 diff_abv_im = self.black_im
 
+
                 # if self.if_save_and_print:
                 #   if loc == rival_move[0] or loc == rival_move[1] or bel_loc == rival_move[0] or bel_loc == rival_move[1]:
                 #      cv2.imwrite(angle_dir + loc + '.jpg', diff_im)
             locssims.append(diff_im)
             locsabvims.append(diff_abv_im)
+
+
         return locssims, locsabvims
 
     def create_black_im(self):
