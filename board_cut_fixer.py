@@ -65,7 +65,7 @@ GAUSS_BLOCK_SIZE = 109
 GAUSS_C = 13
 
 ##### nuber of iterations for the board cut fixer#####
-NUM_ITERATIONS = 1
+NUM_ITERATIONS = 2
 NUM_ANGLE_ITERATIONS = 2
 ANGLE_FIX = 1
 MIN_SERIES_SCORE = 6
@@ -957,7 +957,7 @@ class board_cut_fixer:
             except:
                 real_img = self.rotate_image_fix(real_img)
                 print("rotating image")
-        return real_img
+        raise Exception()
 
     def get_line_image(self, lines, img):
         bin = copy.deepcopy(img)
