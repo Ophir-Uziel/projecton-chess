@@ -94,16 +94,6 @@ class board_cut_fixer:
                                         cv2.IMREAD_GRAYSCALE)
         self.board_id = identify_board.identify_board()
 
-    def set_prev_im(self,im):
-        self.last_image_bw = self.gausThresholdChess(im)
-        wid = len(im[0])
-        hi = len(im)
-        self.last_image_bw = self.last_image_bw[hi//9:hi,0:wid]
-        self.last_image_bw = cv2.resize(self.last_image_bw, (RESIZE_WIDTH,RESIZE_HEIGHT))
-        cv2.imshow("image",self.last_image_bw)
-        cv2.waitKey(0)
-
-
     def get_theta(self, line):
         try:
             if line[2] == line[0]:
@@ -261,7 +251,6 @@ class board_cut_fixer:
     """
 
     def projection(self, pointslst, img, frame, take_spare, big_picture):
-
         if (take_spare):
             diff = PROJECTION_SPARE_DIFF
             gridsize = PROJECTION_SPARE_GRID_SIZE
@@ -280,7 +269,7 @@ class board_cut_fixer:
                            [x_hi, y_lo], [x_lo, y_lo]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
         dst = cv2.warpPerspective(img, M, (RESIZE_WIDTH, RESIZE_HEIGHT))
-        # if (DEBUG):
+        #if (DEBUG):
         #    cv2.imshow("image", dst)
         #    k = cv2.waitKey(0)
         return dst
@@ -784,17 +773,17 @@ class board_cut_fixer:
                                                frame[2] + miniidx,
                                                frame[3] + minjidx],
                                  cut_spare, False)
-        realim = self.projection(bigpts, bigim, [frame[0] + miniidx,
-                                               frame[1] + minjidx,
-                                               frame[2] + miniidx,
-                                               frame[3] + minjidx],
-                                 cut_spare, False)
+
         bigim = self.projection(bigpts, bigim, [frame[0] + miniidx,
                                                frame[1] + minjidx,
                                                frame[2] + miniidx,
                                                frame[3] + minjidx],
                                  False, True)
-
+        realim = self.projection(bigpts, bigim, [frame[0] + miniidx,
+                                               frame[1] + minjidx,
+                                               frame[2] + miniidx,
+                                               frame[3] + minjidx],
+                                 cut_spare, False)
 
         return realim, edgeim, bigim
 
@@ -953,8 +942,7 @@ class board_cut_fixer:
                 if not is_proj_correct:
                     print("Shimri's test has failed - bad cut")
                     raise Exception()
-                return tmp_realimg
-                #return self.get_final_image(tmp_bigim)
+                return self.get_final_image(tmp_bigim)
 
             except:
                 real_img = self.rotate_image_fix(real_img)
@@ -986,4 +974,4 @@ def test(foldername):
             print(str(j) + " failed")
 
 
-#test('angle2')
+test('angle2')
