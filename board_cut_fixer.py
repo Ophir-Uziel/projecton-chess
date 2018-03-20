@@ -86,7 +86,8 @@ BOTTOM_LINE_INDEX_VARIATION = 3
 ## for image diff area
 IM_DIFF_AREA_SKIP = 7
 
-
+FINAL_IMG_WIDTH = 400
+FINAL_IMG_HEIGHT = 450
 
 class board_cut_fixer:
     def __init__(self):
@@ -816,7 +817,7 @@ class board_cut_fixer:
                               PROJECTION_SPARE_GRID_SIZE_BIG)
 
         final_img = bigim[int(y_low):int(y_hi),int(x_low):int(x_hi)]
-        final_img = cv2.resize(final_img, (0,0), fx=1, fy=9.0/8)
+        final_img = cv2.resize(final_img, (FINAL_IMG_WIDTH,FINAL_IMG_HEIGHT))
         return final_img
 
     def main(self, real_img):
