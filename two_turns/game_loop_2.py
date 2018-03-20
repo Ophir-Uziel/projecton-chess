@@ -9,6 +9,7 @@ import gui_img_manager
 import cv2
 import numpy as np
 import tester_helper
+import filter_colors_2
 """
 Main logic file.
 """
@@ -16,7 +17,7 @@ SOURCE = True
 LEFT = 0
 RIGHT = 1
 ROWS_NUM = 8
-SAVE_IMAGES = True
+SAVE_IMAGES = False
 RESULTS_DIR = 'super_tester_results'
 
 
@@ -36,7 +37,7 @@ class game_loop_2:
 
         self.hardware = hw.hardware(angles_num, imgs_if_test)
         self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.USER)
-        self.delay_chesshelper = self.chesshelper
+        self.delay_chesshelper = ch.chess_helper_2(ch.chess_helper_2.USER)
         self.ph_angles = []
         if not self.is_test:
             gui_img_manager.set_finished(False)
@@ -60,7 +61,6 @@ class game_loop_2:
 
         self.chess_engine = chess_engine_wrapper.chess_engine_wrapper()
         self.last_move = None
-        # TODO delete upper row
 
     def make_squares_dirs(self):
         make_dir(RESULTS_DIR)
@@ -76,8 +76,9 @@ class game_loop_2:
                     make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1))
                     for k in range(2):
                         make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1) + '\\' + 'angle_num_' + str(k))
+
     def get_rival_move(self):
-        print("move num" + str(self.moves_counter))
+        print("\n" + "move num" + str(self.moves_counter))
         # for angle in self.ph_angles:
         #    angle.update_board(self.last_move)
         rival_move = None
@@ -104,10 +105,10 @@ class game_loop_2:
                 gui_img_manager.set_camera(i)
                 self.ph_angles[i].prep_img()
 
-                try:
-                    pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                except:
-                    pairs_and_ranks = [], []
+                #try:
+                pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                #except:
+                    #pairs_and_ranks = [], []
 
                 gui_img_manager.reset_images(i)
                 pairs = pairs + pairs_and_ranks[0]
@@ -130,6 +131,8 @@ class game_loop_2:
             move = rival_move
         self.last_move = move
         self.chesshelper.do_turn(move[0], move[1])
+        self.delay_chesshelper.do_turn(self.best_move[0],self.best_move[1])
+        self.delay_chesshelper.do_turn(move[0], move[1])
         self.moves_counter += 1
         return move
 
@@ -151,11 +154,21 @@ class game_loop_2:
 
         sourcesims, sourcesabvims = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
                                                                          SOURCE)
+
         destsims, destsabvims = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                      not SOURCE)
 
         pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
                                                      tester_info = (rival_move, self.moves_counter,angle_idx))
+
+        if self.if_save_and_print:
+            above_src = [self.chesshelper.get_square_above(src) for src in sources]
+            above_trgt = [self.chesshelper.get_square_above(trgt) for trgt in dests]
+            source_big_im = tester_helper.make_board_im_helper(sources+above_src,sourcesims+sourcesabvims)
+            tester_helper.save(np.array(source_big_im), "board", self.moves_counter, angle_idx, "src_big_im")
+            target_big_im = tester_helper.make_board_im_helper(dests+above_trgt,destsims+destsabvims)
+            tester_helper.save(np.array(target_big_im), "board", self.moves_counter, angle_idx, "trgt_big_im")
+
 
         ### save prev picture ###
         angle.set_prev_im(cut_board_im)
@@ -170,12 +183,17 @@ class game_loop_2:
         for loc in locs:
             abv_loc = self.chesshelper.get_square_above(loc)
             diff_im, before2save, after2save = angle.get_square_diff(cut_board_im, loc, is_source)
-            tester_helper.save(np.array(before2save),str(loc), self.moves_counter, angle.idx, 'org')
-            tester_helper.save(np.array(after2save),str(loc), self.moves_counter+1, angle.idx, 'org')
+            if filter_colors_2.TEST:
+                tester_helper.save(np.array(before2save),str(loc), self.moves_counter, angle.idx, 'org')
+                tester_helper.save(np.array(after2save),str(loc), self.moves_counter+1, angle.idx, 'org')
+            if loc == "c5":
+                tester_helper.save(np.array(diff_im), loc, self.moves_counter, angle.idx, 'dif')
+
             if abv_loc:
                 diff_abv_im, before_above2save, after_above2save = angle.get_square_diff(cut_board_im, abv_loc, is_source)
-                tester_helper.save(np.array(before_above2save), str(loc), self.moves_counter, angle.idx, 'abv_org')
-                tester_helper.save(np.array(after_above2save), str(loc), self.moves_counter+1, angle.idx, 'abv_org')
+                if filter_colors_2.TEST:
+                    tester_helper.save(np.array(before_above2save), str(loc), self.moves_counter, angle.idx, 'abv_org')
+                    tester_helper.save(np.array(after_above2save), str(loc), self.moves_counter+1, angle.idx, 'abv_org')
 
             else:
                 diff_abv_im = self.black_im
@@ -206,8 +224,8 @@ class game_loop_2:
         else:
             self.best_move = self.user_moves[self.moves_counter]
             print("sorry, I changed my mind. play" + str(self.best_move))
-        self.delay_chesshelper = self.chesshelper
         self.chesshelper.do_turn(self.best_move[0], self.best_move[1])
+
 
     def main(self):
         last_move = None
@@ -218,6 +236,7 @@ class game_loop_2:
                 break
             gui_img_manager.set_finished(False)
             self.play_user_turn(last_move)
+            user_move = self.best_move
             last_move = self.get_rival_move()
             gui_img_manager.set_finished(True)
             cnt+=1

@@ -1,9 +1,10 @@
 import cv2
 import os
 import errno
+import numpy as np
 
 RESULTS_DIR = 'super_tester_results'
-
+ROWS_NUM = 8
 
 
 
@@ -18,3 +19,29 @@ def make_dir(dir_name):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+def make_board_im_helper(squares, square_ims):
+    squares_im_lst = []
+    for i in range(ROWS_NUM):
+        for j in range(ROWS_NUM):
+            square = chr(ord('a')+j)+str(ROWS_NUM-i)
+            if square in squares:
+                squares_im_lst.append(square_ims[squares.index(square)])
+            else:
+                squares_im_lst.append(None)
+    return make_board_im(squares_im_lst, len(square_ims[0]), len(square_ims[0][0]))
+
+def make_board_im(squares_im_lst, pic_hi, pic_wid):
+    #lst of all squares. None for non relevant squares.
+    if len(squares_im_lst) != ROWS_NUM**2:
+        raise Exception('make board im has failed')
+    row_num = pic_hi*ROWS_NUM
+    col_num = pic_wid*ROWS_NUM
+    im = np.zeros((row_num,col_num), dtype=np.int).tolist()
+    for i in range(ROWS_NUM):
+        for j in range(ROWS_NUM):
+            im_num = i*ROWS_NUM+j
+            if squares_im_lst[im_num] is not None:
+                for k in range(pic_hi):
+                    im[i*pic_hi+k][j*pic_wid:(j+1)*pic_wid] = squares_im_lst[i*8+j][k]
+    return im

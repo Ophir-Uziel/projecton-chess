@@ -18,7 +18,7 @@ class photos_angle_2:
 
     def init_colors(self):
 
-        cut_board_im = self.get_new_img()
+        cut_board_im = self.get_new_img(tester_info=(-1,self.idx))
         self.color_filter = two_turns.filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper, self.delay_chess_helper)
 
     def prep_img(self):

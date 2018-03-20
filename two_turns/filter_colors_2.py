@@ -9,13 +9,13 @@ import math
 
 BLACK = (0.0, 0.0, 0.0)
 MINIMAL_PLAYER_BOARD_RATIO = 0.2
-PIXELS_FOR_MAIN_COLORS = (200, 200)
+PIXELS_FOR_MAIN_COLORS = (400, 400)
 PIXELS_SQUARE = (20, 20)
 BLACK_NUM = 1
 WHITE_NUM = 2
 USER = True
 RIVAL = False
-TEST = True
+TEST = False
 BLACK_TEST = (0, 0, 0)
 WHITE_TEST = (255, 255, 255)
 
@@ -29,7 +29,9 @@ class filter_colors_2:
     def __init__(self, im, chess_helper_2, delay_chess_helper_2):
         self.chess_helper_2 = chess_helper_2
         self.delay_chess_helper_2 = delay_chess_helper_2
+        self.bad_board = False
         self.initialize_colors(im)
+
 
     def color_dist(self, color1, color2):
         return abs(max(color1) - max(color2) - min(color2) + min(color1))
@@ -120,7 +122,7 @@ class filter_colors_2:
                 color_dist_from_black = self.color_dist(pix, board_colors[0])
                 color_dist_from_white = self.color_dist(pix, board_colors[1])
                 if color_dist_from_player < color_dist_from_black and \
-                                color_dist_from_player < color_dist_from_white:
+                        color_dist_from_player < color_dist_from_white:
                     num_of_player_pix += 1
         num_of_pix = len(ar) * len(ar[0])
         rank = num_of_player_pix / num_of_pix
@@ -137,19 +139,24 @@ class filter_colors_2:
         self.RIVAL_NUM = 8
         # main colors order: black = 1, white = 2, user = 4, rival = 8
         if self.cmpT(main_colors[2], main_colors[0]):
+            self.bad_board = True
             self.USER_NUM = BLACK_NUM
         elif self.cmpT(main_colors[2], main_colors[1]):
+            self.bad_board = True
             self.USER_NUM = WHITE_NUM
         if self.cmpT(main_colors[3], main_colors[0]):
+            self.bad_board = True
             self.RIVAL_NUM = BLACK_NUM
         elif self.cmpT(main_colors[3], main_colors[1]):
+            self.bad_board = True
             self.RIVAL_NUM = WHITE_NUM
         self.R2W = WHITE_NUM - self.RIVAL_NUM
         self.R2B = BLACK_NUM - self.RIVAL_NUM
-        self.R2U = self.USER_NUM - self.RIVAL_NUM
-        self.U2R = self.RIVAL_NUM - self.USER_NUM
         self.B2R = self.RIVAL_NUM - BLACK_NUM
         self.W2R = self.RIVAL_NUM - WHITE_NUM
+        self.R2U = self.USER_NUM - self.RIVAL_NUM
+        self.U2R = self.RIVAL_NUM - self.USER_NUM
+
         if TEST:
             self.user_color_test = (150, 200, 200)
             self.rival_color_test = (130, 50, 50)
@@ -193,7 +200,7 @@ class filter_colors_2:
         :return image fit to 4 main colors:
         """
         im_sz = len(im)
-        new_im = np.ones((im_sz,im_sz),dtype=int)
+        new_im = np.ones((im_sz, im_sz), dtype=int)
         test_im = np.zeros((im_sz, im_sz), dtype='i,i,i').tolist()
         if not TEST:
             for rowidx in range(im_sz):
@@ -230,7 +237,7 @@ class filter_colors_2:
                     if dist < min_dist:
                         new_im[rowidx][pixidx] = self.RIVAL_NUM
                         test_im[rowidx][pixidx] = self.rival_color_test
-        return new_im,test_im
+        return new_im, test_im
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
         is_white = self.chess_helper_2.square_color(square)
@@ -240,7 +247,8 @@ class filter_colors_2:
                 RC.append(self.R2W)
             else:
                 RC.append(self.R2B)
-            if self.chess_helper_2.piece_color(square) == self.chess_helper_2.USER : # if user piece is in this square
+            if self.chess_helper_2.piece_color(
+                    square) == self.chess_helper_2.USER and not self.bad_board:  # if user piece is in this square
                 RC.append(self.R2U)
         else:
             if is_white:
@@ -249,11 +257,16 @@ class filter_colors_2:
                 RC.append(self.B2R)
             if self.delay_chess_helper_2.piece_color(square) or \
                     self.delay_chess_helper_2.piece_color(self.chess_helper_2.get_square_below(square)):
-                RC.append(self.U2R)
+                if self.bad_board:
+                    if self.chess_helper_2.piece_color(square) or self.chess_helper_2.piece_color(
+                        self.chess_helper_2.get_square_below(square)):
+                        RC.append(self.U2R)
+                else:
+                    RC.append(self.U2R)
         while 0 in RC:
             RC.remove(0)
         im_sz = len(im1)
-        binary_im = np.zeros((im_sz,im_sz),dtype=int)
+        binary_im = np.zeros((im_sz, im_sz), dtype=int)
         for rowidx in range(im_sz):
             for pixidx in range(im_sz):
                 if im2[rowidx][pixidx] - im1[rowidx][pixidx] in RC:
@@ -261,8 +274,6 @@ class filter_colors_2:
         return binary_im
 
     def get_square_diff(self, im, square_loc, is_source):
-        if square_loc == 'd6':
-            print('hello')
         """
         :param im:
         :param square_loc:
@@ -276,6 +287,11 @@ class filter_colors_2:
                                    PIXELS_SQUARE)
         before_square, befor2save = self.fit_colors(before_square)
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
+
         return square_diff, befor2save, after2save
 
     ###########################################################################
+
+
+def filter_color_tester(im_bef, im_aft, loc, is_source):
+    a = 0
