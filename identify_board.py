@@ -72,7 +72,8 @@ PROJECTION_IMAGE_PADDING_RATIO = 1.0 / 7
 
 PROJECTION_SPARE_GRID_SIZE = 12
 PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
-
+PROJECTION_SPARE_GRID_SIZE_BIG = 2*PROJECTION_SPARE_GRID_SIZE
+PROJECTION_SPARE_DIFF_BIG = (PROJECTION_SPARE_GRID_SIZE_BIG-8)/2
 
 DEBUG = False
 
@@ -488,16 +489,22 @@ class identify_board:
         p4[0] += fix_point
         p4[1] += fix_point
 
-    def projection_with_spare(self, pointslst, img):
+    def projection_with_spare(self, pointslst, img, big_picture):
+        diff = PROJECTION_SPARE_DIFF
+        grid = PROJECTION_SPARE_GRID_SIZE
+        if (big_picture):
+            diff = 4
+            grid = 16
+
         pts1 = np.float32(pointslst)
-        x_hi = (PROJECTION_SPARE_DIFF + 8) * RESIZE_WIDTH \
-               / PROJECTION_SPARE_GRID_SIZE
-        x_lo = (PROJECTION_SPARE_DIFF + 0) * RESIZE_WIDTH \
-               / PROJECTION_SPARE_GRID_SIZE
-        y_hi = (PROJECTION_SPARE_DIFF) * RESIZE_HEIGHT / \
-               PROJECTION_SPARE_GRID_SIZE
-        y_lo = (PROJECTION_SPARE_DIFF + 8
-                ) * RESIZE_HEIGHT / PROJECTION_SPARE_GRID_SIZE
+        x_hi = (diff + 8) * RESIZE_WIDTH \
+               / grid
+        x_lo = (diff+ 0) * RESIZE_WIDTH \
+               / grid
+        y_hi = (diff) * RESIZE_HEIGHT / \
+               grid
+        y_lo = (diff + 8
+                ) * RESIZE_HEIGHT / grid
         pts2 = np.float32([[x_lo, y_hi], [x_hi, y_hi],
                            [x_lo, y_lo], [x_hi, y_lo]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
@@ -674,15 +681,16 @@ class identify_board:
             final_points = self.get_final_points(lines, forth_line, x_tikun, y_tikun)
 
             #                self.draw_lines_by_points(final_points,egdeim_copy)
-            img = self.projection_with_spare(final_points, real_img)
-            edgeim = self.projection_with_spare(final_points, edgeim)
+            img = self.projection_with_spare(final_points, real_img, False)
+            edgeim = self.projection_with_spare(final_points, edgeim, False)
+            bigim = self.projection_with_spare(final_points, real_img, True)
             if (DEBUG):
-                cv2.imshow('sss', img)
+                cv2.imshow('sss', bigim)
                 cv2.waitKey(0)
-            return img, edgeim
+            return img, edgeim, bigim
         except:
             print("identify board has failed")
-            return real_img, edgeim
+            return real_img, edgeim, real_img
 
 # a = identify_board()
 # a.test('two_turns\\angle1')

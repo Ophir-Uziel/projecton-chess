@@ -45,6 +45,7 @@ class photos_angle_2:
 
 
     def set_prev_im(self, img):
+        #self.fixer.set_prev_im(img)
         return self.color_filter.set_prev_im(img)
 
     def get_prev_im(self):

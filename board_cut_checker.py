@@ -176,7 +176,7 @@ def doConvRight(img):
 
     return changeCounterAbv
 
-def board_cut_chacker(threshimg):
+def board_cut_checker(threshimg):
     IsCutExect= doConvUp(threshimg) > CHANGE_COLOR_SAF and doConvDown(
         threshimg) > CHANGE_COLOR_SAF and doConvLeft(threshimg) > CHANGE_COLOR_SAF and \
                 doConvRight(threshimg) > CHANGE_COLOR_SAF
@@ -201,7 +201,7 @@ def test(foldername):
                 k=cv2.waitKey(0)
                 cv2.imshow("",gaus)
                 k=cv2.waitKey(0)
-            IsCutExect = board_cut_chacker(gaus)
+            IsCutExect = board_cut_checker(gaus)
             print((str(IsCutExect)) + " " + str(j))
     #    except:
      #       print(str(j)+" failed")

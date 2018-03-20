@@ -65,7 +65,7 @@ GAUSS_BLOCK_SIZE = 109
 GAUSS_C = 13
 
 ##### nuber of iterations for the board cut fixer#####
-NUM_ITERATIONS = 2
+NUM_ITERATIONS = 1
 NUM_ANGLE_ITERATIONS = 2
 ANGLE_FIX = 1
 MIN_SERIES_SCORE = 6
@@ -77,6 +77,8 @@ ANGLE_CONSTRAINT_DECAY_FACTOR = 0.3
 
 PROJECTION_SPARE_GRID_SIZE = 14
 PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE - 8) / 2
+PROJECTION_SPARE_GRID_SIZE_BIG = 16
+PROJECTION_SPARE_DIFF_BIG = (PROJECTION_SPARE_GRID_SIZE_BIG-8)/2
 
 ## for getting best bottom line - number of options to test
 BOTTOM_LINE_INDEX_VARIATION = 3
@@ -91,6 +93,14 @@ class board_cut_fixer:
         self.last_image_bw = cv2.imread("utils\\img_start_bw.jpg",
                                         cv2.IMREAD_GRAYSCALE)
         self.board_id = identify_board.identify_board()
+
+    def set_prev_im(self,im):
+        self.last_image_bw = self.gausThresholdChess(im)
+        wid = len(im[0])
+        hi = len(im)
+        self.last_image_bw = self.last_image_bw[hi//9:hi,0:wid]
+        self.last_image_bw = cv2.resize(self.last_image_bw, (RESIZE_WIDTH,RESIZE_HEIGHT))
+
 
     def get_theta(self, line):
         try:
@@ -248,14 +258,17 @@ class board_cut_fixer:
     fixes projected image
     """
 
-    def projection(self, pointslst, img, frame, take_spare):
+    def projection(self, pointslst, img, frame, take_spare, big_picture):
+
         if (take_spare):
             diff = PROJECTION_SPARE_DIFF
             gridsize = PROJECTION_SPARE_GRID_SIZE
         else:
             diff = 0
             gridsize = 8
-
+        if(big_picture):
+            diff = PROJECTION_SPARE_DIFF_BIG
+            gridsize = PROJECTION_SPARE_GRID_SIZE_BIG
         pts1 = np.float32(pointslst)
         x_hi = (diff + frame[1]) * RESIZE_WIDTH / gridsize
         x_lo = (diff + frame[3]) * RESIZE_WIDTH / gridsize
@@ -265,7 +278,7 @@ class board_cut_fixer:
                            [x_hi, y_lo], [x_lo, y_lo]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
         dst = cv2.warpPerspective(img, M, (RESIZE_WIDTH, RESIZE_HEIGHT))
-        #if (DEBUG):
+        # if (DEBUG):
         #    cv2.imshow("image", dst)
         #    k = cv2.waitKey(0)
         return dst
@@ -310,6 +323,20 @@ class board_cut_fixer:
     series.
     :return a list of best fits to the series, SORTED BY FIT!
     """
+
+    def get_im_from_bigim(self, bigim):
+       # if(spare):
+        x_low = len(bigim[0])*PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG
+        x_hi = len(bigim[0])*(1-PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG)
+
+        y_low = len(bigim) * PROJECTION_SPARE_DIFF_BIG / PROJECTION_SPARE_GRID_SIZE_BIG
+        y_hi = len(bigim) * (
+    1 - PROJECTION_SPARE_DIFF_BIG / PROJECTION_SPARE_GRID_SIZE_BIG)
+
+        pts = [[x_low,y_low],[x_hi,y_low],[x_hi,y_hi], [x_low,y_hi]]
+        frame = [8,8,0,0]
+
+        return self.projection(pts,bigim,frame,False,False)
 
     def get_line_series(self, lines, valfunc, lower_d, upper_d, num_vals,
                         ):
@@ -710,13 +737,26 @@ class board_cut_fixer:
 
         return best_pair_indices
 
+    ## convert points on real_im with spare to big_im
+    def get_bigims_pts(self, pts, bigim, prevdiff, prevgrid):
+        bigpts = []
+        for pt in pts:
+            bigpts.append([(pt[0]-RESIZE_WIDTH*prevdiff/prevgrid)*
+                           prevgrid/PROJECTION_SPARE_GRID_SIZE_BIG+len(bigim[0])
+                            *PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG,
+                           (pt[1]-RESIZE_HEIGHT*prevdiff/prevgrid)*
+                           prevgrid/PROJECTION_SPARE_GRID_SIZE_BIG+len(bigim)*PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG])
+
+        return bigpts
+
     ### Cut image at different idxs and check which is best
-    def get_best_cut_image(self, edgeim, realim, pts, frame, cut_spare):
+    def get_best_cut_image(self, realim, edgeim, bigim, pts, bigpts, frame,
+                           cut_spare):
         bwim = self.gausThresholdChess(realim)
         bwims = [self.projection(pts, bwim, [frame[0] + i,
                                              frame[1] + j,
                                              frame[2] + i,
-                                             frame[3] + j], False)
+                                             frame[3] + j], False,False)
                  for i in range(-BOTTOM_LINE_INDEX_VARIATION,
                                 BOTTOM_LINE_INDEX_VARIATION + 1) for j
                  in range(-BOTTOM_LINE_INDEX_VARIATION,
@@ -740,16 +780,21 @@ class board_cut_fixer:
         edgeim = self.projection(pts, edgeim, [frame[0] + miniidx,
                                                frame[1] + minjidx,
                                                frame[2] + miniidx,
-                                               frame[3] + minjidx], cut_spare)
-
-        realim = self.projection(pts, realim, [frame[0] + miniidx,
+                                               frame[3] + minjidx],
+                                 cut_spare, False)
+        realim = self.projection(bigpts, bigim, [frame[0] + miniidx,
                                                frame[1] + minjidx,
                                                frame[2] + miniidx,
-                                               frame[3] + minjidx], cut_spare)
+                                               frame[3] + minjidx],
+                                 cut_spare, False)
+        bigim = self.projection(bigpts, bigim, [frame[0] + miniidx,
+                                               frame[1] + minjidx,
+                                               frame[2] + miniidx,
+                                               frame[3] + minjidx],
+                                 False, True)
 
 
-
-        return edgeim, realim
+        return realim, edgeim, bigim
 
     def get_diff_area(self, im1, im2):
         ctr = 0
@@ -758,6 +803,21 @@ class board_cut_fixer:
                 if im1[i][j] != im2[i][j]:
                     ctr += 1
         return ctr
+
+    ## image with 9th row
+    def get_final_image(self, bigim):
+        x_low = len(bigim[0])*PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG
+        x_hi = len(bigim[
+                        0]) * (1-PROJECTION_SPARE_DIFF_BIG / \
+                               PROJECTION_SPARE_GRID_SIZE_BIG)
+
+        y_low = len(bigim) * (PROJECTION_SPARE_DIFF_BIG-1) / PROJECTION_SPARE_GRID_SIZE_BIG
+        y_hi = len(bigim) * (1 - PROJECTION_SPARE_DIFF_BIG / \
+                              PROJECTION_SPARE_GRID_SIZE_BIG)
+
+        final_img = bigim[int(y_low):int(y_hi),int(x_low):int(x_hi)]
+        final_img = cv2.resize(final_img, (0,0), fx=1, fy=9.0/8)
+        return final_img
 
     def main(self, real_img):
 
@@ -799,13 +859,16 @@ class board_cut_fixer:
         def get_theta_ver(line):
             return self.get_theta(line)
 
-        real_img, edgeim = self.board_id.main(real_img)
-
         for j in range(NUM_ANGLE_ITERATIONS):
             try:
+
+                tmp_realimg, tmp_edgeim, tmp_bigim= self.board_id.main(real_img)
+
                 for i in range(NUM_ITERATIONS):
+
+
                     angle_constraint = 1 * (ANGLE_CONSTRAINT_DECAY_FACTOR ** i)
-                    hor, ver = self.get_lines(edgeim, angle_constraint)
+                    hor, ver = self.get_lines(tmp_edgeim, angle_constraint)
 
                     # hor, start_from_top = self.remove_bad_hor_lines(hor,
                     #                                         get_y_point_on_line,
@@ -815,16 +878,19 @@ class board_cut_fixer:
                     new_hor, best_hor_idx, hor_d = self.get_line_series(hor,
                                                                         lambda
                                                                             x: RESIZE_HEIGHT - get_y_point_on_line(x),
-                                                                        len(edgeim) * MIN_GRID_SIZE,
-                                                                        len(edgeim) * MAX_GRID_SIZE, 9)
+                                                                        len(
+                                                                            tmp_edgeim) * MIN_GRID_SIZE,
+                                                                        len(
+                                                                            tmp_edgeim) * MAX_GRID_SIZE, 9)
                     new_ver, best_ver_idx, ver_d = self.get_line_series(ver,
-                                                                        get_x_point_on_line, len(edgeim[0]) * MIN_GRID_SIZE,
-                                                                        len(edgeim[0]) * MAX_GRID_SIZE, 9)
+                                                                        get_x_point_on_line, len(tmp_edgeim[0]) * MIN_GRID_SIZE,
+                                                                        len(
+                                                                            tmp_edgeim[0]) * MAX_GRID_SIZE, 9)
                     if (DEBUG):
-                        self.draw_lines(ver, edgeim)
-                        self.draw_lines(new_ver, edgeim)
-                        self.draw_lines(hor, edgeim)
-                        self.draw_lines(new_hor, edgeim)
+                        self.draw_lines(ver, tmp_edgeim)
+                        self.draw_lines(new_ver, tmp_edgeim)
+                        self.draw_lines(hor, tmp_edgeim)
+                        self.draw_lines(new_hor, tmp_edgeim)
 
                     best_hor_pair = self.get_best_line_pair_index(new_hor,
                                                                   best_hor_idx, hor_d,
@@ -848,14 +914,26 @@ class board_cut_fixer:
 
                     points = self.get_board_limits(up_line, right_line, down_line, left_line)
 
-                    # find where to start cutting (bottom of board)
-                    edgeim, real_img = self.get_best_cut_image(edgeim, real_img,
-                                                               points, frame,
-                                                               i < NUM_ITERATIONS - 1)
+                    spare = PROJECTION_SPARE_DIFF
+                    grid = PROJECTION_SPARE_GRID_SIZE
+                    if(i==0): #spare is from id board
+                        spare = identify_board.PROJECTION_SPARE_DIFF
+                        grid = identify_board.PROJECTION_SPARE_GRID_SIZE
+
+                    bigpts = self.get_bigims_pts(points,tmp_bigim,spare,grid)
 
                     if (DEBUG):
-                        self.draw_lines([up_line, left_line, right_line, down_line], edgeim)
-                        self.draw_points(real_img, points)
+                        self.draw_lines([up_line, left_line, right_line,
+                                         down_line], tmp_edgeim)
+                        self.draw_points(tmp_realimg, points)
+
+
+                    # find where to start cutting (bottom of board)
+                    tmp_realimg, tmp_edgeim, tmp_bigim= self.get_best_cut_image(
+                        tmp_realimg,tmp_edgeim,tmp_bigim,
+                                                               points, bigpts, frame,
+                                                               i < NUM_ITERATIONS - 1)
+
 
                         # gui_img_manager.add_img(self.get_line_image(hor, edgeim))
                         # gui_img_manager.add_img(self.get_line_image(new_hor, edgeim))
@@ -863,20 +941,22 @@ class board_cut_fixer:
                         # left_line, right_line, down_line], edgeim))
                         # gui_img_manager.add_img(proim)
 
-                gaus = self.gausThresholdChess(real_img)
+
+                gaus = self.gausThresholdChess(tmp_realimg)
                 if DEBUG:
                     cv2.imshow("image", gaus)
                     k = cv2.waitKey(0)
-                is_proj_correct = board_cut_checker.board_cut_chacker(gaus)
+                is_proj_correct = board_cut_checker.board_cut_checker(gaus)
+
                 if not is_proj_correct:
                     print("Shimri's test has failed - bad cut")
                     raise Exception()
-                break
+                return tmp_realimg
+                #return self.get_final_image(tmp_bigim)
+
             except:
                 real_img = self.rotate_image_fix(real_img)
-                edgeim = self.rotate_image_fix(edgeim)
                 print("rotating image")
-
         return real_img
 
     def get_line_image(self, lines, img):
@@ -898,10 +978,10 @@ def test(foldername):
             realim = id.get_image_from_filename(foldername + "\\" + str(j) + ".jpg")
             fixed_im = fixer.main(realim)
 
-            cv2.imwrite(foldername + '/fixed/' + str(j) + '.jpg', fixed_im)
+            cv2.imwrite(foldername + '\\fixed\\' + str(j) + '.jpg', fixed_im)
             print(str(j)+'sucsseed!!!')
         except:
             print(str(j) + " failed")
 
 
-#test('angle1')
+#test('angle2')
