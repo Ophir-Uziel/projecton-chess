@@ -182,6 +182,10 @@ def board_cut_chacker(threshimg):
                 doConvRight(threshimg) > CHANGE_COLOR_SAF
     return IsCutExect
 
+
+
+
+
 def test(foldername):
     # get lines from image, and edge-image
     id = identify_board.identify_board()
@@ -202,4 +206,4 @@ def test(foldername):
     #    except:
      #       print(str(j)+" failed")
 
-test('fixed2')
+#test('fixed2')
