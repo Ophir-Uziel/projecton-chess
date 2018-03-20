@@ -951,8 +951,8 @@ class board_cut_fixer:
                 if not is_proj_correct:
                     print("Shimri's test has failed - bad cut")
                     raise Exception()
-                return tmp_realimg
-                #return self.get_final_image(tmp_bigim)
+                #return tmp_realimg
+                return self.get_final_image(tmp_bigim)
 
             except:
                 real_img = self.rotate_image_fix(real_img)
