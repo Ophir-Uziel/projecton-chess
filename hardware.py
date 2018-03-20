@@ -61,6 +61,6 @@ class hardware:
             return 0
 
 def first_2_chars(x):
-    return int(x[0:-4])
+    return x[0:-4]
 
 

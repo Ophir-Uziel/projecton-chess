@@ -100,6 +100,8 @@ class board_cut_fixer:
         hi = len(im)
         self.last_image_bw = self.last_image_bw[hi//9:hi,0:wid]
         self.last_image_bw = cv2.resize(self.last_image_bw, (RESIZE_WIDTH,RESIZE_HEIGHT))
+        cv2.imshow("image",self.last_image_bw)
+        cv2.waitKey(0)
 
 
     def get_theta(self, line):
