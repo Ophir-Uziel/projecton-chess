@@ -194,6 +194,7 @@ class filter_colors_2:
         """
         im_sz = len(im)
         new_im = np.ones((im_sz,im_sz),dtype=int)
+        test_im = np.zeros((im_sz, im_sz), dtype='d,d,d').tolist()
         if not TEST:
             for rowidx in range(im_sz):
                 for pixidx in range(im_sz):
@@ -210,9 +211,7 @@ class filter_colors_2:
                     dist = self.color_dist(pix, self.main_colors[3])
                     if dist < min_dist:
                         new_im[rowidx][pixidx] = self.RIVAL_NUM
-            return [new_im]
         else:
-            test_im = np.zeros((im_sz,im_sz),dtype='d,d,d').tolist()
             for rowidx in range(im_sz):
                 for pixidx in range(im_sz):
                     pix = im[rowidx][pixidx]
@@ -231,7 +230,7 @@ class filter_colors_2:
                     if dist < min_dist:
                         new_im[rowidx][pixidx] = self.RIVAL_NUM
                         test_im[rowidx][pixidx] = self.rival_color_test
-            return [new_im,test_im]
+        return new_im,test_im
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
         is_white = self.chess_helper_2.square_color(square)
@@ -242,7 +241,6 @@ class filter_colors_2:
             else:
                 RC.append(self.R2B)
             if self.chess_helper_2.piece_color(square): # if user piece is in this square
-                # TODO correct chess_helper - change the colors of pieces to User and Rival
                 RC.append(self.R2U)
         else:
             if is_white:
@@ -270,15 +268,11 @@ class filter_colors_2:
         :return binary image of relevant changes only (according alot of parameters):
         """
         after_square = cv2.resize(self.get_square_image(im, square_loc), PIXELS_SQUARE)
-        after_square = self.fit_colors(after_square)[0]
-        maybe_before_square = None
-        if maybe_before_square == None:
-            before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc),
-                                       PIXELS_SQUARE)
-            before_square = self.fit_colors(before_square)[0]
-        else:
-            before_square = maybe_before_square
+        after_square, im2save = self.fit_colors(after_square)
+        before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc),
+                                   PIXELS_SQUARE)
+        before_square = self.fit_colors(before_square)[0]
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
-        return square_diff
+        return square_diff, im2save
 
     ###########################################################################

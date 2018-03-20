@@ -40,10 +40,10 @@ class game_loop_2:
             if not self.is_test:
                 gui_img_manager.set_camera(i)
                 self.ph_angles.append(photos_angle_2.photos_angle_2(self.hardware, self.chesshelper,self.delay_chesshelper, i))
-                self.ph_angles[i].prep_img()
             else:
                 self.ph_angles.append(photos_angle_2.photos_angle_2(self.hardware, self.chesshelper, self.delay_chesshelper, i))
-                self.ph_angles[i].prep_img()
+
+            self.ph_angles[i].prep_img()
 
         for ang in self.ph_angles:
             ang.init_colors()
@@ -69,13 +69,15 @@ class game_loop_2:
         dests = relevant_squares[1]
         pairs = []
         pairs_ranks = []
-        for i in range(len(self.ph_angles)):
-            gui_img_manager.set_camera(i)
-            self.ph_angles[i].prep_img()
+        # for i in range(len(self.ph_angles)):
+        #     gui_img_manager.set_camera(i)
+        #     self.ph_angles[i].prep_img()
 
         cnt = 0
         to_continue = True
-        while len(pairs) == 0 or len(pairs_ranks) == 0:
+        while to_continue and (len(pairs) == 0 or len(pairs_ranks) == 0):
+            if self.is_test:
+                to_continue = False
             for i in range(len(self.ph_angles)):
                 if cnt > 0:
                     print("id error plz take another photo k thnx")
@@ -111,19 +113,13 @@ class game_loop_2:
         return move
 
     def check_one_direction(self, sources, dests, angle_idx):
-        make_dir('super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
-        angle_dir = 'super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx) + '/'
+        make_dir('super tester results/move_num_' + str(self.moves_counter-1) + '/angle_num_' + str(angle_idx))
+        angle_dir = 'super tester results/move_num_' + str(self.moves_counter-1) + '/angle_num_' + str(angle_idx) + '/'
         rival_move = None
         angle = self.ph_angles[angle_idx]
         cut_board_im = angle.get_new_img(angle_dir)
         if self.if_save_and_print:
             print("angle_num_" + str(angle_idx))
-
-            print("sources are:")
-            print(sources)
-
-            print("destinations are:")
-            print(dests)
 
         else:
             rival_move = None
@@ -152,9 +148,10 @@ class game_loop_2:
         for loc in locs:
             abv_loc = self.chesshelper.get_square_above(loc)
             bel_loc = self.chesshelper.get_square_below(loc)
-            diff_im = angle.get_square_diff(cut_board_im, loc, is_source)
+            diff_im, im2save = angle.get_square_diff(cut_board_im, loc, is_source)
+
             if abv_loc:
-                diff_abv_im = angle.get_square_diff(cut_board_im, abv_loc, is_source)
+                diff_abv_im, im_above2save = angle.get_square_diff(cut_board_im, abv_loc, is_source)
             else:
                 diff_abv_im = self.black_im
                 # if self.if_save_and_print:
@@ -185,12 +182,16 @@ class game_loop_2:
 
     def main(self):
         last_move = None
+        cnt = 0
         while True:
+            if self.user_moves and cnt >= len(self.user_moves):
+                print('Done')
+                break
             gui_img_manager.set_finished(False)
             self.play_user_turn(last_move)
             last_move = self.get_rival_move()
             gui_img_manager.set_finished(True)
-
+            cnt+=1
 def make_dir(dir_name):
     try:
         os.makedirs(dir_name)

@@ -28,17 +28,17 @@ class hardware:
 
                 print(sorted_img_names)
                 self.angles_imgs_lst.append(img_array)
-                self.angles_imgs_counter.append(-1)
+                self.angles_imgs_counter.append(0)
         else:
             self.is_test = False
             self.socket = connection.connection(connection.LISTENER)
 
     def get_image(self, angle_idx):
         if self.is_test:
-            self.angles_imgs_counter[angle_idx] += 1
             img = self.angles_imgs_lst[angle_idx][self.angles_imgs_counter[angle_idx]]
             img = cv2.resize(img,(RESIZE_SIZE,RESIZE_SIZE))
             gui_img_manager.add_img(img)
+            self.angles_imgs_counter[angle_idx] += 1
             return img
         else:
             if(angle_idx==0):

@@ -1,6 +1,5 @@
 import cv2
-
-import filter_colors_2
+import two_turns.filter_colors_2
 import identify_board
 import board_cut_fixer
 import numpy as np
@@ -18,7 +17,7 @@ class photos_angle_2:
 
     def init_colors(self):
         cut_board_im = self.get_new_img()
-        self.color_filter = filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper, self.delay_chess_helper)
+        self.color_filter = two_turns.filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper, self.delay_chess_helper)
 
     def prep_img(self):
         self.prep_im = self.hardware.get_image(self.idx)
