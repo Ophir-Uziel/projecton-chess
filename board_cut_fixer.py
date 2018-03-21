@@ -27,12 +27,16 @@ MAX_GRID_SIZE = 1.0 / 8
 MAX_LINE_DIST_RATIO = 1.0 / 15
 RESIZE_HEIGHT = identify_board.RESIZE_HEIGHT
 RESIZE_WIDTH = identify_board.RESIZE_WIDTH
+BIG_RESIZE_WIDTH = identify_board.BIG_RESIZE_WIDTH
+BIG_RESIZE_HEIGHT = identify_board.BIG_RESIZE_HEIGHT
 MAX_NUM_LINES = 11
 MAX_LINES_IN_GRID = 9
 LINE_SERIES_COEFF = 5
 LINE_SERIES_POWER = 1
 ANGLE_STD_COEFF = 0.8
 MIN_NUM_ANGLES_AVG = 3
+SERIES_ANGLE_STD_COEFF = 12.5
+MIN_SERIES_SCORE = 6
 
 ### Filter lines by surrounding color parameters ###
 MIN_MIXED_AREA_VAR_LIGHTNESS = 15
@@ -42,6 +46,7 @@ INSIDE_LINE = 0
 OUTSIDE_LINE = 1
 BAD_LINE = 2
 
+LINE_PAIR_IDX_DIFF_COEFF = 3
 LINE_METRIC_ANGLE_ERROR_COEFF = 150
 LINE_METRIC_DIST_ERROR_COEFF = 6
 
@@ -68,7 +73,7 @@ GAUSS_C = 13
 NUM_ITERATIONS = 2
 NUM_ANGLE_ITERATIONS = 5
 ANGLE_FIX = 1
-MIN_SERIES_SCORE = 6
+
 
 # Line-finding parameters
 VER_ANGLE_RANGE = 0.1
@@ -263,6 +268,8 @@ class board_cut_fixer:
 
     def projection(self, pointslst, img, frame, take_spare, big_picture):
 
+        width = RESIZE_WIDTH
+        height = RESIZE_HEIGHT
         if (take_spare):
             diff = PROJECTION_SPARE_DIFF
             gridsize = PROJECTION_SPARE_GRID_SIZE
@@ -272,15 +279,21 @@ class board_cut_fixer:
         if(big_picture):
             diff = PROJECTION_SPARE_DIFF_BIG
             gridsize = PROJECTION_SPARE_GRID_SIZE_BIG
+            width = BIG_RESIZE_WIDTH
+            height = BIG_RESIZE_HEIGHT
         pts1 = np.float32(pointslst)
-        x_hi = (diff + frame[1]) * RESIZE_WIDTH / gridsize
-        x_lo = (diff + frame[3]) * RESIZE_WIDTH / gridsize
-        y_hi = (8 + diff - frame[0]) * RESIZE_HEIGHT / gridsize
-        y_lo = (8 + diff - frame[2]) * RESIZE_HEIGHT / gridsize
+        x_hi = (diff + frame[1]) * width / gridsize
+        x_lo = (diff + frame[3]) * width / gridsize
+        y_hi = (8 + diff - frame[0]) * height/ gridsize
+        y_lo = (8 + diff - frame[2]) * height/ gridsize
         pts2 = np.float32([[x_lo, y_hi], [x_hi, y_hi],
                            [x_hi, y_lo], [x_lo, y_lo]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
-        dst = cv2.warpPerspective(img, M, (RESIZE_WIDTH, RESIZE_HEIGHT))
+        if (big_picture):
+            dst = cv2.warpPerspective(img, M,
+                                      (BIG_RESIZE_WIDTH, BIG_RESIZE_HEIGHT))
+        else:
+            dst = cv2.warpPerspective(img, M, (RESIZE_WIDTH, RESIZE_HEIGHT))
         # if (DEBUG):
         #    cv2.imshow("image", dst)
         #    k = cv2.waitKey(0)
@@ -341,23 +354,26 @@ class board_cut_fixer:
 
         return self.projection(pts,bigim,frame,False,False)
 
-    def get_line_series(self, lines, valfunc, lower_d, upper_d, num_vals,
+    def get_line_series(self, lines, valfunc, anglefunc, lower_d, upper_d,
+                        num_vals,
                         ):
         lines.sort(key=valfunc)
         vals = [valfunc(l) for l in lines]
+        angles = [anglefunc(l) for l in lines]
         best_d = 0
         best_score = 0
         best_lines = []
         best_line_index = 0
+        start = -(num_vals - 1)
+        end = num_vals - 1
         for i in range(len(vals)):
             for j in range(i + 1, len(vals)):
                 if not i == j:  # delta val cannot be 0.
                     d = abs(vals[j] - vals[i])
                     if (lower_d <= d <= upper_d):
-                        start = -(num_vals - 1)
-                        end = num_vals - 1
                         scores = []
                         tmp_lines = []
+                        series_angles = []
                         for n in range(start, end + 1):
 
                             val_n = vals[i] + n * d
@@ -365,6 +381,7 @@ class board_cut_fixer:
                                 # beyond bounds
                                 scores.append(0)
                                 tmp_lines.append(lines[i])
+                                series_angles.append(angles[i])
                             else:
                                 # find closest value <= val_n
                                 val_closest_idx = bisect.bisect_right(vals,
@@ -379,14 +396,17 @@ class board_cut_fixer:
                                     scores.append(1 / (
                                         1 + LINE_SERIES_COEFF * diff * 1.0 / d) ** LINE_SERIES_POWER)
                                     tmp_lines.append(line_closest)
+                                    series_angles.append(angles[val_closest_idx])
                                 else:
                                     scores.append(0)
                                     tmp_lines.append(lines[i])
+                                    series_angles.append(angles[i])
                                     # score it
                                     # will
                                     #  have :(
 
                         score = sum(scores[0:num_vals])
+                        score -= np.std(series_angles)*SERIES_ANGLE_STD_COEFF
                         best_window_score = score
                         offset = 0
                         for k in range(0, len(scores) - num_vals):
@@ -713,7 +733,8 @@ class board_cut_fixer:
 
         ##### Find highest line that is close enough to such angle #####
         def pair_metric(line, idx, line2, idx2):
-            score = abs(idx2 - idx) - LINE_METRIC_ANGLE_ERROR_COEFF * (abs(
+            score = abs(idx2 - idx)*LINE_PAIR_IDX_DIFF_COEFF - LINE_METRIC_ANGLE_ERROR_COEFF * (
+                abs(
                 get_theta(line) - angle_avg) + abs(
                 get_theta(line2) - angle_avg)) - LINE_METRIC_DIST_ERROR_COEFF * (self.modulo(
                 abs(get_pos(line) - get_pos(baseline)), d) + self.modulo(
@@ -721,8 +742,9 @@ class board_cut_fixer:
             return score
 
         scores = [(i, j, pair_metric(lines[i], i, lines[j], j)) for i in
-                  range(9) if not (self.line_eq(lines[i], baseline) and (
-                not i == base_idx)) for j in range(9) if (not j == i) and not (
+                  range(2,7) if not (self.line_eq(lines[i], baseline) and (
+                not i == base_idx)) for j in range(2,7) if (not j == i) and
+                  not (
                 self.line_eq(
                     lines[j], baseline) and (
                     not j == base_idx))]
@@ -747,10 +769,11 @@ class board_cut_fixer:
         bigpts = []
         for pt in pts:
             bigpts.append([(pt[0]-RESIZE_WIDTH*prevdiff/prevgrid)*
-                           prevgrid/prevgridbig+len(bigim[0])
+                           prevgrid/prevgridbig*BIG_RESIZE_WIDTH/RESIZE_WIDTH+len(
+                bigim[0])
                             *prevdiffbig/prevgridbig,
                            (pt[1]-RESIZE_HEIGHT*prevdiff/prevgrid)*
-                           prevgrid/prevgridbig+len(
+                           prevgrid/prevgridbig*BIG_RESIZE_WIDTH/RESIZE_WIDTH+len(
                                bigim)*prevdiffbig/prevgridbig])
 
         return bigpts
@@ -886,12 +909,13 @@ class board_cut_fixer:
                     new_hor, best_hor_idx, hor_d = self.get_line_series(hor,
                                                                         lambda
                                                                             x: RESIZE_HEIGHT - get_y_point_on_line(x),
+                                                                        get_theta_hor,
                                                                         len(
                                                                             tmp_edgeim) * MIN_GRID_SIZE,
                                                                         len(
                                                                             tmp_edgeim) * MAX_GRID_SIZE, 9)
                     new_ver, best_ver_idx, ver_d = self.get_line_series(ver,
-                                                                        get_x_point_on_line, len(tmp_edgeim[0]) * MIN_GRID_SIZE,
+                                                                        get_x_point_on_line,get_theta_ver, len(tmp_edgeim[0]) * MIN_GRID_SIZE,
                                                                         len(
                                                                             tmp_edgeim[0]) * MAX_GRID_SIZE, 9)
                     if (DEBUG):
@@ -939,6 +963,7 @@ class board_cut_fixer:
                         self.draw_lines([up_line, left_line, right_line,
                                          down_line], tmp_edgeim)
                         self.draw_points(tmp_realimg, points)
+                    self.draw_points(tmp_bigim, bigpts)
 
 
                     # find where to start cutting (bottom of board)
@@ -971,7 +996,6 @@ class board_cut_fixer:
                 real_img = self.rotate_image_fix(orig_im, j)
                 if (DEBUG):
                     print("rotating image")
-        print("board cut fixer exception")
         raise Exception()
 
 
@@ -1001,4 +1025,4 @@ def test(foldername):
             print(str(j) + " failed")
 
 
-#test("taken photos2")
+#test("taken photos test/taken photos5")
