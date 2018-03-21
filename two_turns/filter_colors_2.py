@@ -15,7 +15,7 @@ BLACK_NUM = 1
 WHITE_NUM = 2
 USER = True
 RIVAL = False
-TEST = False
+TEST = True
 BLACK_TEST = (0, 0, 0)
 WHITE_TEST = (255, 255, 255)
 
@@ -62,7 +62,7 @@ class filter_colors_2:
         :return 2 primary colors from board image:
         """
         im_sz = len(im)
-        ar = im[(im_sz // 4):(3 * im_sz // 4)]
+        ar = im[(im_sz // 3):(7 * im_sz // 9)]
         shape = ar.shape
         ar = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
         codes, dist = scipy.cluster.vq.kmeans(ar, 2)
@@ -199,7 +199,7 @@ class filter_colors_2:
         """
         im_sz = len(im)
         new_im = np.ones((im_sz, im_sz), dtype=int)
-        test_im = np.zeros((im_sz, im_sz), dtype='i,i,i').tolist()
+        test_im = np.zeros((im_sz, im_sz), dtype='d,d,d').tolist()
         if not TEST:
             for rowidx in range(im_sz):
                 for pixidx in range(im_sz):
@@ -291,5 +291,16 @@ class filter_colors_2:
     ###########################################################################
 
 
-def filter_color_tester(im_bef, im_aft, loc, is_source):
-    a = 0
+def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
+    im_bef = cv2.imread(im_bef_name)
+    im_aft = cv2.imread(im_aft_name)
+    chess_helper = chess_helper_2.chess_helper_2(True)
+    delay_chess_helper = chess_helper_2.chess_helper_2(True)
+    filter = filter_colors_2(im_bef,chess_helper,delay_chess_helper)
+    square_diff, befor2save, after2save = filter.get_square_diff(im_aft,loc,is_source)
+    scipy.misc.imsave("test_befor.jpg",befor2save)
+    scipy.misc.imsave("test_after.jpg", after2save)
+    cv2.imwrite("test_diff.jpg",square_diff)
+    return
+
+# filter_color_tester("im1.jpeg","im2.jpeg",'d7',True)
