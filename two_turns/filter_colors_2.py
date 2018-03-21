@@ -6,6 +6,7 @@ import chess_helper_2
 import chess
 import cv2
 import math
+import os
 
 BLACK = (0.0, 0.0, 0.0)
 MINIMAL_PLAYER_BOARD_RATIO = 0.2
@@ -33,7 +34,6 @@ class filter_colors_2:
         self.bad_board = False
         self.initialize_colors(im)
 
-
     def color_dist(self, color1, color2):
         return abs(max(color1) - max(color2) - min(color2) + min(color1))
 
@@ -53,7 +53,7 @@ class filter_colors_2:
         main_colors.append(user_color)
         main_colors.append(rival_color)
         self.set_colors_nums(main_colors)
-        print('main colors are:')
+        print('\nmain colors are:')
         print(main_colors)
         self.main_colors = main_colors
 
@@ -97,7 +97,7 @@ class filter_colors_2:
         ar = im
         ar_sz = len(ar)
         if player == RIVAL:
-            ar = ar[ar_sz // 9:(ar_sz  // 3)]
+            ar = ar[ar_sz // 9:(ar_sz // 3)]
             if TEST:
                 cv2.imwrite("rival_board.jpg", ar)
         else:
@@ -127,18 +127,31 @@ class filter_colors_2:
                 color_dist_from_black = self.color_dist(pix, black)
                 color_dist_from_white = self.color_dist(pix, white)
                 if color_dist_from_player < color_dist_from_black and \
-                        color_dist_from_player < color_dist_from_white:
+                                color_dist_from_player < color_dist_from_white:
                     num_of_player_pix += 1
         num_of_pix = len(ar) * len(ar[0])
         rank = num_of_player_pix / num_of_pix
-        print(rank)
+        if TEST:
+            if player:
+                print('user rank: ' + str(rank))
+            else:
+                print('rival rank: ' + str(rank))
+
         if rank < MINIMAL_PLAYER_BOARD_RATIO:
             if (user_starts and not player) or (not user_starts and player):
                 player_color = black
             else:
                 player_color = white
+        if TEST:
+            if player:
+                print("dist between user to black is: " + str(self.color_dist(player_color, black)))
+                print("dist between user to white is: " + str(self.color_dist(player_color, white)))
+            else:
+                print("dist between rival to black is: " + str(self.color_dist(player_color, black)))
+                print("dist between rival to white is: " + str(self.color_dist(player_color, white)))
         if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST:
             player_color = black
+
         elif self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
             player_color = white
         return player_color
@@ -250,9 +263,16 @@ class filter_colors_2:
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
         is_white = self.chess_helper_2.square_color(square)
+        if int(square[1]) == 9:
+            above_board = True
+        else:
+            above_board = False
         RC = []
         if is_source:
-            if is_white:
+            if above_board:
+                RC.append(self.R2W)
+                RC.append(self.R2B)
+            elif is_white:
                 RC.append(self.R2W)
             else:
                 RC.append(self.R2B)
@@ -260,7 +280,10 @@ class filter_colors_2:
                     square) == self.chess_helper_2.USER and not self.bad_board:  # if user piece is in this square
                 RC.append(self.R2U)
         else:
-            if is_white:
+            if above_board:
+                RC.append(self.W2R)
+                RC.append(self.B2R)
+            elif is_white:
                 RC.append(self.W2R)
             else:
                 RC.append(self.B2R)
@@ -268,7 +291,7 @@ class filter_colors_2:
                     self.delay_chess_helper_2.piece_color(self.chess_helper_2.get_square_below(square)):
                 if self.bad_board:
                     if self.chess_helper_2.piece_color(square) or self.chess_helper_2.piece_color(
-                        self.chess_helper_2.get_square_below(square)):
+                            self.chess_helper_2.get_square_below(square)):
                         RC.append(self.U2R)
                 else:
                     RC.append(self.U2R)
@@ -299,22 +322,10 @@ class filter_colors_2:
 
         return square_diff, befor2save, after2save
 
-    ###########################################################################
+        ###########################################################################
 
 
 def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
-    im_bef = cv2.imread(im_bef_name)
-    im_aft = cv2.imread(im_aft_name)
-    chess_helper = chess_helper_2.chess_helper_2(True)
-    delay_chess_helper = chess_helper_2.chess_helper_2(True)
-    filter = filter_colors_2(im_bef,chess_helper,delay_chess_helper)
-    square_diff, befor2save, after2save = filter.get_square_diff(im_aft,loc,is_source)
-    scipy.misc.imsave("test_befor.jpg",befor2save)
-    scipy.misc.imsave("test_after.jpg", after2save)
-    cv2.imwrite("test_diff.jpg",square_diff)
-    return
-
-def main_colors_tester(im_bef_name, im_aft_name, loc, is_source):
     im_bef = cv2.imread(im_bef_name)
     im_aft = cv2.imread(im_aft_name)
     chess_helper = chess_helper_2.chess_helper_2(True)
@@ -327,4 +338,16 @@ def main_colors_tester(im_bef_name, im_aft_name, loc, is_source):
     return
 
 
+def main_colors_tester(folder_name):
+    chess_helper = chess_helper_2.chess_helper_2(True)
+    delay_chess_helper = chess_helper_2.chess_helper_2(True)
+    img_names = os.listdir(folder_name)
+    img_array = []
+    for j in range(len(img_names)):
+        image = cv2.imread(folder_name + '/' + img_names[j], cv2.IMREAD_COLOR)
+        filter = filter_colors_2(image, chess_helper, delay_chess_helper)
+    return
+
+
 # filter_color_tester("im1.jpg","im2.jpg",'g5',False)
+main_colors_tester("images")
