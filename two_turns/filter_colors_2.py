@@ -9,6 +9,7 @@ import math
 
 BLACK = (0.0, 0.0, 0.0)
 MINIMAL_PLAYER_BOARD_RATIO = 0.2
+MINIMAL_COLOR_DIST = 35
 PIXELS_FOR_MAIN_COLORS = (400, 400)
 PIXELS_SQUARE = (20, 20)
 BLACK_NUM = 1
@@ -62,7 +63,7 @@ class filter_colors_2:
         :return 2 primary colors from board image:
         """
         im_sz = len(im)
-        ar = im[(im_sz // 3):(7 * im_sz // 9)]
+        ar = im[(im_sz // 3):(2 * im_sz // 3)]
         shape = ar.shape
         ar = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
         codes, dist = scipy.cluster.vq.kmeans(ar, 2)
@@ -90,19 +91,25 @@ class filter_colors_2:
         :param player (user or rival):
         :return player color in RGB:
         """
+        black = board_colors[0]
+        white = board_colors[1]
         user_starts = self.chess_helper_2.user_starts
         ar = im
         ar_sz = len(ar)
         if player == RIVAL:
-            ar = ar[ar_sz // 9:(ar_sz * 2 // 9)]
+            ar = ar[ar_sz // 9:(ar_sz  // 3)]
+            if TEST:
+                cv2.imwrite("rival_board.jpg", ar)
         else:
             ar = ar[7 * (ar_sz // 9):]
+            if TEST:
+                cv2.imwrite("user_board.jpg", ar)
         shape = ar.shape
         ar2 = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
         codes, dist = scipy.cluster.vq.kmeans(ar2, 3)
         for i in range(3):
-            color_dist_1 = self.color_dist(codes[i], board_colors[0])
-            color_dist_2 = self.color_dist(codes[i], board_colors[1])
+            color_dist_1 = self.color_dist(codes[i], black)
+            color_dist_2 = self.color_dist(codes[i], white)
             if i == 0:
                 max_dist = min(color_dist_1, color_dist_2)
                 max_dist_index = i
@@ -117,8 +124,8 @@ class filter_colors_2:
             row = ar[rowidx]
             for pix in row:
                 color_dist_from_player = self.color_dist(pix, player_color)
-                color_dist_from_black = self.color_dist(pix, board_colors[0])
-                color_dist_from_white = self.color_dist(pix, board_colors[1])
+                color_dist_from_black = self.color_dist(pix, black)
+                color_dist_from_white = self.color_dist(pix, white)
                 if color_dist_from_player < color_dist_from_black and \
                         color_dist_from_player < color_dist_from_white:
                     num_of_player_pix += 1
@@ -127,9 +134,13 @@ class filter_colors_2:
         print(rank)
         if rank < MINIMAL_PLAYER_BOARD_RATIO:
             if (user_starts and not player) or (not user_starts and player):
-                player_color = board_colors[0]
+                player_color = black
             else:
-                player_color = board_colors[1]
+                player_color = white
+        if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST:
+            player_color = black
+        elif self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
+            player_color = white
         return player_color
 
     def set_colors_nums(self, main_colors):
@@ -303,4 +314,17 @@ def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
     cv2.imwrite("test_diff.jpg",square_diff)
     return
 
-# filter_color_tester("im1.jpeg","im2.jpeg",'d7',True)
+def main_colors_tester(im_bef_name, im_aft_name, loc, is_source):
+    im_bef = cv2.imread(im_bef_name)
+    im_aft = cv2.imread(im_aft_name)
+    chess_helper = chess_helper_2.chess_helper_2(True)
+    delay_chess_helper = chess_helper_2.chess_helper_2(True)
+    filter = filter_colors_2(im_bef, chess_helper, delay_chess_helper)
+    square_diff, befor2save, after2save = filter.get_square_diff(im_aft, loc, is_source)
+    scipy.misc.imsave("test_befor.jpg", befor2save)
+    scipy.misc.imsave("test_after.jpg", after2save)
+    cv2.imwrite("test_diff.jpg", square_diff)
+    return
+
+
+# filter_color_tester("im1.jpg","im2.jpg",'g5',False)
