@@ -5,6 +5,8 @@ import copy
 import numpy as np
 import bisect
 import board_cut_checker
+import os
+import errno
 
 # import gui_img_manager
 
@@ -1010,19 +1012,26 @@ class board_cut_fixer:
 
 
 def test(foldername):
+    make_dir(foldername + "\\fixed")
     # get lines from image, and edge-image
     id = identify_board.identify_board()
     fixer = board_cut_fixer()
-    for j in range(0, 200):
+    for j in range(0, 9):
         try:
-            realim = id.get_image_from_filename(foldername + "\\0_" + str(j)
+            realim = id.get_image_from_filename(foldername + "\\1_" + str(j)
                                                 + ".jpg")
             fixed_im = fixer.main(realim)
             fixer.set_prev_im(fixed_im)
-            cv2.imwrite(foldername + '\\fixed\\0_' + str(j) + '.jpg', fixed_im)
+            cv2.imwrite(foldername + '\\fixed\\1_' + str(j) + '.jpg', fixed_im)
             print(str(j)+'sucsseed!!!')
         except:
             print(str(j) + " failed")
 
+def make_dir(dir_name):
+    try:
+        os.makedirs(dir_name)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
-#test("taken photos test/taken photos5")
+#test("taken photos2\\temp")
