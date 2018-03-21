@@ -84,8 +84,7 @@ PROJECTION_SPARE_DIFF_BIG = (PROJECTION_SPARE_GRID_SIZE_BIG-8)/2
 BOTTOM_LINE_INDEX_VARIATION = 3
 
 ## for image diff area
-IM_DIFF_AREA_SKIP = 7
-
+IM_DIFF_AREA_SKIP = 5
 
 
 class board_cut_fixer:
@@ -740,14 +739,16 @@ class board_cut_fixer:
         return best_pair_indices
 
     ## convert points on real_im with spare to big_im
-    def get_bigims_pts(self, pts, bigim, prevdiff, prevgrid):
+    def get_bigims_pts(self, pts, bigim, prevdiff, prevgrid, prevdiffbig,
+                       prevgridbig):
         bigpts = []
         for pt in pts:
             bigpts.append([(pt[0]-RESIZE_WIDTH*prevdiff/prevgrid)*
-                           prevgrid/PROJECTION_SPARE_GRID_SIZE_BIG+len(bigim[0])
-                            *PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG,
+                           prevgrid/prevgridbig+len(bigim[0])
+                            *prevdiffbig/prevgridbig,
                            (pt[1]-RESIZE_HEIGHT*prevdiff/prevgrid)*
-                           prevgrid/PROJECTION_SPARE_GRID_SIZE_BIG+len(bigim)*PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG])
+                           prevgrid/prevgridbig+len(
+                               bigim)*prevdiffbig/prevgridbig])
 
         return bigpts
 
@@ -789,6 +790,7 @@ class board_cut_fixer:
                                                frame[2] + miniidx,
                                                frame[3] + minjidx],
                                  cut_spare, False)
+
         bigim = self.projection(bigpts, bigim, [frame[0] + miniidx,
                                                frame[1] + minjidx,
                                                frame[2] + miniidx,
@@ -870,7 +872,6 @@ class board_cut_fixer:
 
                 for i in range(NUM_ITERATIONS):
 
-
                     angle_constraint = 1 * (ANGLE_CONSTRAINT_DECAY_FACTOR ** i)
                     hor, ver = self.get_lines(tmp_edgeim, angle_constraint)
 
@@ -920,11 +921,16 @@ class board_cut_fixer:
 
                     spare = PROJECTION_SPARE_DIFF
                     grid = PROJECTION_SPARE_GRID_SIZE
+                    bigspare = PROJECTION_SPARE_DIFF_BIG
+                    biggrid = PROJECTION_SPARE_GRID_SIZE_BIG
                     if(i==0): #spare is from id board
                         spare = identify_board.PROJECTION_SPARE_DIFF
                         grid = identify_board.PROJECTION_SPARE_GRID_SIZE
+                        bigspare = identify_board.PROJECTION_SPARE_DIFF_BIG
+                        biggrid = identify_board.PROJECTION_SPARE_GRID_SIZE_BIG
 
-                    bigpts = self.get_bigims_pts(points,tmp_bigim,spare,grid)
+                    bigpts = self.get_bigims_pts(points,tmp_bigim,spare,
+                                                 grid,bigspare,biggrid)
 
                     if (DEBUG):
                         self.draw_lines([up_line, left_line, right_line,
@@ -983,10 +989,11 @@ def test(foldername):
             realim = id.get_image_from_filename(foldername + "\\0_" + str(j)
                                                 + ".jpg")
             fixed_im = fixer.main(realim)
-
-            cv2.imwrite(foldername + '\\fixed\\' + str(j) + '.jpg', fixed_im)
+            fixer.set_prev_im(fixed_im)
+            cv2.imwrite(foldername + '\\fixed\\0_' + str(j) + '.jpg', fixed_im)
             print(str(j)+'sucsseed!!!')
         except:
             print(str(j) + " failed")
 
 
+#test("taken photos2")

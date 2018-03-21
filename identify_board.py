@@ -504,8 +504,8 @@ class identify_board:
         diff = PROJECTION_SPARE_DIFF
         grid = PROJECTION_SPARE_GRID_SIZE
         if (big_picture):
-            diff = 4
-            grid = 16
+            diff = PROJECTION_SPARE_DIFF_BIG
+            grid = PROJECTION_SPARE_GRID_SIZE_BIG
 
         pts1 = np.float32(pointslst)
         x_hi = (diff + 8) * RESIZE_WIDTH \
