@@ -25,13 +25,14 @@ if not os.path.exists(IMAGE_FOLDER + "fixed8/"):
     os.makedirs(os.path.join(IMAGE_FOLDER, 'fixed8'))
 if not os.path.exists(IMAGE_FOLDER+"fixer failed/"):
     os.makedirs(os.path.join(IMAGE_FOLDER, 'fixer failed'))
-user_moves = open(IMAGE_FOLDER + "fixed/user_moves.txt",'w')
-rival_moves = open(IMAGE_FOLDER + "fixed/rival_moves.txt",'w')
+user_moves = open(IMAGE_FOLDER + "fixed/user_moves.txt",'w+')
+rival_moves = open(IMAGE_FOLDER + "fixed/rival_moves.txt",'w+')
 
 
 
 
 while True:
+
     while True:
         try:
 
@@ -57,6 +58,10 @@ while True:
                 IMAGE_FOLDER +"fixed8/"+ direction + "_" + str(int(img_num))
                 + '.jpg',fix_im[len(fix_im)//9:,:])
             x = input('please accept')
+            if x == "exit":
+                user_moves.close()
+                rival_moves.close()
+                break
             if(len(x)!=0):
                 cv2.imwrite(
                     IMAGE_FOLDER + "fixer failed/" + direction + "_" + str(
@@ -83,3 +88,5 @@ while True:
         user_moves.write(input("Plz enter user move honz"))
         rival_moves.write(input("Plz enter rival move honz"))
         direction = connection.LEFT
+    user_moves = open(IMAGE_FOLDER + "fixed/user_moves.txt", 'w+')
+    rival_moves = open(IMAGE_FOLDER + "fixed/rival_moves.txt", 'w+')

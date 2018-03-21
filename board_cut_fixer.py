@@ -86,6 +86,9 @@ BOTTOM_LINE_INDEX_VARIATION = 3
 ## for image diff area
 IM_DIFF_AREA_SKIP = 5
 
+OUT_IMG_WIDTH = 400
+OUT_IMG_HEIGHT = 450
+
 
 class board_cut_fixer:
     def __init__(self):
@@ -820,7 +823,7 @@ class board_cut_fixer:
                               PROJECTION_SPARE_GRID_SIZE_BIG)
 
         final_img = bigim[int(y_low):int(y_hi),int(x_low):int(x_hi)]
-        final_img = cv2.resize(final_img, (0,0), fx=1, fy=9.0/8)
+        final_img = cv2.resize(final_img, (OUT_IMG_WIDTH,OUT_IMG_HEIGHT))
         return final_img
 
     def main(self, real_img):
@@ -968,7 +971,9 @@ class board_cut_fixer:
                 real_img = self.rotate_image_fix(orig_im, j)
                 if (DEBUG):
                     print("rotating image")
+        print("board cut fixer exception")
         raise Exception()
+
 
     def get_line_image(self, lines, img):
         bin = copy.deepcopy(img)
