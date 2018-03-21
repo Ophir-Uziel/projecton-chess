@@ -32,7 +32,7 @@ def make_dir(dir_name):
         if e.errno != errno.EEXIST:
             raise
 
-def make_board_im_helper(squares, square_ims):
+def make_board_im_helper(squares, square_ims, is_rgb):
     squares_im_lst = []
     for i in range(ROWS_NUM):
         for j in range(COL_NUM):
@@ -41,15 +41,20 @@ def make_board_im_helper(squares, square_ims):
                 squares_im_lst.append(square_ims[squares.index(square)])
             else:
                 squares_im_lst.append(None)
-    return make_board_im(squares_im_lst, len(square_ims[0]), len(square_ims[0][0]))
+    if is_rgb:
+        return make_board_im(squares_im_lst, len(square_ims[0]), len(square_ims[0][0]), 'd,d,d')
+    else:
+        return make_board_im(squares_im_lst, len(square_ims[0]), len(square_ims[0][0]))
 
-def make_board_im(squares_im_lst, pic_hi, pic_wid):
+def make_board_im(squares_im_lst, pic_hi, pic_wid, dtype = np.int):
     #lst of all squares. None for non relevant squares.
     if len(squares_im_lst) != ROWS_NUM*COL_NUM:
         raise Exception('make board im has failed')
     row_num = pic_hi*ROWS_NUM
     col_num = pic_wid*COL_NUM
-    im = np.zeros((row_num,col_num), dtype=np.int).tolist()
+    im = np.zeros((row_num,col_num), dtype=dtype).tolist()
+
+
     for i in range(ROWS_NUM):
         for j in range(COL_NUM):
             im_num = i*COL_NUM+j
@@ -57,3 +62,5 @@ def make_board_im(squares_im_lst, pic_hi, pic_wid):
                 for k in range(pic_hi):
                     im[i*pic_hi+k][j*pic_wid:(j+1)*pic_wid] = squares_im_lst[i*8+j][k]
     return im
+
+
