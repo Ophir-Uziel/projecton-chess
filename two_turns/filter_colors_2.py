@@ -18,8 +18,8 @@ WHITE_NUM = 2
 USER = True
 RIVAL = False
 TEST = True
-BLACK_TEST = (0, 0, 0)
-WHITE_TEST = (255, 255, 255)
+BLACK_TEST = (0.0, 0.0, 0.0)
+WHITE_TEST = (1.0, 1.0, 1.0)
 
 
 class filter_colors_2:
@@ -127,7 +127,7 @@ class filter_colors_2:
                 color_dist_from_black = self.color_dist(pix, black)
                 color_dist_from_white = self.color_dist(pix, white)
                 if color_dist_from_player < color_dist_from_black and \
-                                color_dist_from_player < color_dist_from_white:
+                        color_dist_from_player < color_dist_from_white:
                     num_of_player_pix += 1
         num_of_pix = len(ar) * len(ar[0])
         rank = num_of_player_pix / num_of_pix
@@ -180,7 +180,7 @@ class filter_colors_2:
         self.U2R = self.RIVAL_NUM - self.USER_NUM
 
         if TEST:
-            self.user_color_test = (150, 200, 200)
+            self.user_color_test = (0.2, 0.7, 0.7)
             self.rival_color_test = (130, 50, 50)
             if self.cmpT(main_colors[2], main_colors[0]):
                 self.user_color_test = BLACK_TEST
@@ -289,14 +289,19 @@ class filter_colors_2:
                 RC.append(self.W2R)
             else:
                 RC.append(self.B2R)
-            if self.delay_chess_helper_2.piece_color(square) or \
-                    self.delay_chess_helper_2.piece_color(self.chess_helper_2.get_square_below(square)):
-                if self.bad_board:
-                    if self.chess_helper_2.piece_color(square) or self.chess_helper_2.piece_color(
-                            self.chess_helper_2.get_square_below(square)):
+            sq_below = self.chess_helper_2.get_square_below(square)
+            if self.bad_board:
+                if self.delay_chess_helper_2.piece_color(square) and self.chess_helper_2.piece_color(
+                        square):
+                    if self.delay_chess_helper_2.piece_color(sq_below) == self.chess_helper_2.piece_color(sq_below):
                         RC.append(self.U2R)
-                else:
-                    RC.append(self.U2R)
+                if self.delay_chess_helper_2.piece_color(sq_below) and self.chess_helper_2.piece_color(
+                        sq_below):
+                    if self.delay_chess_helper_2.piece_color(square) == self.chess_helper_2.piece_color(square):
+                        RC.append(self.U2R)
+            elif self.delay_chess_helper_2.piece_color(square) or self.delay_chess_helper_2.piece_color(sq_below):
+                RC.append(self.U2R)
+
         while 0 in RC:
             RC.remove(0)
         im_sz = len(im1)
@@ -350,6 +355,5 @@ def main_colors_tester(folder_name):
         filter = filter_colors_2(image, chess_helper, delay_chess_helper)
     return
 
-
 # filter_color_tester("im1.jpg","im2.jpg",'g5',False)
-#main_colors_tester("images")
+# main_colors_tester("images")
