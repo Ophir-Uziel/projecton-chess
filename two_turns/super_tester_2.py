@@ -59,7 +59,7 @@ def first_2_chars(x):
 
 
 
-if_one_dir("images1")
+if_one_dir("images6")
 super_tester_2("moves",["angle1","angle2"],WITH_SAVES)
 
 

@@ -105,10 +105,8 @@ class game_loop_2:
                 gui_img_manager.set_camera(i)
                 self.ph_angles[i].prep_img()
 
-                try:
-                    pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                except:
-                    pairs_and_ranks = [], []
+                pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+
 
                 gui_img_manager.reset_images(i)
                 pairs = pairs + pairs_and_ranks[0]
@@ -137,77 +135,92 @@ class game_loop_2:
         return move
 
     def check_one_direction(self, sources, dests, angle_idx):
-        make_dir(RESULTS_DIR + '\\' + 'by_move/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
+        try:
+
+            if self.if_save_and_print:
+                print("angle_num_" + str(angle_idx))
+            make_dir(RESULTS_DIR + '\\' + 'by_move/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
+
+            rival_move = None
+            if (self.is_test):
+                rival_move = self.rival_moves[self.moves_counter]
+
+            angle = self.ph_angles[angle_idx]
+            cut_board_im = angle.get_new_img(tester_info=(self.moves_counter, angle_idx))
 
 
-        rival_move = None
-        angle = self.ph_angles[angle_idx]
-        cut_board_im = angle.get_new_img(tester_info=(self.moves_counter, angle_idx))
+            sourcesims, sourcesabvims = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
+                                                                             SOURCE)
+
+            if self.moves_counter == 8:
+                print("hello")
+            destsims, destsabvims = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
+                                                                         not SOURCE)
+
+            pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
+                                                         tester_info = (rival_move, self.moves_counter,angle_idx))
+
+            if self.if_save_and_print:
+                above_src = [self.chesshelper.get_square_above(src) for src in sources]
+                above_trgt = [self.chesshelper.get_square_above(trgt) for trgt in dests]
+                source_big_im = tester_helper.make_board_im_helper(sources+above_src,sourcesims+sourcesabvims)
+                tester_helper.save_bw(np.array(source_big_im), "board", self.moves_counter, angle_idx, "src_big_im")
+                target_big_im = tester_helper.make_board_im_helper(dests+above_trgt,destsims+destsabvims)
+                tester_helper.save_bw(np.array(target_big_im), "board", self.moves_counter, angle_idx, "trgt_big_im")
 
 
-        if self.if_save_and_print:
-            print("angle_num_" + str(angle_idx))
+            ### save prev picture ###
+            angle.set_prev_im(cut_board_im)
 
-        if (self.is_test):
-            rival_move = self.rival_moves[self.moves_counter]
-
-
-        sourcesims, sourcesabvims = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
-                                                                         SOURCE)
-
-        destsims, destsabvims = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
-                                                                     not SOURCE)
-
-        pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
-                                                     tester_info = (rival_move, self.moves_counter,angle_idx))
-
-        if self.if_save_and_print:
-            above_src = [self.chesshelper.get_square_above(src) for src in sources]
-            above_trgt = [self.chesshelper.get_square_above(trgt) for trgt in dests]
-            source_big_im = tester_helper.make_board_im_helper(sources+above_src,sourcesims+sourcesabvims)
-            tester_helper.save(np.array(source_big_im), "board", self.moves_counter, angle_idx, "src_big_im")
-            target_big_im = tester_helper.make_board_im_helper(dests+above_trgt,destsims+destsabvims)
-            tester_helper.save(np.array(target_big_im), "board", self.moves_counter, angle_idx, "trgt_big_im")
-
-
-        ### save prev picture ###
-        angle.set_prev_im(cut_board_im)
-
-        return pairs, pairs_rank
+            return pairs, pairs_rank
+        except:
+            print("angle " + str(angle_idx) + " failed")
+            if self.moves_counter == 8:
+                raise
+            return [], []
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
-        angle_dir = 'super_tester_results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle.idx) + '/'
-        locssims = []
-        locsabvims = []
+        try:
+            angle_dir = 'super_tester_results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle.idx) + '/'
+            locssims = []
+            locsabvims = []
 
-        for loc in locs:
-            abv_loc = self.chesshelper.get_square_above(loc)
-            diff_im, before2save, after2save = angle.get_square_diff(cut_board_im, loc, is_source)
-            if filter_colors_2.TEST:
-                tester_helper.save(np.array(before2save),str(loc), self.moves_counter, angle.idx, 'org')
-                tester_helper.save(np.array(after2save),str(loc), self.moves_counter+1, angle.idx, 'org')
-            if loc == "c5":
-                tester_helper.save(np.array(diff_im), loc, self.moves_counter, angle.idx, 'dif')
-
-            if abv_loc:
-                diff_abv_im, before_above2save, after_above2save = angle.get_square_diff(cut_board_im, abv_loc, is_source)
+            for loc in locs:
+                abv_loc = self.chesshelper.get_square_above(loc)
+                diff_im, before2save, after2save = angle.get_square_diff(cut_board_im, loc, is_source)
                 if filter_colors_2.TEST:
-                    tester_helper.save(np.array(before_above2save), str(loc), self.moves_counter, angle.idx, 'abv_org')
-                    tester_helper.save(np.array(after_above2save), str(loc), self.moves_counter+1, angle.idx, 'abv_org')
+                    tester_helper.save_colors(before2save, str(loc), self.moves_counter, angle.idx, 'org')
+                    tester_helper.save_colors(after2save, str(loc), self.moves_counter + 1, angle.idx, 'org')
 
+                if abv_loc:
+                    diff_abv_im, before_above2save, after_above2save = angle.get_square_diff(cut_board_im, abv_loc, is_source)
+                    if filter_colors_2.TEST:
+                        tester_helper.save_colors(before_above2save, str(loc), self.moves_counter, angle.idx,
+                                              'abv_org')
+                        tester_helper.save_colors(after_above2save, str(loc), self.moves_counter + 1, angle.idx,
+                                              'abv_org')
+
+                else:
+                    diff_abv_im = self.black_im
+
+
+                    # if self.if_save_and_print:
+                    #   if loc == rival_move[0] or loc == rival_move[1] or bel_loc == rival_move[0] or bel_loc == rival_move[1]:
+                    #      cv2.imwrite(angle_dir + loc + '.jpg', diff_im)
+                locssims.append(diff_im)
+                locsabvims.append(diff_abv_im)
+
+
+            return locssims, locsabvims
+
+        except Exception as e:
+            if is_source:
+                b_val ="source"
             else:
-                diff_abv_im = self.black_im
-
-
-                # if self.if_save_and_print:
-                #   if loc == rival_move[0] or loc == rival_move[1] or bel_loc == rival_move[0] or bel_loc == rival_move[1]:
-                #      cv2.imwrite(angle_dir + loc + '.jpg', diff_im)
-            locssims.append(diff_im)
-            locsabvims.append(diff_abv_im)
-
-
-        return locssims, locsabvims
-
+                b_val="target"
+            print("get_dif_im ("+b_val+")_failed" )
+            print (str(e))
+            raise
     def create_black_im(self):
         black_im = []
         for i in range(20):

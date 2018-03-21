@@ -57,73 +57,78 @@ class find_moves_rank:
     def get_move(self,sources_place, sources_self, sources_above,
                                targets_place, targets_self, targets_above, tester_info):
 
-        to_save = bool(tester_info)
+        try:
+            to_save = bool(tester_info)
 
-        if to_save:
-            real_move = tester_info[0]
-            move_num = tester_info[1]
-            angle_idx = tester_info[2]
+            if to_save:
+                real_move = tester_info[0]
+                move_num = tester_info[1]
+                angle_idx = tester_info[2]
 
-            self.mistake_idxes = []
-            real_change_s = real_move[0]
-            real_change_t = real_move[1]
-            real_idx_source = sources_place.index(real_change_s)
-            real_idx_target = targets_place.index(real_change_t)
+                self.mistake_idxes = []
+                real_change_s = real_move[0]
+                real_change_t = real_move[1]
+                real_idx_source = sources_place.index(real_change_s)
+                real_idx_target = targets_place.index(real_change_t)
 
-        else:
-            real_change_s = None
-            real_change_t = None
-            real_idx_source = None
-            real_idx_target = None
+            else:
+                real_change_s = None
+                real_change_t = None
+                real_idx_source = None
+                real_idx_target = None
 
-        sources_rank = self.check_squares(sources_self,
-                                     sources_above,real_change_s, real_idx_source)
-        if to_save:
-            for idx in self.mistake_idxes:
-                tester_helper.save(img=np.array(sources_self[idx]), place=sources_place[idx], move_num=move_num, angle_idx=angle_idx, desc='dif')
-                tester_helper.save(img=np.array(sources_above[idx]), place=sources_place[idx], move_num=move_num, angle_idx=angle_idx, desc='dif_abv')
+            sources_rank = self.check_squares(sources_self,
+                                         sources_above,real_change_s, real_idx_source)
+            if to_save:
+                for idx in self.mistake_idxes:
+                    tester_helper.save_bw(img=np.array(sources_self[idx]), place=sources_place[idx], move_num=move_num,
+                                          angle_idx=angle_idx, desc='dif')
+                    tester_helper.save_bw(img=np.array(sources_above[idx]), place=sources_place[idx], move_num=move_num,
+                                          angle_idx=angle_idx, desc='dif_abv')
 
 
-            #save neuron's images:
-            cv2.imwrite('self_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_self[real_idx_source]))
-            cv2.imwrite('abv_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_above[real_idx_source]))
-            n_source_idx = real_idx_source
-            while n_source_idx == real_idx_source:
-                n_source_idx = np.random.randint(0, len(sources_self))
-            cv2.imwrite('self_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_self[n_source_idx]))
-            cv2.imwrite('abv_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_above[n_source_idx]))
+                #save neuron's images:
+                cv2.imwrite('self_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_self[real_idx_source]))
+                cv2.imwrite('abv_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_above[real_idx_source]))
+                n_source_idx = real_idx_source
+                while n_source_idx == real_idx_source:
+                    n_source_idx = np.random.randint(0, len(sources_self))
+                cv2.imwrite('self_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_self[n_source_idx]))
+                cv2.imwrite('abv_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_above[n_source_idx]))
 
-            cv2.imwrite('self_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[real_idx_target]))
-            cv2.imwrite('abv_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[real_idx_target]))
-            n_target_idx = real_idx_target
-            while n_target_idx == real_idx_target:
-                n_target_idx = np.random.randint(0, len(targets_self))
-            cv2.imwrite('self_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[n_target_idx]))
-            cv2.imwrite('abv_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[n_target_idx]))
-            self.neuron_counter += 2
+                cv2.imwrite('self_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[real_idx_target]))
+                cv2.imwrite('abv_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[real_idx_target]))
+                n_target_idx = real_idx_target
+                while n_target_idx == real_idx_target:
+                    n_target_idx = np.random.randint(0, len(targets_self))
+                cv2.imwrite('self_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[n_target_idx]))
+                cv2.imwrite('abv_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[n_target_idx]))
+                self.neuron_counter += 2
 
-        targets_rank = self.check_squares(targets_self,
-                                     targets_above,real_change_t, real_idx_target)
+            targets_rank = self.check_squares(targets_self,
+                                         targets_above,real_change_t, real_idx_target)
 
-        if to_save:
-            for idx in self.mistake_idxes:
-                tester_helper.save(img=np.array(targets_self[idx]), place=targets_place[idx], move_num=move_num,
-                          angle_idx=angle_idx)
-                tester_helper.save(img=np.array(targets_above[idx]), place=targets_place[idx], move_num=move_num,
-                          angle_idx=angle_idx, desc='abv')
+            if to_save:
+                for idx in self.mistake_idxes:
+                    tester_helper.save_bw(img=np.array(targets_self[idx]), place=targets_place[idx], move_num=move_num,
+                                          angle_idx=angle_idx)
+                    tester_helper.save_bw(img=np.array(targets_above[idx]), place=targets_place[idx], move_num=move_num,
+                                          angle_idx=angle_idx, desc='abv')
 
-            print("sources : ")
-            print(sources_place)
-            print("ranking : ")
-            print(sources_rank)
-            print("dests : ")
-            print(targets_place)
-            print("ranking : ")
-            print(targets_rank)
+                print("sources : ")
+                print(sources_place)
+                print("ranking : ")
+                print(sources_rank)
+                print("dests : ")
+                print(targets_place)
+                print("ranking : ")
+                print(targets_rank)
 
-        return self.get_pairs_and_ranks(sources_place, targets_place, sources_rank,
-                                        targets_rank)
-
+            return self.get_pairs_and_ranks(sources_place, targets_place, sources_rank,
+                                            targets_rank)
+        except:
+            print("get_move_failed")
+            raise
     '''
     receives a list of square images, and list of square images above them and
     returns a list of rank with the corresponding indexes
