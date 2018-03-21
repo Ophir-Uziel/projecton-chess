@@ -35,6 +35,17 @@ HOR_MIN_ANGLE = 0.15
 HOR_MAX_ANGLE = 3.0
 HOR_DIFF_ANGLE = 0.09
 
+# VER_MIN_ANGLE = 0.9
+# VER_MAX_ANGLE = 2.3
+# VER_LEFT_MIN_ANGLE = 0.9
+# VER_LEFT_MAX_ANGLE = 2.3
+# VER_RIGHT_MIN_ANGLE = 0.9
+# VER_RIGHT_MAX_ANGLE = 2.3
+# HOR_MIN_ANGLE = 0.3
+# HOR_MAX_ANGLE = 2.85
+# HOR_DIFF_ANGLE = 0.09
+
+
 ##### General hough parameters #####
 RHO_RES = 1
 THETA_RES = np.pi / 180
@@ -689,7 +700,8 @@ class identify_board:
                 cv2.waitKey(0)
             return img, edgeim, bigim
         except:
-            print("identify board has failed")
+            if (DEBUG):
+                print("identify board has failed")
             return real_img, edgeim, real_img
 
 # a = identify_board()

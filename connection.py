@@ -8,12 +8,12 @@ SIZE_LEN = 10
 
 ### Error fixing consts ###
 REQUEST_SHOT_MSG = "please take photo"
-GOOD_SHOT_MSG = "great f*king shot"
+MOVE_MSG = "move"
 RIGHT = "0"
 LEFT = "1"
 
 LAPTOP_IP = '192.168.43.195'
-SEND_TIMEOUT = 2.0 #seconds
+SEND_TIMEOUT = 20.0 #seconds
 LISTEN_TIMEOUT = 1000.0
 IM_SIZE = 8192000
 SENDER = True
@@ -70,6 +70,7 @@ class connection:
     def send_msg(self, msg):
         def really_send(msg):
             try:
+                print("sending " + msg)
                 self.socket.settimeout(SEND_TIMEOUT)
                 self.send_data(msg.encode())
             except:

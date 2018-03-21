@@ -66,7 +66,7 @@ GAUSS_C = 13
 
 ##### nuber of iterations for the board cut fixer#####
 NUM_ITERATIONS = 2
-NUM_ANGLE_ITERATIONS = 2
+NUM_ANGLE_ITERATIONS = 5
 ANGLE_FIX = 1
 MIN_SERIES_SCORE = 6
 
@@ -249,9 +249,10 @@ class board_cut_fixer:
         return point
 
 
-    def rotate_image_fix(self, image):
+    def rotate_image_fix(self, image, idx):
+        angle_fix = ((-1)**idx)*ANGLE_FIX*idx
         rows,cols = image.shape[0:2]
-        M = cv2.getRotationMatrix2D((cols/2,rows/2),ANGLE_FIX, 1)
+        M = cv2.getRotationMatrix2D((cols/2,rows/2),angle_fix, 1)
         return cv2.warpAffine(image, M, (cols,rows))
 
     """
@@ -403,7 +404,8 @@ class board_cut_fixer:
             print("score: " + str(best_score))
 
         if best_score<MIN_SERIES_SCORE:
-            print("Error: Best series too bad")
+            if (DEBUG):
+                print("Error: Best series too bad")
             raise Exception()
 
         return best_lines, best_line_index, best_d
@@ -859,6 +861,8 @@ class board_cut_fixer:
         def get_theta_ver(line):
             return self.get_theta(line)
 
+        orig_im = real_img
+
         for j in range(NUM_ANGLE_ITERATIONS):
             try:
 
@@ -949,14 +953,15 @@ class board_cut_fixer:
                 is_proj_correct = board_cut_checker.board_cut_checker(gaus)
 
                 if not is_proj_correct:
-                    print("Shimri's test has failed - bad cut")
+                    if(DEBUG):
+                        print("Shimri's test has failed - bad cut")
                     raise Exception()
-                return tmp_realimg
-                #return self.get_final_image(tmp_bigim)
+                return self.get_final_image(tmp_bigim)
 
             except:
-                real_img = self.rotate_image_fix(real_img)
-                print("rotating image")
+                real_img = self.rotate_image_fix(orig_im, j)
+                if (DEBUG):
+                    print("rotating image")
         raise Exception()
 
     def get_line_image(self, lines, img):
@@ -975,7 +980,8 @@ def test(foldername):
     fixer = board_cut_fixer()
     for j in range(0, 200):
         try:
-            realim = id.get_image_from_filename(foldername + "\\" + str(j) + ".jpg")
+            realim = id.get_image_from_filename(foldername + "\\0_" + str(j)
+                                                + ".jpg")
             fixed_im = fixer.main(realim)
 
             cv2.imwrite(foldername + '\\fixed\\' + str(j) + '.jpg', fixed_im)
@@ -984,4 +990,3 @@ def test(foldername):
             print(str(j) + " failed")
 
 
-#test('angle2')

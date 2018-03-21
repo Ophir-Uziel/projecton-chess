@@ -58,7 +58,7 @@ class hardware:
     # TODO write this func
 
     def player_indication(self, move):
-            return 0
+        self.socket.send_msg(connection.MOVE+move)
 
 def first_2_chars(x):
     return x[0:-4]
