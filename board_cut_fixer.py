@@ -1025,4 +1025,4 @@ def test(foldername):
             print(str(j) + " failed")
 
 
-test("taken photos test/taken photos5")
+#test("taken photos test/taken photos5")
