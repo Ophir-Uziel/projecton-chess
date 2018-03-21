@@ -350,4 +350,4 @@ def main_colors_tester(folder_name):
 
 
 # filter_color_tester("im1.jpg","im2.jpg",'g5',False)
-main_colors_tester("images")
+# main_colors_tester("images")
