@@ -272,6 +272,7 @@ class filter_colors_2:
             if above_board:
                 RC.append(self.R2W)
                 RC.append(self.R2B)
+                RC.append(self.R2U)
             elif is_white:
                 RC.append(self.R2W)
             else:
@@ -283,6 +284,7 @@ class filter_colors_2:
             if above_board:
                 RC.append(self.W2R)
                 RC.append(self.B2R)
+                RC.append(self.U2R)
             elif is_white:
                 RC.append(self.W2R)
             else:
@@ -350,4 +352,4 @@ def main_colors_tester(folder_name):
 
 
 # filter_color_tester("im1.jpg","im2.jpg",'g5',False)
-main_colors_tester("images")
+#main_colors_tester("images")

@@ -7,7 +7,7 @@ import scipy.misc
 RESULTS_DIR = 'super_tester_results'
 ROWS_NUM = 9
 COL_NUM = 8
-
+PRINT = True
 
 
 def save_bw(img, place, move_num, angle_idx, desc =''):
@@ -15,15 +15,14 @@ def save_bw(img, place, move_num, angle_idx, desc =''):
         cv2.imwrite(RESULTS_DIR + '\\' +'by_move' + '\\' + 'move_num_' + str(move_num) + '\\' + 'angle_num_' + str(angle_idx) + '\\' + place + '_' + desc + '.jpg', img)
         cv2.imwrite(RESULTS_DIR + '\\' +'by_square' + '\\' + place + '\\' + 'angle_num_' + str(angle_idx) + '\\' + str(move_num) + '_' + desc + '.jpg', img)
     except:
-        print("save_failed")
-
+        pass
 
 def save_colors(img, place, move_num, angle_idx, desc =''):
     try:
         scipy.misc.imsave(RESULTS_DIR + '\\' +'by_move' + '\\' + 'move_num_' + str(move_num) + '\\' + 'angle_num_' + str(angle_idx) + '\\' + place + '_' + desc + '.jpg', img)
         scipy.misc.imsave(RESULTS_DIR + '\\' +'by_square' + '\\' + place + '\\' + 'angle_num_' + str(angle_idx) + '\\' + str(move_num) + '_' + desc + '.jpg', img)
     except:
-        print("save_failed")
+        pass
 
 
 def make_dir(dir_name):

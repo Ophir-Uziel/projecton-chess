@@ -21,6 +21,8 @@ class hardware:
             for i in range(angle_num):
                 img_names = os.listdir(imgs_if_tester[i])
                 sorted_img_names = sorted(img_names, key= first_2_chars)
+                # sorted_img_names = img_names
+
                 img_array = []
                 for j in range(len(sorted_img_names)):
                     img_array.append(cv2.imread(imgs_if_tester[i] +'/'+
@@ -61,6 +63,6 @@ class hardware:
         self.socket.send_msg(connection.MOVE+move)
 
 def first_2_chars(x):
-    return int(x[3:-4])
+    return int(x[2:-4])
 
 

@@ -75,7 +75,7 @@ def make_dir(dir_name):
             raise
 
 if_one_dir_new("taken photos1/fixed")
-super_tester_2("moves",["angle0","angle1"],WITH_SAVES)
+super_tester_2("moves.txt",["angle0","angle1"],WITH_SAVES)
 
 
 

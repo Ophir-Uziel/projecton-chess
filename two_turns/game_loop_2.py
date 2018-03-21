@@ -17,7 +17,6 @@ SOURCE = True
 LEFT = 0
 RIGHT = 1
 ROWS_NUM = 8
-SAVE_IMAGES = False
 RESULTS_DIR = 'super_tester_results'
 
 
@@ -174,6 +173,8 @@ class game_loop_2:
             return pairs, pairs_rank
         except:
             print("angle " + str(angle_idx) + " failed")
+            if self.moves_counter == 8:
+                raise
             return [], []
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
@@ -247,8 +248,10 @@ class game_loop_2:
                 break
             gui_img_manager.set_finished(False)
             self.play_user_turn(last_move)
+            print(self.chesshelper.board)
             user_move = self.best_move
             last_move = self.get_rival_move()
+            print(self.chesshelper.board)
             gui_img_manager.set_finished(True)
             cnt+=1
 
