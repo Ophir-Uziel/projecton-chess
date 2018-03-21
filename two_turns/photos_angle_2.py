@@ -32,7 +32,9 @@ class photos_angle_2:
 
             new_board_im = self.prep_im
 
-            better_cut_board_im = self.fixer.main(new_board_im)
+            # better_cut_board_im = self.fixer.main(new_board_im)
+            better_cut_board_im = new_board_im
+            # TODO: switch two upper rows
 
             if to_save:
                 move_num = tester_info[0]
