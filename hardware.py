@@ -61,6 +61,6 @@ class hardware:
         self.socket.send_msg(connection.MOVE+move)
 
 def first_2_chars(x):
-    return x[0:-4]
+    return int(x[3:-4])
 
 

@@ -240,6 +240,7 @@ class game_loop_2:
             last_move = self.get_rival_move()
             gui_img_manager.set_finished(True)
             cnt+=1
+
 def make_dir(dir_name):
     try:
         os.makedirs(dir_name)

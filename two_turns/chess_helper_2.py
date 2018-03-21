@@ -67,6 +67,8 @@ class chess_helper_2:
         letter = square_location[0]
         number = int(square_location[1]) - 1
         numLine = ord(letter) - 97
+        if number == 8:
+            return None
         square = number * 8 + numLine
         piece = self.board.piece_at(square)
         if piece == None:
@@ -134,6 +136,6 @@ class chess_helper_2:
             row = int(square[1]) + 1
         else:
             row = int(square[1]) - 1
-        if row == 9 or row == 0:
+        if row == 10 or row == 0:
             return None
         return square[0] + str(row)

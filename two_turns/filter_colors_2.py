@@ -45,10 +45,9 @@ class filter_colors_2:
         :return black,white,user soldier color, rival soldier color:
         """
         self.prev_im = im
-        im_resize = cv2.resize(im, PIXELS_FOR_MAIN_COLORS)
-        board_colors = self.get_board_colors(im_resize)
-        user_color = self.get_player_color(im_resize, board_colors, USER)
-        rival_color = self.get_player_color(im_resize, board_colors, RIVAL)
+        board_colors = self.get_board_colors(im)
+        user_color = self.get_player_color(im, board_colors, USER)
+        rival_color = self.get_player_color(im, board_colors, RIVAL)
         main_colors = board_colors
         main_colors.append(user_color)
         main_colors.append(rival_color)
@@ -62,7 +61,6 @@ class filter_colors_2:
         :param im:
         :return 2 primary colors from board image:
         """
-        # TODO fix this lines
         im_sz = len(im)
         ar = im[(im_sz // 4):(3 * im_sz // 4)]
         shape = ar.shape
@@ -96,9 +94,9 @@ class filter_colors_2:
         ar = im
         ar_sz = len(ar)
         if player == RIVAL:
-            ar = ar[:(ar_sz // 4)]
+            ar = ar[ar_sz // 9:(ar_sz * 2 // 9)]
         else:
-            ar = ar[3 * (ar_sz // 4):]
+            ar = ar[7 * (ar_sz // 9):]
         shape = ar.shape
         ar2 = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
         codes, dist = scipy.cluster.vq.kmeans(ar2, 3)
@@ -184,10 +182,10 @@ class filter_colors_2:
         user_starts = self.chess_helper_2.user_starts
         locidx = self.chess_helper_2.ucitoidx(loc)
         sq_sz = len(im[0]) // 8
-        sq_sz_y = len(im) // 8
+        sq_sz_y = len(im) // 9
         x = locidx[0]
         if user_starts:
-            y = 8 - locidx[1]
+            y = 9 - locidx[1]
         else:
             y = locidx[1]
         area = (x * sq_sz, y * sq_sz_y, (x + 1) * sq_sz, (y + 1) * sq_sz_y)
@@ -280,8 +278,8 @@ class filter_colors_2:
         :param is_source:
         :return binary image of relevant changes only (according alot of parameters):
         """
-
-        after_square = cv2.resize(self.get_square_image(im, square_loc), PIXELS_SQUARE)
+        temp_im = self.get_square_image(im, square_loc)
+        after_square = cv2.resize(temp_im, PIXELS_SQUARE)
         after_square, after2save = self.fit_colors(after_square)
         before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc),
                                    PIXELS_SQUARE)
