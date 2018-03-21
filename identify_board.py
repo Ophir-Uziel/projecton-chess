@@ -17,6 +17,7 @@ image, projected to be rectangular.
 ##### Image resize and cut dimensions #####
 RESIZE_WIDTH = 600
 RESIZE_HEIGHT = 600
+
 CUT_UP = 70
 CUT_DOWN = 1550
 
@@ -85,6 +86,11 @@ PROJECTION_SPARE_GRID_SIZE = 12
 PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
 PROJECTION_SPARE_GRID_SIZE_BIG = 2*PROJECTION_SPARE_GRID_SIZE
 PROJECTION_SPARE_DIFF_BIG = (PROJECTION_SPARE_GRID_SIZE_BIG-8)/2
+
+BIG_RESIZE_WIDTH = int(PROJECTION_SPARE_GRID_SIZE_BIG*RESIZE_WIDTH\
+                   /PROJECTION_SPARE_GRID_SIZE)
+BIG_RESIZE_HEIGHT = int(PROJECTION_SPARE_GRID_SIZE_BIG*RESIZE_HEIGHT\
+                   /PROJECTION_SPARE_GRID_SIZE)
 
 DEBUG = False
 
@@ -503,23 +509,30 @@ class identify_board:
     def projection_with_spare(self, pointslst, img, big_picture):
         diff = PROJECTION_SPARE_DIFF
         grid = PROJECTION_SPARE_GRID_SIZE
+        width = RESIZE_WIDTH
+        height = RESIZE_HEIGHT
         if (big_picture):
             diff = PROJECTION_SPARE_DIFF_BIG
             grid = PROJECTION_SPARE_GRID_SIZE_BIG
+            width = BIG_RESIZE_WIDTH
+            height = BIG_RESIZE_HEIGHT
 
         pts1 = np.float32(pointslst)
-        x_hi = (diff + 8) * RESIZE_WIDTH \
+        x_hi = (diff + 8) * width \
                / grid
-        x_lo = (diff+ 0) * RESIZE_WIDTH \
+        x_lo = (diff+ 0) * width\
                / grid
-        y_hi = (diff) * RESIZE_HEIGHT / \
+        y_hi = (diff) * height/ \
                grid
         y_lo = (diff + 8
-                ) * RESIZE_HEIGHT / grid
+                ) * height/ grid
         pts2 = np.float32([[x_lo, y_hi], [x_hi, y_hi],
                            [x_lo, y_lo], [x_hi, y_lo]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
-        dst = cv2.warpPerspective(img, M, (RESIZE_WIDTH, RESIZE_HEIGHT))
+        if(big_picture):
+            dst = cv2.warpPerspective(img, M, (BIG_RESIZE_WIDTH, BIG_RESIZE_HEIGHT))
+        else:
+            dst = cv2.warpPerspective(img, M, (RESIZE_WIDTH, RESIZE_HEIGHT))
         if (DEBUG):
             cv2.imshow("image", dst)
             k = cv2.waitKey(0)
