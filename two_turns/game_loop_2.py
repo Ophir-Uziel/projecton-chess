@@ -152,8 +152,7 @@ class game_loop_2:
             sourcesims, sourcesabvims = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
                                                                              SOURCE)
 
-            if self.moves_counter == 8:
-                print("hello")
+
             destsims, destsabvims = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                          not SOURCE)
 
@@ -175,8 +174,6 @@ class game_loop_2:
             return pairs, pairs_rank
         except:
             print("angle " + str(angle_idx) + " failed")
-            if self.moves_counter == 8:
-                raise
             return [], []
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
@@ -186,6 +183,7 @@ class game_loop_2:
             locsabvims = []
 
             for loc in locs:
+
                 abv_loc = self.chesshelper.get_square_above(loc)
                 diff_im, before2save, after2save = angle.get_square_diff(cut_board_im, loc, is_source)
                 if filter_colors_2.TEST:
