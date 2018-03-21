@@ -243,7 +243,7 @@ class game_loop_2:
         last_move = None
         cnt = 0
         while True:
-            if self.user_moves and cnt >= len(self.user_moves):
+            if self.user_moves and self.moves_counter >= len(self.user_moves):
                 print('Done')
                 break
             gui_img_manager.set_finished(False)

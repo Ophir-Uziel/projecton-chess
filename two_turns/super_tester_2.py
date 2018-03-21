@@ -74,7 +74,7 @@ def make_dir(dir_name):
         if e.errno != errno.EEXIST:
             raise
 
-if_one_dir_new("taken photos1/fixed")
+if_one_dir_new("taken photos2/fixed")
 super_tester_2("moves.txt",["angle0","angle1"],WITH_SAVES)
 
 
