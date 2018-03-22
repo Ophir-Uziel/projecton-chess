@@ -5,6 +5,7 @@ import copy
 import numpy as np
 import bisect
 import board_cut_checker
+from enum import Enum
 
 # import gui_img_manager
 
@@ -89,6 +90,24 @@ IM_DIFF_AREA_SKIP = 5
 
 OUT_IMG_WIDTH = 400
 OUT_IMG_HEIGHT = 450
+
+MAX_BLACK_AREA = 100
+
+class FixerErrorType(Enum):
+    NoDirection = 0
+    TopLeft = 1
+    TopRight = 2
+    BottomRight = 3
+    BottomLeft = 4
+
+class FixerError(Exception):
+    def __init__(self, message, error):
+
+        # Call the base class constructor with the parameters it needs
+        super(FixerError, self).__init__(message)
+
+        # Now for your custom code...
+        self.error = error
 
 
 class board_cut_fixer:
@@ -749,7 +768,8 @@ class board_cut_fixer:
             return self.get_theta(line)
 
         orig_im = real_img
-
+        black_area = 0
+        gray = None
         for j in range(NUM_ANGLE_ITERATIONS):
             try:
 
@@ -849,13 +869,23 @@ class board_cut_fixer:
                     if(DEBUG):
                         print("Shimri's test has failed - bad cut")
                     raise Exception()
+
+                final_im = self.get_final_image(tmp_bigim)
+                gray = cv2.cvtColor(final_im, cv2.COLOR_RGB2GRAY)
+                black_area =len(gray)*len(gray[0]) - cv2.countNonZero(gray)
+                if black_area>= MAX_BLACK_AREA:
+                    raise Exception()
                 return self.get_final_image(tmp_bigim)
 
-            except:
+            except Exception:
+                if black_area>=MAX_BLACK_AREA:
+                    if(DEBUG):
+                        print("too much black in picture, bad cut")
+                    raise FixerError("",self.find_error_dir(gray))
                 real_img = self.rotate_image_fix(orig_im, j)
                 if (DEBUG):
                     print("rotating image")
-        raise Exception()
+        raise FixerError("",FixerErrorType.NoDirection)
 
 
     def get_line_image(self, lines, img):
@@ -874,14 +904,16 @@ def test(foldername):
     fixer = board_cut_fixer()
     for j in range(0, 200):
         try:
-            realim = id.get_image_from_filename(foldername + "\\0_" + str(j)
+            realim = id.get_image_from_filename(foldername + "\\1_" + str(j)
                                                 + ".jpg")
             fixed_im = fixer.main(realim)
             fixer.set_prev_im(fixed_im)
-            cv2.imwrite(foldername + '\\fixed\\0_' + str(j) + '.jpg', fixed_im)
+            cv2.imwrite(foldername + '\\fixed\\0_' + str(j) + '.jpg',
+             fixed_im)
             print(str(j)+'sucsseed!!!')
         except:
             print(str(j) + " failed")
 
 
-#test("taken photos test/taken photos5")
+test("D:\\Talpiot\\Semester C\\Projecton-Git\\projecton-chess\\taken "
+     "photoss\\taken photos10")

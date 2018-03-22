@@ -13,7 +13,7 @@ MOVE_MSG = "move"
 RIGHT = "0"
 LEFT = "1"
 
-LAPTOP_IP = '192.168.43.195'
+LAPTOP_IP = '192.168.43.194'
 GATEWAY = '192.168.43.1'
 SUBNET_MASK = '255.255.255.0'
 SEND_TIMEOUT = 20.0 #seconds
@@ -40,10 +40,10 @@ class connection:
                     self.socket = s
                 else:
                     ## fix ip ##
-                    call("netsh")
-                    call("interface ip set address name=\"Wireless Network"
-                         "Connection 2\" static " +LAPTOP_IP + " " +
-                         GATEWAY + " " + SUBNET_MASK)
+                    # call("netsh interface ip set address name=\"Wireless "
+                    #      "Network"
+                    #      "Connection 2\" static " +LAPTOP_IP + " " +
+                    #      SUBNET_MASK + " " + GATEWAY)
                     self.timeout = LISTEN_TIMEOUT
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.bind(("", port))
@@ -78,7 +78,6 @@ class connection:
     def send_msg(self, msg):
         def really_send(msg):
             try:
-                print("sending " + msg)
                 self.socket.settimeout(SEND_TIMEOUT)
                 self.send_data(msg.encode())
             except:
@@ -132,3 +131,4 @@ class connection:
             tmp_data = tmp_data + self.socket.recv(IM_SIZE)
             
         return tmp_data[SIZE_LEN:]        
+
