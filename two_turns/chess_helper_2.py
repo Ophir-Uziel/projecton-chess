@@ -21,7 +21,7 @@ class chess_helper_2:
         stringmove = src+dest
         move2do = chess.Move.from_uci(stringmove)
         if (move2do not in self.board.legal_moves):
-            return False
+            raise Exception("illegal move: " + stringmove)
         self.board.push(move2do)
         if(self.curr_player == chess_helper_2.USER):
             self.curr_player = chess_helper_2.RIVAL

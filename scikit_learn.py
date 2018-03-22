@@ -2,7 +2,7 @@ from sklearn import svm
 import numpy as np
 import os
 from sklearn import datasets
-
+import cv2
 
 def try1():
     digits = datasets.load_digits()
@@ -22,6 +22,9 @@ def create_net():
 
 def train_net(net, y_img, n_img):
     shuffle_img, ans = shuffle(y_img,n_img)
+    digits = datasets.load_digits()
+    ex_inp = digits.data
+    ex_tsr = digits.target
     inp = np.asarray(shuffle_img)
     tar = np.asarray(ans)
     SVC = net.fit(inp, tar)
@@ -71,5 +74,21 @@ def test(size,im_num):
     out = check_net(net, n_img)
     print(out)
 
-try1()
-test(400,100)
+
+def read_imgs(lst, fold):
+    imgs = []
+    for i in range(len(lst)):
+        im = cv2.imread(fold + "\\" +lst[i], cv2.IMREAD_GRAYSCALE)
+        new_im =[]
+        for row in im:
+            for pixel in row:
+                new_im.append(pixel)
+        imgs.append(cv2.imread(fold +"\\"+lst[i], cv2.IMREAD_GRAYSCALE))
+    return imgs
+
+net = create_net()
+y_lst = read_imgs(os.listdir("y"),"y")
+n_lst = read_imgs(os.listdir("n"),"n")
+y_check = read_imgs(os.listdir("ycheck"),"ycheck")
+train_net(net,y_lst,n_lst)
+print(check_net(net, y_check))
