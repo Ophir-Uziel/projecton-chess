@@ -268,6 +268,7 @@ class filter_colors_2:
         return new_im, test_im
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
+        user_is_white = self.chess_helper_2.user_starts
         is_white = self.chess_helper_2.square_color(square)
         if int(square[1]) == 9:
             above_board = True
@@ -283,7 +284,7 @@ class filter_colors_2:
             else:
                 RC.append(self.R2B)
             if self.chess_helper_2.piece_color(square):
-                if self.chess_helper_2.square_color(square) != self.chess_helper_2.user_starts:
+                if is_white != user_is_white:
                     if not self.bad_rival:
                         RC.append(self.R2U)
                 else:
@@ -297,7 +298,7 @@ class filter_colors_2:
             else:
                 RC.append(self.B2R)
             sq_below = self.chess_helper_2.get_square_below(square)
-            if self.bad_board:
+            if self.bad_rival and is_white != user_is_white:
                 if self.delay_chess_helper_2.piece_color(square) and self.chess_helper_2.piece_color(
                         square):
                     if self.delay_chess_helper_2.piece_color(sq_below) == self.chess_helper_2.piece_color(sq_below):
