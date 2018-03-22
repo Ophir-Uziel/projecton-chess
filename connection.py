@@ -3,6 +3,7 @@ import cv2
 import numpy
 
 from threading import Thread
+from subprocess import call
 
 SIZE_LEN = 10
 
@@ -13,6 +14,8 @@ RIGHT = "0"
 LEFT = "1"
 
 LAPTOP_IP = '192.168.43.195'
+GATEWAY = '192.168.43.1'
+SUBNET_MASK = '255.255.255.0'
 SEND_TIMEOUT = 20.0 #seconds
 LISTEN_TIMEOUT = 1000.0
 IM_SIZE = 8192000
@@ -36,6 +39,11 @@ class connection:
                     print("Connected to GUI!")
                     self.socket = s
                 else:
+                    ## fix ip ##
+                    call("netsh")
+                    call("interface ip set address name=\"Wireless Network"
+                         "Connection 2\" static " +LAPTOP_IP + " " +
+                         GATEWAY + " " + SUBNET_MASK)
                     self.timeout = LISTEN_TIMEOUT
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.bind(("", port))
