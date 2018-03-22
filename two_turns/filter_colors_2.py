@@ -11,16 +11,15 @@ import os
 BLACK = (0.0, 0.0, 0.0)
 MINIMAL_PLAYER_BOARD_RATIO = 0.2
 MINIMAL_COLOR_DIST = 35
-PIXELS_FOR_MAIN_COLORS = (400, 400)
+PIXELS_FOR_MAIN_COLORS = (400, 450)
 PIXELS_SQUARE = (20, 20)
 BLACK_NUM = 1
 WHITE_NUM = 2
 USER = True
 RIVAL = False
 TEST = True
-BLACK_TEST = (0.0, 0.0, 0.0)
-WHITE_TEST = (1.0, 1.0, 1.0)
-
+BLACK_TEST = (0, 0, 0)
+WHITE_TEST = (255, 255, 255)
 
 class filter_colors_2:
     """
@@ -31,7 +30,10 @@ class filter_colors_2:
     def __init__(self, im, chess_helper_2, delay_chess_helper_2):
         self.chess_helper_2 = chess_helper_2
         self.delay_chess_helper_2 = delay_chess_helper_2
+        self.bad_user = False
+        self.bad_rival = False
         self.bad_board = False
+
         self.initialize_colors(im)
 
     def color_dist(self, color1, color2):
@@ -161,17 +163,21 @@ class filter_colors_2:
         self.RIVAL_NUM = 8
         # main colors order: black = 1, white = 2, user = 4, rival = 8
         if self.cmpT(main_colors[2], main_colors[0]):
-            self.bad_board = True
+            self.bad_user = True
             self.USER_NUM = BLACK_NUM
+            self.bad_board = True
         elif self.cmpT(main_colors[2], main_colors[1]):
-            self.bad_board = True
+            self.bad_user = True
             self.USER_NUM = WHITE_NUM
+            self.bad_board = True
         if self.cmpT(main_colors[3], main_colors[0]):
-            self.bad_board = True
+            self.bad_rival = True
             self.RIVAL_NUM = BLACK_NUM
-        elif self.cmpT(main_colors[3], main_colors[1]):
             self.bad_board = True
+        elif self.cmpT(main_colors[3], main_colors[1]):
+            self.bad_rival = True
             self.RIVAL_NUM = WHITE_NUM
+            self.bad_board = True
         self.R2W = WHITE_NUM - self.RIVAL_NUM
         self.R2B = BLACK_NUM - self.RIVAL_NUM
         self.B2R = self.RIVAL_NUM - BLACK_NUM
@@ -262,6 +268,7 @@ class filter_colors_2:
         return new_im, test_im
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
+        user_is_white = self.chess_helper_2.user_starts
         is_white = self.chess_helper_2.square_color(square)
         if int(square[1]) == 9:
             above_board = True
@@ -272,25 +279,26 @@ class filter_colors_2:
             if above_board:
                 RC.append(self.R2W)
                 RC.append(self.R2B)
-                RC.append(self.R2U)
             elif is_white:
                 RC.append(self.R2W)
             else:
                 RC.append(self.R2B)
-            if self.chess_helper_2.piece_color(
-                    square) == self.chess_helper_2.USER and not self.bad_board:  # if user piece is in this square
-                RC.append(self.R2U)
+            if self.chess_helper_2.piece_color(square):
+                if is_white != user_is_white:
+                    if not self.bad_rival:
+                        RC.append(self.R2U)
+                else:
+                    RC.append(self.R2U)
         else:
             if above_board:
                 RC.append(self.W2R)
                 RC.append(self.B2R)
-                RC.append(self.U2R)
             elif is_white:
                 RC.append(self.W2R)
             else:
                 RC.append(self.B2R)
             sq_below = self.chess_helper_2.get_square_below(square)
-            if self.bad_board:
+            if self.bad_rival and is_white != user_is_white:
                 if self.delay_chess_helper_2.piece_color(square) and self.chess_helper_2.piece_color(
                         square):
                     if self.delay_chess_helper_2.piece_color(sq_below) == self.chess_helper_2.piece_color(sq_below):
