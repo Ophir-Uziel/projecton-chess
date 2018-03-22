@@ -176,6 +176,7 @@ class game_loop_2:
             return pairs, pairs_rank
         except:
             print("angle " + str(angle_idx) + " failed")
+            raise
             return [], []
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
