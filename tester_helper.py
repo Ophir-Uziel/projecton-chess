@@ -85,6 +85,20 @@ def make_two_ims_dir(game_dir, y_or_n,counter):
         counter +=1
     return counter
 
+def make_squares_dirs(self):
+    tester_helper.make_dir(RESULTS_DIR)
+    tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_move')
+    tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square')
+    for i in range(ROWS_NUM+1):
+        if i == ROWS_NUM:
+            tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board')
+            for k in range(2):
+                tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board' + '\\' + 'angle_num_' + str(k))
+        else:
+            for j in range(ROWS_NUM):
+                tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1))
+                for k in range(2):
+                    tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1) + '\\' + 'angle_num_' + str(k))
 
 # for y_or_no in ["y", "n"]:
 #     counter = 300
