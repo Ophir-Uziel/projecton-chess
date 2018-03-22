@@ -41,7 +41,7 @@ def super_tester(moves_file, img_dir_lst,with_saves):
 
     print('Done')
 
-super_tester(moves_file='moves.txt', img_dir_lst=['angle1','angle2'], with_saves=WITH_SAVES)
+super_tester(moves_+file='moves.txt', img_dir_lst=['angle1','angle2'], with_saves=WITH_SAVES)
 
 
 

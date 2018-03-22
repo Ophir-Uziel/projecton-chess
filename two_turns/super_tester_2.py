@@ -9,7 +9,7 @@ WITH_SAVES = True
 def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
     if net_idx:
         net_dir_name = "net" +str(net_idx)
-        make_dir(net_dir_name)
+        tester_helper.make_dir(net_dir_name)
     else:
         net_dir_name = None
     corrects = []
@@ -74,17 +74,12 @@ def first_2_chars(x):
 # gameloop = game_loop_2.game_loop_2(angles_num = 2)
 # gameloop.main()
 
-def make_dir(dir_name):
-    try:
-        os.makedirs(dir_name)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+
 
 
 
 if_one_dir_new("fixed")
-super_tester_2("fixed\\moves.txt", ["angle0", "angle1"], WITH_SAVES,1)
+super_tester_2("fixed\\moves.txt", ["angle0", "angle1"], WITH_SAVES, net_idx=1)
 
 
 
