@@ -7,8 +7,9 @@ import chess
 import cv2
 import math
 import os
+import copy
 
-BLACK = (0.0, 0.0, 0.0)
+BLACK = (0, 0, 100)
 MINIMAL_PLAYER_BOARD_RATIO = 0.2
 MINIMAL_COLOR_DIST = 35
 PIXELS_FOR_MAIN_COLORS = (400, 450)
@@ -18,7 +19,7 @@ WHITE_NUM = 2
 USER = True
 RIVAL = False
 TEST = True
-BLACK_TEST = (0, 0, 0)
+BLACK_TEST = (100, 100, 100)
 WHITE_TEST = (255, 255, 255)
 
 class filter_colors_2:
@@ -36,6 +37,8 @@ class filter_colors_2:
         self.bad_board = False
         self.squares_before = {}
         self.squares_after = {}
+        self.squares_before_test = {}
+        self.squares_after_test = {}
         self.initialize_colors(im)
 
     def color_dist(self, color1, color2):
@@ -189,16 +192,16 @@ class filter_colors_2:
         self.U2R = self.RIVAL_NUM - self.USER_NUM
 
         if TEST:
-            self.user_color_test = (0.2, 0.7, 0.7)
-            self.rival_color_test = (130, 50, 50)
+            self.user_color_test = (255, 100, 255)
+            self.rival_color_test = (50, 100, 0)
             if self.cmpT(main_colors[2], main_colors[0]):
                 self.user_color_test = BLACK_TEST
             elif self.cmpT(main_colors[2], main_colors[1]):
                 self.user_color_test = WHITE_TEST
             if self.cmpT(main_colors[3], main_colors[0]):
-                self.user_color_test = BLACK_TEST
+                self.rival_color_test = BLACK_TEST
             elif self.cmpT(main_colors[3], main_colors[1]):
-                self.user_color_test = WHITE_TEST
+                self.rival_color_test = WHITE_TEST
         return
 
     def set_prev_im(self, img):
@@ -212,26 +215,21 @@ class filter_colors_2:
         :param loc:
         :return subimage of a square in the board:
         """
-        if before and loc in self.squares_before.keys():
-            return self.squares_before[loc]
-        elif not before and loc in self.squares_after.keys():
-            return self.squares_after[loc]
+        locidx = self.chess_helper_2.ucitoidx(loc)
+        sq_sz = len(im[0]) // 8
+        sq_sz_y = len(im) // 9
+        x = locidx[0]
+        if self.user_starts:
+            y = 9 - locidx[1]
         else:
-            locidx = self.chess_helper_2.ucitoidx(loc)
-            sq_sz = len(im[0]) // 8
-            sq_sz_y = len(im) // 9
-            x = locidx[0]
-            if self.user_starts:
-                y = 9 - locidx[1]
-            else:
-                y = locidx[1]
-            area = (x * sq_sz, y * sq_sz_y, (x + 1) * sq_sz, (y + 1) * sq_sz_y)
-            sqr_im = im[area[1]:area[3], area[0]:area[2]]
-            if before:
-                self.squares_before[loc] = sqr_im
-            else:
-                self.squares_after[loc] = sqr_im
-            return sqr_im
+            y = locidx[1]
+        area = (x * sq_sz, y * sq_sz_y, (x + 1) * sq_sz, (y + 1) * sq_sz_y)
+        sqr_im = im[area[1]:area[3], area[0]:area[2]]
+        if before:
+            self.squares_before[loc] = sqr_im
+        else:
+            self.squares_after[loc] = sqr_im
+        return sqr_im
 
     def fit_colors(self, im):
         """
@@ -338,16 +336,31 @@ class filter_colors_2:
         :param is_source:
         :return binary image of relevant changes only (according alot of parameters):
         """
-        after_square = cv2.resize(self.get_square_image(im, square_loc,False), PIXELS_SQUARE)
-        after_square, after2save = self.fit_colors(after_square)
-        before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc,True),
-                                   PIXELS_SQUARE)
-        before_square, befor2save = self.fit_colors(before_square)
+        if square_loc in self.squares_before.keys():
+            before_square = self.squares_before[square_loc]
+        else:
+            before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc, True),
+                                       PIXELS_SQUARE)
+            before_square, before2save = self.fit_colors(before_square)
+            self.squares_before[square_loc] = before_square
+            self.squares_before_test[square_loc] = before2save
+        if square_loc in self.squares_after.keys():
+            after_square = self.squares_after[square_loc]
+        else:
+            after_square = cv2.resize(self.get_square_image(im, square_loc, False), PIXELS_SQUARE)
+            after_square, after2save = self.fit_colors(after_square)
+            self.squares_after[square_loc] = after_square
+            self.squares_after_test[square_loc] = after2save
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
-
-        return square_diff, befor2save, after2save
+        return square_diff
 
         ###########################################################################
+
+    def update_board(self):
+        self.squares_before = copy.deepcopy(self.squares_after)
+        self.squares_before_test = copy.deepcopy(self.squares_after_test)
+        self.squares_after = {}
+        self.squares_after_test = {}
 
 
 def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):

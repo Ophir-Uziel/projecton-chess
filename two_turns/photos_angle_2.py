@@ -18,7 +18,6 @@ class photos_angle_2:
         self.fixer = board_cut_fixer.board_cut_fixer()
 
     def init_colors(self):
-
         cut_board_im = self.get_new_img(tester_info=(-1, self.idx))
         self.color_filter = two_turns.filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper,
                                                                       self.delay_chess_helper)
@@ -55,3 +54,12 @@ class photos_angle_2:
 
     def get_prev_im(self):
         return self.color_filter.prev_im
+
+    def update_board(self):
+        self.color_filter.update_board()
+
+    def get_board_test(self,is_before):
+        if is_before:
+            return self.color_filter.squares_before_test
+        else:
+            return self.color_filter.squares_after_test

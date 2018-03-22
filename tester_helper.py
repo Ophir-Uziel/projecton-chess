@@ -32,7 +32,7 @@ def make_dir(dir_name):
         if e.errno != errno.EEXIST:
             raise
 
-def make_board_im_helper(squares, square_ims, is_rgb):
+def make_board_im_helper(squares, square_ims, is_rgb = False):
     squares_im_lst = []
     for i in range(ROWS_NUM):
         for j in range(COL_NUM):
