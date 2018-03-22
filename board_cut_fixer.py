@@ -664,6 +664,36 @@ class board_cut_fixer:
 
         return bigpts
 
+    def find_error_dir(self, img):
+        flag = True
+        for i in range(0, 3):
+            for j in range(0, 3):
+                if img[i, j] != 0:
+                    flag = False
+        if (flag):
+            return FixerErrorType.TopLeft
+        flag = True
+        for i in range(0, 3):
+            for j in range(-3, 0):
+                if img[i, j] != 0:
+                    flag = False
+        if (flag):
+            return FixerErrorType.TopRight
+        flag = True
+        for i in range(-3, 0):
+            for j in range(-3, 0):
+                if img[i, j] != 0:
+                    flag = False
+        if (flag):
+            return FixerErrorType.BottomRight
+        flag = True
+        for i in range(-3, 0):
+            for j in range(0, 3):
+                if img[i, j] != 0:
+                    flag = False
+        if (flag):
+            return FixerErrorType.BottomLeft
+
     ### Cut image at different idxs and check which is best
     def get_best_cut_image(self, realim, edgeim, bigim, pts, bigpts, frame,
                            cut_spare):
@@ -902,7 +932,7 @@ def test(foldername):
     # get lines from image, and edge-image
     id = identify_board.identify_board()
     fixer = board_cut_fixer()
-    for j in range(0, 200):
+    for j in range(13, 200):
         try:
             realim = id.get_image_from_filename(foldername + "\\1_" + str(j)
                                                 + ".jpg")
@@ -915,5 +945,5 @@ def test(foldername):
             print(str(j) + " failed")
 
 
-test("D:\\Talpiot\\Semester C\\Projecton-Git\\projecton-chess\\taken "
+#test("D:\\Talpiot\\Semester C\\Projecton-Git\\projecton-chess\\taken "
      "photoss\\taken photos10")
