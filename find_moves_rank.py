@@ -55,7 +55,7 @@ class find_moves_rank:
     """
 
     def get_move(self,sources_place, sources_self, sources_above,
-                               targets_place, targets_self, targets_above, tester_info):
+                               targets_place, targets_self, targets_above, tester_info = None):
 
         try:
             to_save = bool(tester_info)
