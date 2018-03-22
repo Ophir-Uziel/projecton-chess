@@ -74,22 +74,22 @@ def connect_two_ims(im,im_abv):
 
 def make_two_ims_dir(game_dir, y_or_n,counter):
     make_dir(game_dir)
-    make_dir(y_or_n +"check")
+    make_dir(y_or_n+"check")
     slf_ims = os.listdir(game_dir + "\\" + "self_" + y_or_n + "_dir" )
     abv_ims = os.listdir(game_dir + "\\" + "abv_" + y_or_n + "_dir" )
     for i in range(len(slf_ims)):
         im = cv2.imread(game_dir + "\\" + "self_" + y_or_n + "_dir"  + "\\"+slf_ims[i], cv2.IMREAD_GRAYSCALE).tolist()
         im_abv = cv2.imread(game_dir + "\\" + "abv_" + y_or_n + "_dir" +"\\"+ abv_ims[i], cv2.IMREAD_GRAYSCALE).tolist()
         new_im = connect_two_ims(im, im_abv)
-        cv2.imwrite(y_or_n + "\\" + str(counter)+ ".jpg", np.array(new_im))
+        cv2.imwrite(y_or_n + "check" + "\\" + str(counter)+ ".jpg", np.array(new_im))
         counter +=1
     return counter
 
 
 # for y_or_no in ["y", "n"]:
-#     counter = 0
+#     counter = 300
 #     for i in range(1):
-#         counter = make_two_ims_dir("game"+str(i+6), y_or_no, counter)
+#          counter = make_two_ims_dir("game"+str(i+6), y_or_no, counter)
 
 
 
