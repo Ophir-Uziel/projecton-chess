@@ -23,7 +23,7 @@ class photos_angle_2:
                                                                       self.delay_chess_helper)
 
     def prep_img(self):
-        self.prep_im = self.hardware.get_image(self.idx)
+        self.prep_im = self.hardware.get_image(self.idx, board_cut_fixer.FixerErrorType.NoDirection.value)
 
     def get_new_img(self, tester_info=None):
         try:
