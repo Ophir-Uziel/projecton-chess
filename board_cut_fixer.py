@@ -946,4 +946,4 @@ def test(foldername):
 
 
 #test("D:\\Talpiot\\Semester C\\Projecton-Git\\projecton-chess\\taken "
-     "photoss\\taken photos10")
+#     "photoss\\taken photos10")
