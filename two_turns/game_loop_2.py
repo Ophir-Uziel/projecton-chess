@@ -21,13 +21,14 @@ RESULTS_DIR = 'super_tester_results'
 
 
 class game_loop_2:
-    def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True):
+    def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
 
         self.if_save_and_print = if_save_and_print
         self.make_squares_dirs()
         self.moves_counter = 0
         self.black_im = self.create_black_im()
         if user_moves_if_test is not None:
+            self.net_dir_name = net_dir_name
             self.is_test = True
             self.user_moves = user_moves_if_test
             self.rival_moves = rival_moves_if_test
@@ -56,7 +57,7 @@ class game_loop_2:
         if not self.is_test:
             gui_img_manager.set_finished(True)
 
-        self.movefinder = fm.find_moves_rank(self.chesshelper)
+        self.movefinder = fm.find_moves_rank(self.chesshelper, self.net_dir_name)
 
         self.chess_engine = chess_engine_wrapper.chess_engine_wrapper()
         self.last_move = None
@@ -138,6 +139,8 @@ class game_loop_2:
 
             if self.if_save_and_print:
                 print("angle_num_" + str(angle_idx))
+            if self.moves_counter == 6:
+                print("hello")
             make_dir(RESULTS_DIR + '\\' + 'by_move/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
 
             rival_move = None
@@ -173,8 +176,6 @@ class game_loop_2:
             return pairs, pairs_rank
         except:
             print("angle " + str(angle_idx) + " failed")
-            if self.moves_counter == 8:
-                raise
             return [], []
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):

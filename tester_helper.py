@@ -53,8 +53,6 @@ def make_board_im(squares_im_lst, pic_hi, pic_wid, dtype = np.int):
     row_num = pic_hi*ROWS_NUM
     col_num = pic_wid*COL_NUM
     im = np.zeros((row_num,col_num), dtype=dtype).tolist()
-
-
     for i in range(ROWS_NUM):
         for j in range(COL_NUM):
             im_num = i*COL_NUM+j
@@ -62,5 +60,36 @@ def make_board_im(squares_im_lst, pic_hi, pic_wid, dtype = np.int):
                 for k in range(pic_hi):
                     im[i*pic_hi+k][j*pic_wid:(j+1)*pic_wid] = squares_im_lst[i*8+j][k]
     return im
+
+
+def connect_two_ims(im,im_abv):
+    row_num = len(im)*2
+    col_num = len(im[0])
+    new_im = np.zeros((row_num,col_num), np.int).tolist()
+    for i in range(row_num//2):
+        new_im[i] = im_abv[i]
+        new_im[i+(row_num//2)] = im[i]
+    return new_im
+
+
+def make_two_ims_dir(game_dir, y_or_n,counter):
+    make_dir(game_dir)
+    make_dir(y_or_n +"check")
+    slf_ims = os.listdir(game_dir + "\\" + "self_" + y_or_n + "_dir" )
+    abv_ims = os.listdir(game_dir + "\\" + "abv_" + y_or_n + "_dir" )
+    for i in range(len(slf_ims)):
+        im = cv2.imread(game_dir + "\\" + "self_" + y_or_n + "_dir"  + "\\"+slf_ims[i], cv2.IMREAD_GRAYSCALE).tolist()
+        im_abv = cv2.imread(game_dir + "\\" + "abv_" + y_or_n + "_dir" +"\\"+ abv_ims[i], cv2.IMREAD_GRAYSCALE).tolist()
+        new_im = connect_two_ims(im, im_abv)
+        cv2.imwrite(y_or_n + "\\" + str(counter)+ ".jpg", np.array(new_im))
+        counter +=1
+    return counter
+
+
+# for y_or_no in ["y", "n"]:
+#     counter = 0
+#     for i in range(1):
+#         counter = make_two_ims_dir("game"+str(i+6), y_or_no, counter)
+
 
 
