@@ -5,18 +5,12 @@ import copy
 import numpy as np
 import bisect
 import board_cut_checker
-import os
-import errno
 
 # import gui_img_manager
 
 ### DEBUG FLAG ###
 DEBUG = False
 
-##### Gaussian Threshold parameters #####
-GAUSS_MAX_VALUE = 255
-GAUSS_BLOCK_SIZE = 115
-GAUSS_C = 13
 
 
 ##### Edge detection parameters #####
@@ -103,26 +97,22 @@ class board_cut_fixer:
                                         cv2.IMREAD_GRAYSCALE)
         self.board_id = identify_board.identify_board()
 
-    def set_prev_im(self,im):
+    def set_prev_im(self, im):
         self.last_image_bw = self.gausThresholdChess(im)
         wid = len(im[0])
         hi = len(im)
-        self.last_image_bw = self.last_image_bw[hi//9:hi,0:wid]
-        self.last_image_bw = cv2.resize(self.last_image_bw, (RESIZE_WIDTH,RESIZE_HEIGHT))
-
+        self.last_image_bw = self.last_image_bw[hi//9:hi, 0:wid]
+        self.last_image_bw = cv2.resize(self.last_image_bw, (RESIZE_WIDTH,
+                                                             RESIZE_HEIGHT))
 
     def get_theta(self, line):
-        try:
-            if line[2] == line[0]:
-                theta = math.pi / 2
-            else:
-                theta = (float)(math.atan2(float(line[3] - line[1]), float(line[2] - line[0])))
-        except:
-            print('1'
-                  '')
-        return (theta % math.pi);
+        if line[2] == line[0]:
+            theta = math.pi / 2
+        else:
+            theta = (float)(math.atan2(float(line[3] - line[1]), float(line[2] - line[0])))
+        return theta % math.pi
 
-        """"""
+
 
     def draw_points(self, img, points):
         if (DEBUG):
@@ -143,55 +133,6 @@ class board_cut_fixer:
         if mod > y / 2:
             mod = y - mod
         return mod
-
-    def get_board_limits(self, im, points):
-        board_size = len(im)
-        best_pair = self.get_grid_origin_pair(points, board_size)
-        p1 = best_pair[0]
-        p2 = best_pair[1]
-        self.draw_points(im, best_pair)
-        axes = self.get_axes_from_pair(best_pair)
-        x_axis = axes[0]
-        y_axis = axes[1]
-        row_scores = {}
-        col_scores = {}
-        for i in range(-MAX_NUM_LINES, MAX_NUM_LINES + 1):
-            row_scores[i] = 0
-            col_scores[i] = 0
-        for p in points:
-            grid_loc = self.get_point_grid_location(p1, x_axis, y_axis, p)
-            score = self.get_point_grid_metric(grid_loc)
-            row = round(grid_loc[0])
-            col = round(grid_loc[1])
-            row_scores[row] = row_scores[row] + score
-            col_scores[col] = col_scores[col] + score
-
-        max_row_score = 0
-        max_col_score = 0
-        left_row_idx = -12
-        top_row_idx = -12
-        for i in range(-MAX_NUM_LINES, 1):
-            row_score = (row_scores[i]) ** 0.5 + (row_scores[i + 8]) ** 0.5
-            col_score = (col_scores[i]) ** 0.5 + (col_scores[i + 8]) ** 0.5
-            if (row_score > max_row_score):
-                max_row_score = row_score
-                left_row_idx = i
-            if (col_score > max_col_score):
-                max_col_score = col_score
-                top_col_idx = i
-
-        ul_pt = (p1[0] + left_row_idx * x_axis[0] + top_col_idx * y_axis[0],
-                 p1[1] + left_row_idx * x_axis[1] + top_col_idx * y_axis[1])
-
-        br_pt = (p1[0] + (left_row_idx + 8) * x_axis[0] + (top_col_idx + 8) * y_axis[0],
-                 p1[1] + (left_row_idx + 8) * x_axis[1] + (top_col_idx + 8) * y_axis[1])
-
-        ur_pt = (p1[0] + (left_row_idx + 8) * x_axis[0] + top_col_idx * y_axis[0],
-                 p1[1] + (left_row_idx + 8) * x_axis[1] + top_col_idx * y_axis[1])
-
-        bl_pt = (p1[0] + left_row_idx * x_axis[0] + (top_col_idx + 8) * y_axis[0],
-                 p1[1] + left_row_idx * x_axis[1] + (top_col_idx + 8) * y_axis[1])
-        return (ul_pt, ur_pt, br_pt, bl_pt)
 
     def Make_3d_List_2_2d_List(self, list):
         list2d = []
@@ -252,9 +193,7 @@ class board_cut_fixer:
 
         x = int((n1 - n2) / (m2 - m1))
         y = int(m1 * x + n1)
-        point = []
-        point.append(x)
-        point.append(y)
+        point = [x, y]
         return point
 
 
@@ -272,7 +211,7 @@ class board_cut_fixer:
 
         width = RESIZE_WIDTH
         height = RESIZE_HEIGHT
-        if (take_spare):
+        if take_spare:
             diff = PROJECTION_SPARE_DIFF
             gridsize = PROJECTION_SPARE_GRID_SIZE
         else:
@@ -325,14 +264,11 @@ class board_cut_fixer:
         hor_range = HOR_ANGLE_RANGE * constraint_factor
         for l in lines:
             theta = self.get_theta(l)
-            if theta < (math.pi / 2) + ver_range and \
-                            theta > (math.pi / 2) - ver_range:
+            if -ver_range < theta-math.pi/2 < ver_range:
                 ver.append(l)
             if theta < hor_range or theta > math.pi - hor_range:
                 hor.append(l)
-                #        hor.sort(key=lambda x: x[1], reverse=True)
-        # hor = self.connectLines(hor,len(img))
-        # ver = self.connectLines(ver,len(img))
+
         return hor, ver
 
     """
@@ -343,13 +279,12 @@ class board_cut_fixer:
     """
 
     def get_im_from_bigim(self, bigim):
-       # if(spare):
+
         x_low = len(bigim[0])*PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG
         x_hi = len(bigim[0])*(1-PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG)
 
         y_low = len(bigim) * PROJECTION_SPARE_DIFF_BIG / PROJECTION_SPARE_GRID_SIZE_BIG
-        y_hi = len(bigim) * (
-    1 - PROJECTION_SPARE_DIFF_BIG / PROJECTION_SPARE_GRID_SIZE_BIG)
+        y_hi = len(bigim) * (1 - PROJECTION_SPARE_DIFF_BIG / PROJECTION_SPARE_GRID_SIZE_BIG)
 
         pts = [[x_low,y_low],[x_hi,y_low],[x_hi,y_hi], [x_low,y_hi]]
         frame = [8,8,0,0]
@@ -372,14 +307,14 @@ class board_cut_fixer:
             for j in range(i + 1, len(vals)):
                 if not i == j:  # delta val cannot be 0.
                     d = abs(vals[j] - vals[i])
-                    if (lower_d <= d <= upper_d):
+                    if lower_d <= d <= upper_d:
                         scores = []
                         tmp_lines = []
                         series_angles = []
                         for n in range(start, end + 1):
 
                             val_n = vals[i] + n * d
-                            if (val_n < -d or val_n > RESIZE_WIDTH + d):  # exit if
+                            if val_n < -d or val_n > RESIZE_WIDTH + d:  # exit if
                                 # beyond bounds
                                 scores.append(0)
                                 tmp_lines.append(lines[i])
@@ -390,7 +325,7 @@ class board_cut_fixer:
                                                                       val_n) - 1
                                 if (val_closest_idx + 1) < len(vals) and vals[val_closest_idx + 1] - val_n < \
                                                 val_n - vals[val_closest_idx]:
-                                    val_closest_idx = val_closest_idx + 1
+                                    val_closest_idx += 1
                                 val_closest = vals[val_closest_idx]
                                 line_closest = lines[val_closest_idx]
                                 diff = abs(val_n - val_closest)
@@ -437,28 +372,6 @@ class board_cut_fixer:
     def line_eq(self, l1, l2):
         return l1[0] == l2[0] and l1[1] == l2[1] and l1[2] == l2[2] and l1[3] == l2[3]
 
-    def make_hor_line(self, point, angle):
-        x1 = point[0]
-        y1 = point[1]
-        x2 = RESIZE_WIDTH - 1
-        y2 = math.atan(angle) * (x2 - x1) + y1
-        x1 = int(x1)
-        x2 = int(x2)
-        y1 = int(y1)
-        y2 = int(y2)
-        return [x1, y1, x2, y2]
-
-    def make_ver_line(self, point, angle):
-        x1 = point[0]
-        y1 = point[1]
-        y2 = RESIZE_HEIGHT - 1
-        x2 = math.atan(-angle + math.pi / 2) * (y2 - y1) + x1
-        x1 = int(x1)
-        x2 = int(x2)
-        y1 = int(y1)
-        y2 = int(y2)
-        return [x1, y1, x2, y2]
-
     def get_board_limits(self, up_line, right_line, bot_line, left_line):
         points = []
         points.append(self.get_cutoff_point(up_line, left_line))
@@ -470,54 +383,6 @@ class board_cut_fixer:
     """
     check if line's area contains black&white.
     """
-
-    def get_area_type(self, line, img, above):
-        dx = 5
-        dy = 5
-        if (above):
-            x_min = max(min(line[0], line[2]) - dx, 0)
-            x_max = min(max(line[0], line[2]) + dx, len(img[0]))
-            y_min = max(min(line[1], line[3]), 0)
-            y_max = min(max(line[1], line[3]) + dy, len(img))
-        else:
-            x_min = max(min(line[0], line[2]) - dx, 0)
-            x_max = min(max(line[0], line[2]) + dx, len(img[0]))
-            y_min = max(min(line[1], line[3]) - dy, 0)
-            y_max = min(max(line[1], line[3]), len(img))
-        avg_lightness = 0
-        for i in range(x_min, x_max, LINE_UNIFORM_SCANNER_PIXEL_JUMP):
-            for j in range(y_min, y_max):
-                avg_lightness += max(img[j][i]) / 2 + min(img[j][i]) / 2
-
-        avg_lightness = avg_lightness * 1.0 / (len(range(x_min, x_max,
-                                                         LINE_UNIFORM_SCANNER_PIXEL_JUMP)) * (y_max - y_min))
-        var_lightness = 0
-        for i in range(x_min, x_max, LINE_UNIFORM_SCANNER_PIXEL_JUMP):
-            for j in range(y_min, y_max):
-                var_lightness += abs(max(img[j][i]) / 2 + min(img[j][i]) / 2 - avg_lightness)
-        var_lightness = var_lightness * 1.0 / (len(range(x_min, x_max, LINE_UNIFORM_SCANNER_PIXEL_JUMP)) * (
-            y_max - y_min))
-        if var_lightness > MIN_MIXED_AREA_VAR_LIGHTNESS:
-            return MIXED_AREA
-        return UNIFORM_AREA
-
-    """
-    color img plz
-    """
-
-    def get_lines_types(self, lines, img):
-        types = [(self.get_area_type(line, img, True), self.get_area_type(line, img, False)) for line in lines]
-        bad = []
-        out = []
-        ins = []
-        for i in range(len(types)):
-            if types[i][0] == MIXED_AREA and types[i][1] == MIXED_AREA:
-                ins.append(lines[i])
-            elif types[i][0] == MIXED_AREA and types[i][1] == UNIFORM_AREA:
-                out.append(lines[i])
-            elif types[i][0] == UNIFORM_AREA and types[i][1] == UNIFORM_AREA:
-                bad.append(lines[i])
-        return bad, out, ins
 
     def find_m_n(self, line):
         x1 = line[0]
@@ -799,11 +664,11 @@ class board_cut_fixer:
                        BOTTOM_LINE_INDEX_VARIATION + 1):
             for i in range(-BOTTOM_LINE_INDEX_VARIATION,
                            BOTTOM_LINE_INDEX_VARIATION + 1):
-                diff = self.get_diff_area(bwims[(
+                diff = cv2.countNonZero(cv2.absdiff(bwims[(
                                                     i + BOTTOM_LINE_INDEX_VARIATION) * (
                                                     2 * BOTTOM_LINE_INDEX_VARIATION + 1) + (
                                                     j + BOTTOM_LINE_INDEX_VARIATION)],
-                                          self.last_image_bw)
+                                          self.last_image_bw))
                 if diff < mindiff:
                     mindiff = diff
                     miniidx = i
@@ -840,31 +705,23 @@ class board_cut_fixer:
     def get_final_image(self, bigim):
         x_low = len(bigim[0])*PROJECTION_SPARE_DIFF_BIG/PROJECTION_SPARE_GRID_SIZE_BIG
         x_hi = len(bigim[
-                        0]) * (1-PROJECTION_SPARE_DIFF_BIG / \
+                        0]) * (1-PROJECTION_SPARE_DIFF_BIG /
                                PROJECTION_SPARE_GRID_SIZE_BIG)
 
-        y_low = len(bigim) * (PROJECTION_SPARE_DIFF_BIG-1) / PROJECTION_SPARE_GRID_SIZE_BIG
-        y_hi = len(bigim) * (1 - PROJECTION_SPARE_DIFF_BIG / \
-                              PROJECTION_SPARE_GRID_SIZE_BIG)
+        y_low = len(bigim) * (PROJECTION_SPARE_DIFF_BIG-1) /  \
+                PROJECTION_SPARE_GRID_SIZE_BIG
+        y_hi = len(bigim) * (1 - PROJECTION_SPARE_DIFF_BIG /
+                             PROJECTION_SPARE_GRID_SIZE_BIG)
 
         final_img = bigim[int(y_low):int(y_hi),int(x_low):int(x_hi)]
-        final_img = cv2.resize(final_img, (OUT_IMG_WIDTH,OUT_IMG_HEIGHT))
+        final_img = cv2.resize(final_img, (OUT_IMG_WIDTH, OUT_IMG_HEIGHT))
         return final_img
 
     def main(self, real_img):
 
-        def get_theta(line):
-            if line[2] == line[0]:
-                return math.pi / 2
-            else:
-                return (float)(math.atan2(float(line[3] - line[1]),
-                                          float(line[2] - line[0]))) % math.pi
-
-            """"""
-
         """
-         do not use with vertical lines.
-         """
+        do not use with vertical lines.
+        """
 
         def get_y_point_on_line(line):
             x1 = line[0]
@@ -1012,26 +869,19 @@ class board_cut_fixer:
 
 
 def test(foldername):
-    make_dir(foldername + "\\fixed")
     # get lines from image, and edge-image
     id = identify_board.identify_board()
     fixer = board_cut_fixer()
-    for j in range(0, 9):
+    for j in range(0, 200):
         try:
-            realim = id.get_image_from_filename(foldername + "\\1_" + str(j)
+            realim = id.get_image_from_filename(foldername + "\\0_" + str(j)
                                                 + ".jpg")
             fixed_im = fixer.main(realim)
             fixer.set_prev_im(fixed_im)
-            cv2.imwrite(foldername + '\\fixed\\1_' + str(j) + '.jpg', fixed_im)
+            cv2.imwrite(foldername + '\\fixed\\0_' + str(j) + '.jpg', fixed_im)
             print(str(j)+'sucsseed!!!')
         except:
             print(str(j) + " failed")
 
-def make_dir(dir_name):
-    try:
-        os.makedirs(dir_name)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
 
-#test("taken photos2\\temp")
+#test("taken photos test/taken photos5")
