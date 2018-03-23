@@ -156,12 +156,11 @@ class filter_colors_2:
             else:
                 print("dist between rival to black is: " + str(self.color_dist(player_color, black)))
                 print("dist between rival to white is: " + str(self.color_dist(player_color, white)))
-        if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST:
-            if player != self.user_starts:
-                player_color = black
-        elif self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
+        if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST or self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
             if player == self.user_starts:
                 player_color = white
+            else:
+                player_color = black
         return player_color
 
     def set_colors_nums(self, main_colors):
