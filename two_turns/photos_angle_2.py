@@ -53,7 +53,7 @@ class photos_angle_2:
 
             return better_cut_board_im
         except:
-            if DEBUG:
+            if self.hardware.is_live:
                 cv2.imshow("image", new_board_im)
                 cv2.waitKey(0)
             print("get new im failed")
