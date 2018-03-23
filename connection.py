@@ -3,17 +3,21 @@ import cv2
 import numpy
 
 from threading import Thread
+from subprocess import call
 
 SIZE_LEN = 10
 
 ### Error fixing consts ###
-REQUEST_SHOT_MSG = "please take photo" #append 0 or 1 to indicate direction
-MOVE_MSG = "please do move" #append move to request it
+REQUEST_SHOT_MSG = "please take photo"
+MOVE_MSG = "move"
 RIGHT = "0"
 LEFT = "1"
+CLOSE = "close"
 
-LAPTOP_IP = '192.168.43.195'
-SEND_TIMEOUT = 2.0 #seconds
+LAPTOP_IP = '192.168.43.185'
+GATEWAY = '192.168.43.1'
+SUBNET_MASK = '255.255.255.0'
+SEND_TIMEOUT = 20.0 #seconds
 LISTEN_TIMEOUT = 1000.0
 IM_SIZE = 8192000
 SENDER = True
@@ -36,6 +40,11 @@ class connection:
                     print("Connected to GUI!")
                     self.socket = s
                 else:
+                    ## fix ip ##
+                    # call("netsh interface ip set address name=\"Wireless "
+                    #      "Network"
+                    #      "Connection 2\" static " +LAPTOP_IP + " " +
+                    #      SUBNET_MASK + " " + GATEWAY)
                     self.timeout = LISTEN_TIMEOUT
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.bind(("", port))
@@ -61,7 +70,7 @@ class connection:
             except:
                 print("failed to send image <:-(")
 
-        if not self.thread is None:
+        if not self.thread==None:
             self.thread.join()
 
         self.thread = Thread(target = really_send, args = (img,))
@@ -75,7 +84,7 @@ class connection:
             except:
                 print("failed to send msg <:-(")
 
-        if not self.thread is None:
+        if not self.thread == None:
             self.thread.join()
 
         self.thread = Thread(target=really_send, args=(msg,))
@@ -94,7 +103,7 @@ class connection:
     def get_msg(self):
         self.socket.settimeout(LISTEN_TIMEOUT)
         while True:
-            msg = str(self.recv_data())[2:-1]
+            msg = str(self.recv_data())
             if not (msg is None):
                return msg
 
@@ -123,3 +132,4 @@ class connection:
             tmp_data = tmp_data + self.socket.recv(IM_SIZE)
             
         return tmp_data[SIZE_LEN:]        
+

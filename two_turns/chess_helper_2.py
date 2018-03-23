@@ -6,7 +6,7 @@ This file is responsible for all chess logic that isn't Stockfish.
 class chess_helper_2:
 
     RIVAL = False
-    ME = True
+    USER = True
 
     def __init__(self, start_player = True):
         """
@@ -15,18 +15,20 @@ class chess_helper_2:
         """
         self.board = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         self.user_starts = start_player
+        self.curr_player = start_player
 
-    """
-    updates the board.
-    :return whether turn is legal
-    """
     def do_turn(self, src, dest):
         stringmove = src+dest
         move2do = chess.Move.from_uci(stringmove)
         if (move2do not in self.board.legal_moves):
-            return False
+            raise Exception("illegal move: " + stringmove)
         self.board.push(move2do)
+        if(self.curr_player == chess_helper_2.USER):
+            self.curr_player = chess_helper_2.RIVAL
+        else:
+            self.curr_player = chess_helper_2.USER
         return True
+
 
     """
         :src source square
@@ -65,6 +67,8 @@ class chess_helper_2:
         letter = square_location[0]
         number = int(square_location[1]) - 1
         numLine = ord(letter) - 97
+        if number == 8 or number == -1:
+            return None
         square = number * 8 + numLine
         piece = self.board.piece_at(square)
         if piece == None:
@@ -106,20 +110,19 @@ class chess_helper_2:
         sources = self.get_sources()
         dests = self.get_destinations()
         return [sources, dests]
-#f
+
     def get_square_below(self, square):
         """
         :param square:
         :return the square below the square given to us, -1 if illegal:
         """
         flag = self.user_starts
-        col=square[0]
+        col = square[0]
         if flag:
-            row = int(square[1])-1
+            row = int(square[1]) - 1
         else:
             row = int(square[1]) + 1
-        if row == 0 or row == 9: return -1
-        return square[0]+str(row)
+        return square[0] + str(row)
 
     def get_square_above(self, square):
         """
@@ -127,11 +130,9 @@ class chess_helper_2:
         :return the square above the square given to us, -1 if illegal:
         """
         flag = self.user_starts
-        col=square[0]
+        col = square[0]
         if flag:
             row = int(square[1]) + 1
         else:
             row = int(square[1]) - 1
-        if row == 9 or row == 0: return -1
-        return square[0]+str(row)
-
+        return square[0] + str(row)

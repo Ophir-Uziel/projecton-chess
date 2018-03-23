@@ -6,6 +6,8 @@ import cv2
 import os
 from scipy import misc
 import numpy as np
+import errno
+import tester_helper
 
 
 """
@@ -35,14 +37,21 @@ WINDOW_RT = 10
 WHITE_DEF_RT = 2
 MIN_WHITE_RT = 5
 
+PRINTS = False
 
 class find_moves_rank:
 
 
-    def __init__(self, chess_helper):
+    def __init__(self, chess_helper, net_dir_name = None):
+        self.neuron_counter = 0
         self.chess_helper = chess_helper
         self.mistake_idxes = []
-
+        if net_dir_name:
+            self.net_dir_name = net_dir_name
+            tester_helper.make_dir(net_dir_name + "\\" + 'self_y_dir')
+            tester_helper.make_dir(net_dir_name + "\\" + 'self_n_dir')
+            tester_helper.make_dir(net_dir_name + "\\" + 'abv_y_dir')
+            tester_helper.make_dir(net_dir_name + "\\" + 'abv_n_dir')
     """
     :arg square_im a binary image of changes in the square
     :return whether there's been a move on the square, below it, or none,
@@ -50,52 +59,81 @@ class find_moves_rank:
     """
 
     def get_move(self,sources_place, sources_self, sources_above,
-                               targets_place, targets_self, targets_above, real_move = None, angle_dir = None):
+                               targets_place, targets_self, targets_above, tester_info = None):
 
-        if real_move is not None:
-            self.mistake_idxes = []
-            real_change_s = real_move[0]
-            real_change_t = real_move[1]
-            real_idx_source = sources_place.index(real_change_s)
-            real_idx_target = targets_place.index(real_change_t)
-        else:
-            real_change_s = None
-            real_change_t = None
-            real_idx_source = None
-            real_idx_target = None
+        try:
+            to_save = bool(tester_info)
 
-        sources_rank = self.check_squares(sources_self,
-                                     sources_above,real_change_s, real_idx_source)
-        if angle_dir is not None:
-            for idx in self.mistake_idxes:
-                cv2.imwrite(angle_dir + sources_place[idx] + '.jpg',
-                            np.array(sources_self[idx]))
-                cv2.imwrite(angle_dir + sources_place[idx] + '_abv.jpg',
-                            np.array(sources_above[idx]))
+            if to_save:
+                real_move = tester_info[0]
+                move_num = tester_info[1]
+                angle_idx = tester_info[2]
+
+                self.mistake_idxes = []
+                real_change_s = real_move[0]
+                real_change_t = real_move[1]
+                real_idx_source = sources_place.index(real_change_s)
+                real_idx_target = targets_place.index(real_change_t)
+
+            else:
+                real_change_s = None
+                real_change_t = None
+                real_idx_source = None
+                real_idx_target = None
+
+            sources_rank = self.check_squares(sources_self,
+                                         sources_above,real_change_s, real_idx_source)
+            if to_save:
+                for idx in self.mistake_idxes:
+                    tester_helper.save_bw(img=np.array(sources_self[idx]), place=sources_place[idx], move_num=move_num,
+                                          angle_idx=angle_idx, desc='dif')
+                    tester_helper.save_bw(img=np.array(sources_above[idx]), place=sources_place[idx], move_num=move_num,
+                                          angle_idx=angle_idx, desc='dif_abv')
 
 
-        targets_rank = self.check_squares(targets_self,
-                                     targets_above,real_change_t, real_idx_target)
+                #save neuron's images:
+                cv2.imwrite(self.net_dir_name + "\\" + 'self_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_self[real_idx_source]))
+                cv2.imwrite(self.net_dir_name + "\\" + 'abv_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_above[real_idx_source]))
+                if len(sources_self) > 1:
+                    n_source_idx = real_idx_source
+                    while n_source_idx == real_idx_source:
+                        n_source_idx = np.random.randint(0, len(sources_self))
+                    cv2.imwrite(self.net_dir_name + "\\" + 'self_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_self[n_source_idx]))
+                    cv2.imwrite(self.net_dir_name + "\\" + 'abv_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_above[n_source_idx]))
 
-        if angle_dir is not None:
-            for idx in self.mistake_idxes:
-                cv2.imwrite(angle_dir + targets_place[idx] + '.jpg',
-                            np.array(targets_self[idx]))
-                cv2.imwrite(angle_dir + targets_place[idx] + '_abv.jpg',
-                            np.array(targets_above[idx]))
+                cv2.imwrite(self.net_dir_name + "\\" + 'self_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[real_idx_target]))
+                cv2.imwrite(self.net_dir_name + "\\" +'abv_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[real_idx_target]))
+                n_target_idx = real_idx_target
+                while n_target_idx == real_idx_target:
+                    n_target_idx = np.random.randint(0, len(targets_self))
+                cv2.imwrite(self.net_dir_name + "\\" + 'self_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[n_target_idx]))
+                cv2.imwrite(self.net_dir_name + "\\" + 'abv_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[n_target_idx]))
+                self.neuron_counter += 2
 
-            print("sources : ")
-            print(sources_place)
-            print("ranking : ")
-            print(sources_rank)
-            print("dests : ")
-            print(targets_place)
-            print("ranking : ")
-            print(targets_rank)
+            targets_rank = self.check_squares(targets_self,
+                                         targets_above,real_change_t, real_idx_target)
 
-        return self.get_pairs_and_ranks(sources_place, targets_place, sources_rank,
-                                        targets_rank)
+            if to_save:
+                for idx in self.mistake_idxes:
+                    tester_helper.save_bw(img=np.array(targets_self[idx]), place=targets_place[idx], move_num=move_num,
+                                          angle_idx=angle_idx)
+                    tester_helper.save_bw(img=np.array(targets_above[idx]), place=targets_place[idx], move_num=move_num,
+                                          angle_idx=angle_idx, desc='abv')
+                if(PRINTS):
+                    print("sources : ")
+                    print(sources_place)
+                    print("ranking : ")
+                    print(sources_rank)
+                    print("dests : ")
+                    print(targets_place)
+                    print("ranking : ")
+                    print(targets_rank)
 
+            return self.get_pairs_and_ranks(sources_place, targets_place, sources_rank,
+                                            targets_rank)
+        except:
+            print("get_move_failed")
+            raise
     '''
     receives a list of square images, and list of square images above them and
     returns a list of rank with the corresponding indexes
@@ -316,7 +354,6 @@ class find_moves_rank:
         yahasmetrics = (-(yahas - minyahas) * (yahas - maxyahas) + 0.9)/normalizing_factor_yahas
 
         return self.checkDensity(imgOneZero) * yahasmetrics
-
 
 
 

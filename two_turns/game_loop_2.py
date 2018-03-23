@@ -1,12 +1,15 @@
 import os
 import errno
-#import hardware as hw
+import hardware as hw
 import chess_helper_2 as ch
 import find_moves_rank as fm
-import photos_angle
+import photos_angle_2
 import chess_engine_wrapper
 import gui_img_manager
-
+import cv2
+import numpy as np
+import tester_helper
+import filter_colors_2
 """
 Main logic file.
 """
@@ -14,180 +17,204 @@ SOURCE = True
 LEFT = 0
 RIGHT = 1
 ROWS_NUM = 8
+RESULTS_DIR = 'super_tester_results'
 
+PRINTS = False
 
 class game_loop_2:
-    def __init__(self, angles_num, real_moves_if_test=None, imgs_if_test=None, if_save_and_print=True):
+    def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
         self.if_save_and_print = if_save_and_print
-        self.moves_counter = -1
-        self.black_im = self.create_black_im()
-        if real_moves_if_test is not None:
-            self.is_test = True
-            self.real_moves = real_moves_if_test
+        if if_save_and_print:
+            tester_helper.make_squares_dirs()
 
+        self.moves_counter = 0
+        self.last_move = None
+
+        if user_moves_if_test is not None:
+            self.is_test = True
+            self.net_dir_name = net_dir_name
+            self.user_moves = user_moves_if_test
+            self.rival_moves = rival_moves_if_test
         else:
             self.is_test = False
 
-        #self.hardware = hw.hardware(angles_num, imgs_if_test)
-
-        self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.ME)
-
+        self.hardware = hw.hardware(angles_num, imgs_if_test)
+        self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.USER)
+        self.delay_chesshelper = ch.chess_helper_2(ch.chess_helper_2.USER)
         self.ph_angles = []
-        gui_img_manager.set_finished(False)
+        if not self.is_test:
+            gui_img_manager.set_finished(False)
 
         for i in range(angles_num):
-            gui_img_manager.set_camera(i)
-            self.ph_angles.append(photos_angle.photos_angle(self.hardware, self.chesshelper, i))
-            self.ph_angles[i].prep_img()
+            if not self.is_test:
+                gui_img_manager.set_camera(i)
+            self.ph_angles.append(photos_angle_2.photos_angle_2(self.hardware, self.chesshelper, self.delay_chesshelper, i))
 
         for ang in self.ph_angles:
             ang.init_colors()
 
-        gui_img_manager.set_finished(True)
+        if not self.is_test:
+            gui_img_manager.set_finished(True)
 
-        self.movefinder = fm.find_moves_rank(self.chesshelper)
-
+        self.movefinder = fm.find_moves_rank(self.chesshelper, self.net_dir_name)
         self.chess_engine = chess_engine_wrapper.chess_engine_wrapper()
-        self.last_move = None
-        # TODO delete upper row
 
-    def get_new_move(self):
-        self.moves_counter += 1
-        print("move num" + str(self.moves_counter))
-        # for angle in self.ph_angles:
-        #    angle.update_board(self.last_move)
-        real_move = None
+
+    def main(self):
+        while True:
+            if self.is_test and self.moves_counter >= len(self.user_moves) \
+                    or self.moves_counter>= len(self.rival_moves):
+                if (PRINTS):
+                    print('Done')
+                self.hardware.close()
+                break
+            gui_img_manager.set_finished(False)
+            print(self.user_moves[self.moves_counter])
+            print(self.rival_moves[self.moves_counter])
+            self.play_user_turn()
+            if self.if_save_and_print:
+                if (PRINTS):
+                    print(self.chesshelper.board)
+            self.play_rival_move()
+            if self.if_save_and_print:
+                if (PRINTS):
+                    print(self.chesshelper.board)
+            gui_img_manager.set_finished(True)
+
+    def play_user_turn(self):
+        self.best_move = self.chess_engine.get_best_move(self.last_move)
+        if self.if_save_and_print:
+            print("I recommend: " + self.best_move)
+        #self.hardware.player_indication(self.best_move)
+        if self.is_test:
+            self.best_move = self.user_moves[self.moves_counter]
+            print("sorry, I changed my mind. play" + str(self.best_move))
+
+        self.chesshelper.do_turn(self.best_move[0], self.best_move[1])
+
+    def play_rival_move(self):
+        if self.if_save_and_print:
+            print("\n" + "move num" + str(self.moves_counter))
+
+        # real move: only if test
+        rival_move = None
         if (self.is_test):
-            real_move = self.real_moves[self.moves_counter]
+            rival_move = self.rival_moves[self.moves_counter]
+
+        # get relevant squares
         relevant_squares = self.chesshelper.get_relevant_locations()
         sources = relevant_squares[0]
         dests = relevant_squares[1]
         pairs = []
         pairs_ranks = []
-        for i in range(len(self.ph_angles)):
-            gui_img_manager.set_camera(i)
-            self.ph_angles[i].prep_img()
-        for i in range(len(self.ph_angles)):
-            while True:
-                try:
+
+        #get two images per iteration, untill has one abs good move
+        cnt = 0
+        to_continue = True
+        while to_continue and (len(pairs) == 0 or len(pairs_ranks) == 0):
+            try:
+                if self.is_test:
+                   junkvariable = 0
+                   # to_continue = False
+                for i in range(len(self.ph_angles)):
+                    if cnt > 0:
+                        print("id error plz take another photo k thnx")
                     gui_img_manager.set_camera(i)
-                    pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                    break
-                except:
-                    print("id error plz take another photo k thnx")
+                    while True:
+                        pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                        if not (len(pairs_and_ranks[0]) == 0 and len(
+                                        pairs_and_ranks[1]) == 0):
+                            break
                     gui_img_manager.reset_images(i)
-                    self.ph_angles[i].prep_img()
+                    pairs = pairs + pairs_and_ranks[0]
+                    pairs_ranks = pairs_ranks + pairs_and_ranks[1]
+                cnt += 1
+                best_pair_idx = [i for i in range(len(pairs_ranks)) if pairs_ranks[i] == max(pairs_ranks)][0]
+                move = pairs[best_pair_idx]
+            except:
+                move = ' both direction failed'
+                print(move)
 
-            pairs = pairs + pairs_and_ranks[0]
-            pairs_ranks = pairs_ranks + pairs_and_ranks[1]
-        best_pair_idx = [i for i in range(len(pairs_ranks)) if pairs_ranks[i] == max(pairs_ranks)][0]
-        move = pairs[best_pair_idx]
+        if self.if_save_and_print:
+            if(PRINTS):
+                print("detected_move")
+                print(move)
+                print('rival_move')
+                print(rival_move)
 
-        # if self.if_save_and_print:
-        if True:
-            # TODO change the fucking if
-            print("detected_move")
-            print(move)
-            print('real_move')
-            print(real_move)
         if self.is_test:
-            move = real_move
+            move = rival_move
         self.last_move = move
         self.chesshelper.do_turn(move[0], move[1])
-        # TODO get it out of here
+
+        # delayed helper do his turn now for filter_colors needs
+        self.delay_chesshelper.do_turn(self.best_move[0],self.best_move[1])
+        self.delay_chesshelper.do_turn(move[0], move[1])
+        self.moves_counter += 1
         return move
 
     def check_one_direction(self, sources, dests, angle_idx):
-        make_dir('super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
-        angle_dir = 'super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx) + '/'
-        real_move = None
-        angle = self.ph_angles[angle_idx]
-        cut_board_im = angle.get_new_img(angle_dir)
-        if self.if_save_and_print:
-            print("angle_num_" + str(angle_idx))
+        try:
+            self.ph_angles[angle_idx].prep_img()
+            if self.if_save_and_print:
+                if (PRINTS):
+                    print("angle_num_" + str(angle_idx))
+                tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_move/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
 
-            print("sources are:")
-            print(sources)
+            rival_move = None
+            if (self.is_test):
+                rival_move = self.rival_moves[self.moves_counter]
 
-            print("destinations are:")
-            print(dests)
+            angle = self.ph_angles[angle_idx]
+            cut_board_im = angle.get_new_img(tester_info=(self.moves_counter, angle_idx))
+            sourcesims, sourcesabvims = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
+                                                                             SOURCE)
+            destsims, destsabvims = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
+                                                                         not SOURCE)
+            pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
+                                                         tester_info = (rival_move, self.moves_counter,angle_idx))
+            board_before = angle.get_board_test(True)
+            angle.update_board()
+            if self.if_save_and_print:
+                above_src = [self.chesshelper.get_square_above(src) for src in sources]
+                above_trgt = [self.chesshelper.get_square_above(trgt) for trgt in dests]
+                source_big_im = tester_helper.make_board_im_helper(sources+above_src,sourcesims+sourcesabvims)
+                tester_helper.save_bw(np.array(source_big_im), "board", self.moves_counter, angle_idx, "src_big_im")
+                target_big_im = tester_helper.make_board_im_helper(dests+above_trgt,destsims+destsabvims)
+                tester_helper.save_bw(np.array(target_big_im), "board", self.moves_counter, angle_idx, "trgt_big_im")
+                before_big_im = tester_helper.make_board_im_helper(list(board_before.keys()),list(board_before.values()),True)
+                tester_helper.save_colors(before_big_im,"board",self.moves_counter,angle_idx,"berko")
 
-        else:
-            real_move = None
-            angle_dir = None
+            ### save prev picture ###
+            angle.set_prev_im(cut_board_im)
 
-        if (self.is_test):
-            real_move = self.real_moves[self.moves_counter]
-
-        sourcesims, sourcesabvims = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
-                                                                         SOURCE)
-        destsims, destsabvims = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
-                                                                     not SOURCE)
-
-        pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims,
-                                                     dests, destsims, destsabvims, real_move, angle_dir)
-
-        ### save prev picture ###
-        angle.set_prev_im(cut_board_im)
-
-        return pairs, pairs_rank
+            return (pairs, pairs_rank)
+        except:
+            print("angle " + str(angle_idx) + " failed")
+            return ([], [])
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
-        angle_dir = 'super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle.idx) + '/'
-        locssims = []
-        locsabvims = []
-        for loc in locs:
-            abv_loc = self.get_abv_loc(loc)
-            bel_loc = self.get_bel_loc(loc)
-            diff_im = angle.get_square_diff(cut_board_im, loc, is_source)
-            if abv_loc:
+        try:
+            locsims = []
+            locsabvims = []
+            for loc in locs:
+                abv_loc = self.chesshelper.get_square_above(loc)
+                diff_im = angle.get_square_diff(cut_board_im, loc, is_source)
                 diff_abv_im = angle.get_square_diff(cut_board_im, abv_loc, is_source)
+                locsims.append(diff_im)
+                locsabvims.append(diff_abv_im)
+            return locsims, locsabvims
+
+        except Exception as e:
+            if is_source:
+                b_val ="source"
             else:
-                diff_abv_im = self.black_im
-                # if self.if_save_and_print:
-                #   if loc == real_move[0] or loc == real_move[1] or bel_loc == real_move[0] or bel_loc == real_move[1]:
-                #      cv2.imwrite(angle_dir + loc + '.jpg', diff_im)
-            locssims.append(diff_im)
-            locsabvims.append(diff_abv_im)
-        return locssims, locsabvims
-
-    def get_abv_loc(self, loc):
-        column = loc[0]
-        row_num = int(loc[1])
-        if row_num < 8:
-            return column + str(row_num + 1)
-        else:
-            return False
-
-    def get_bel_loc(self, loc):
-        column = loc[0]
-        row_num = int(loc[1])
-        return column + str(row_num - 1)
-
-    def create_black_im(self):
-        black_im = []
-        for i in range(20):
-            black_im.append([])
-            for j in range(20):
-                black_im[i].append(0)
-        return black_im
-
-    def main(self):
-        last_move = None
-        while True:
-            gui_img_manager.set_finished(False)
-            self.best_move = self.chess_engine.get_best_move(last_move)
-            print("I recommend: " + self.best_move)
-            self.hardware.player_indication(self.best_move)
-            self.chesshelper.do_turn(self.best_move[0], self.best_move[1])
-            last_move = self.get_new_move()
-            self.chesshelper.do_turn(last_move[0], last_move[1])
-            gui_img_manager.set_finished(True)
-
-
-def make_dir(dir_name):
-    try:
-        os.makedirs(dir_name)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
+                b_val="target"
+            print("get_dif_im ("+b_val+")_failed" )
+            print(str(e))
             raise
+    
+
+
+
+

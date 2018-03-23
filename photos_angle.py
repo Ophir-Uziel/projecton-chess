@@ -1,8 +1,8 @@
+import cv2
+
 import filter_colors
 import identify_board
 import board_cut_fixer
-import cv2
-
 
 print_and_save = True
 class photos_angle:
@@ -14,6 +14,7 @@ class photos_angle:
         self.fixer = board_cut_fixer.board_cut_fixer()
         
     def init_colors(self):
+        self.prep_im()
         cut_board_im = self.get_new_img()
         self.color_filter = filter_colors.filter_colors(cut_board_im, self.chess_helper)
      
@@ -23,16 +24,17 @@ class photos_angle:
     def get_new_img(self, dir_if_test = None):
         new_board_im = self.prep_im
         cut_board_im, edges = self.boardid.main(new_board_im)
+
         if print_and_save:
-            if dir_if_test is not  None:
-                cv2.imwrite(dir_if_test + 'first_cut_img.jpg', cut_board_im)
+            if dir_if_test is not None:
+                cv2.imwrite(dir_if_test + 'first_cut_img(new)' + str(self.idx) + '.jpg', cut_board_im)
             else:
-                cv2.imwrite('first_cut_img.jpg', cut_board_im)
+                cv2.imwrite('first_cut_img(new)' + str(self.idx) + '.jpg', cut_board_im)
         better_cut_board_im = self.fixer.main(cut_board_im, edges)
         if dir_if_test is not None:
-            cv2.imwrite(dir_if_test + 'second_cut_img' + str(self.idx) + '.jpg', better_cut_board_im)
+            cv2.imwrite(dir_if_test + 'second_cut_img(new)' + str(self.idx) + '.jpg', better_cut_board_im)
         else:
-            cv2.imwrite('second_cut_img' + str(self.idx) + '.jpg', better_cut_board_im)
+            cv2.imwrite('second_cut_img(new)' + str(self.idx) + '.jpg', better_cut_board_im)
         return better_cut_board_im
 
     def get_square_diff(self, cut_board_im, src, is_source):

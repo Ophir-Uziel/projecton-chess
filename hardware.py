@@ -1,13 +1,15 @@
 import os
 import cv2
 import time
+from scipy import misc
 import gui_img_manager
 import connection
 """
 This file is for user communication and hardware.
 """
 
-RESIZE_SIZE = 1000
+save_and_print = True
+RESIZE_SIZE = 600
 
 class hardware:
 
@@ -19,36 +21,50 @@ class hardware:
             for i in range(angle_num):
                 img_names = os.listdir(imgs_if_tester[i])
                 sorted_img_names = sorted(img_names, key= first_2_chars)
+                # sorted_img_names = img_names
+
                 img_array = []
                 for j in range(len(sorted_img_names)):
-                    img_array.append(cv2.imread(imgs_if_tester[i] +
-                                              sorted_img_names[j]))
+                    img_array.append(cv2.imread(imgs_if_tester[i] +'/'+
+                                              sorted_img_names[j], cv2.IMREAD_COLOR))
+
                 print(sorted_img_names)
                 self.angles_imgs_lst.append(img_array)
-                self.angles_imgs_counter.append(-1)
+                self.angles_imgs_counter.append(0)
         else:
             self.is_test = False
             self.socket = connection.connection(connection.LISTENER)
 
-    def get_image(self, angle_idx):
+    def get_image(self, direction, last_error_dir):
         if self.is_test:
-            self.angles_imgs_counter[angle_idx] += 1
-            img = self.angles_imgs_lst[angle_idx][self.angles_imgs_counter[angle_idx]]
-            img = cv2.resize(img,(RESIZE_SIZE,RESIZE_SIZE))
+            img = self.angles_imgs_lst[int(direction)][
+                self.angles_imgs_counter[int(direction)]]
+            #img = cv2.resize(img,(RESIZE_SIZE,RESIZE_SIZE))
             gui_img_manager.add_img(img)
+            self.angles_imgs_counter[int(direction)] += 1
+
             return img
         else:
-            if(angle_idx==0):
-                angle = connection.RIGHT
-            else:
-                angle = connection.LEFT
-            self.socket.send_msg(connection.REQUEST_SHOT_MSG + angle)
+
+            self.socket.send_msg(connection.REQUEST_SHOT_MSG + str(direction) +
+                                 str(last_error_dir))
             img =self.socket.get_image()
             gui_img_manager.add_img(img)
             return img
 
+
+
+    def is_i_first(self):
+        return True
+    # TODO write this func
+
     def player_indication(self, move):
-        if self.is_test:
-            print("sending move to player: " + move)
-        else:
-            self.socket.send_msg(connection.MOVE_MSG + move)
+        self.socket.send_msg(connection.MOVE_MSG+move)
+
+    def close(self):
+        self.socket.send_msg(connection.CLOSE)
+
+def first_2_chars(x):
+    return int(x[2:-4])
+
+
