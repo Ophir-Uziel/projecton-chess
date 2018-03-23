@@ -26,12 +26,9 @@ MAX_DIFF_RATIO = 0.15
 class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
         self.if_save_and_print = if_save_and_print
-        if if_save_and_print:
-            tester_helper.make_squares_dirs()
 
         self.moves_counter = 0
         self.last_move = None
-
 
         if user_moves_if_test is not None:
             self.is_test = True

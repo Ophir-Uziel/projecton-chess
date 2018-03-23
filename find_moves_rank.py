@@ -38,12 +38,15 @@ WHITE_DEF_RT = 2
 MIN_WHITE_RT = 5
 
 PRINTS = False
+SAVE_ALLOT = False
 
 class find_moves_rank:
 
 
     def __init__(self, chess_helper, net_dir_name = None):
         self.neuron_counter = 0
+        if SAVE_ALLOT:
+            tester_helper.make_squares_dirs()
         self.chess_helper = chess_helper
         self.mistake_idxes = []
         if net_dir_name:
@@ -83,7 +86,7 @@ class find_moves_rank:
 
             sources_rank = self.check_squares(sources_self,
                                          sources_above,real_change_s, real_idx_source)
-            if to_save:
+            if to_save and SAVE_ALLOT:
                 for idx in self.mistake_idxes:
                     tester_helper.save_bw(img=np.array(sources_self[idx]), place=sources_place[idx], move_num=move_num,
                                           angle_idx=angle_idx, desc='dif')
@@ -113,7 +116,7 @@ class find_moves_rank:
             targets_rank = self.check_squares(targets_self,
                                          targets_above,real_change_t, real_idx_target)
 
-            if to_save:
+            if to_save and SAVE_ALLOT:
                 for idx in self.mistake_idxes:
                     tester_helper.save_bw(img=np.array(targets_self[idx]), place=targets_place[idx], move_num=move_num,
                                           angle_idx=angle_idx)
