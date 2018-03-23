@@ -14,6 +14,8 @@ This file is responsible for getting an image and returning only the board's
 image, projected to be rectangular.
 """
 
+ANGLE_FIX = 1
+
 ##### Image resize and cut dimensions #####
 RESIZE_WIDTH = 600
 RESIZE_HEIGHT = 600
@@ -27,13 +29,13 @@ HOR_MIN_INTERSECT = 6
 
 ##### Angle Ranges #####
 VER_MIN_ANGLE = 0.9
-VER_MAX_ANGLE = 2.3
+VER_MAX_ANGLE = 2.2
 VER_LEFT_MIN_ANGLE = 1.5
-VER_LEFT_MAX_ANGLE = 2.3
+VER_LEFT_MAX_ANGLE = 2.2
 VER_RIGHT_MIN_ANGLE = 0.9
 VER_RIGHT_MAX_ANGLE = 1.5
 HOR_MIN_ANGLE = 0.15
-HOR_MAX_ANGLE = 3.0
+HOR_MAX_ANGLE = 3
 HOR_DIFF_ANGLE = 0.09
 
 # VER_MIN_ANGLE = 0.9
@@ -92,7 +94,7 @@ BIG_RESIZE_WIDTH = int(PROJECTION_SPARE_GRID_SIZE_BIG*RESIZE_WIDTH\
 BIG_RESIZE_HEIGHT = int(PROJECTION_SPARE_GRID_SIZE_BIG*RESIZE_HEIGHT\
                    /PROJECTION_SPARE_GRID_SIZE)
 
-DEBUG = False
+DEBUG = True
 
 def make_dir(dir_name):
     try:
@@ -146,17 +148,23 @@ class identify_board:
 
         return lapalacian
 
+    def i_strongest_value(self,list,i):
+        sorted(list,reverse=True)
+        return list[i-1]
+
     def lines_filter(self, img):
         ver, hor = self.find_lines(img)
         rank_ver = [self.num_of_cutting(item, hor) for item in ver]
         rank_hor = [self.num_of_cutting(item, ver) for item in hor]
+        ver_min_inspect = self.i_strongest_value(rank_ver,8)
+        hor_min_inspect = self.i_strongest_value(rank_hor,4)
         for i in range(len(rank_ver)):
             i2 = len(rank_ver) - 1 - i
-            if (rank_ver[i2] < VER_MIN_INTERSECT):
+            if (rank_ver[i2] < ver_min_inspect):
                 ver = ver[:i2] + ver[i2 + 1:]
         for i in range(len(rank_hor)):
             i2 = len(rank_hor) - 1 - i
-            if (rank_hor[i2] < HOR_MIN_INTERSECT):
+            if (rank_hor[i2] < hor_min_inspect):
                 hor = hor[:i2] + hor[i2 + 1:]
         return ver, hor
 
@@ -182,7 +190,7 @@ class identify_board:
         for l in lines:
             point = self.get_cutoff_point(line, l)
             if self.is_in_line(point, l) and self.is_in_line(point, line):
-                count += 1
+                count += (self.line_length(l))**2
         return count
 
     def lines_filter2(self, verticel_lines_lst, horizontal_lines_lst):
@@ -542,6 +550,10 @@ class identify_board:
     returns perpendicular line that bisects given line.
     """
 
+    def line_length(self,line):
+        return (float((line[2]-line[0])**2 + (line[3]-line[1])**2))**0.5
+
+
     def get_perpendicular(self, line):
         midx = (line[0] + line[2]) * 1.0 / 2
         midy = (line[1] + line[3]) * 1.0 / 2
@@ -671,16 +683,54 @@ class identify_board:
             except:
                 print(img_name + " failed")
 
+    def find_hor_lines_avg_theta(self,lines):
+        thetas = []
+        for line in lines:
+            if self.get_theta(line) < 0.15:
+                thetas.append(self.get_theta(line))
+            elif self.get_theta(line) > 3:
+                thetas.append(self.get_theta(line) - math.pi)
+        return np.median(thetas)
+
+    def rotate_image_fix(self, image, angle_fix):
+        rows,cols = image.shape[0:2]
+        M = cv2.getRotationMatrix2D((cols/2,rows/2),angle_fix, 1)
+        return cv2.warpAffine(image, M, (cols,rows))
+
+
     def main(self, img):
 
         edgeim, real_img = self.process_im(img, should_cut=True)
         
 #        gui_img_manager.add_img(edgeim)
 
+        egdeim_copy = copy.deepcopy(edgeim)
+        '''
+        linesP = cv2.HoughLinesP(egdeim_copy, RHO_RES, THETA_RES,300, None, 200, 1)
+        new_linesP = []
+        for l in linesP:
+            new_linesP.append(l[0])
+        #self.draw_lines(new_linesP, egdeim_copy)
+        avg_theta = self.find_hor_lines_avg_theta(new_linesP)
+        print('avf=' + str(avg_theta))
+        new_edge  = self.rotate_image_fix(egdeim_copy,avg_theta*180/math.pi)
+        cv2.imshow('sad',new_edge)
+        cv2.waitKey(0)
+        egdeim_copy = new_edge
+        '''
+        '''
+        kernel = np.ones((6, 6), np.uint8)
+        egdeim_copy = cv2.morphologyEx(egdeim_copy, cv2.MORPH_CLOSE, kernel)
+        egdeim_copy = cv2.morphologyEx(egdeim_copy, cv2.MORPH_OPEN, kernel)
+        egdeim_copy = cv2.dilate(egdeim_copy,kernel,iterations=2)
+        egdeim_copy = cv2.erode(egdeim_copy,kernel,iterations=2)
+        '''
+
+
+
 
         try:
-            egdeim_copy = copy.deepcopy(edgeim)
-            ver, her = self.lines_filter(edgeim)
+            ver, her = self.lines_filter(egdeim_copy)
             if (DEBUG):
                 self.draw_lines(ver, egdeim_copy)
                 self.draw_lines(her, egdeim_copy)
@@ -708,9 +758,9 @@ class identify_board:
             img = self.projection_with_spare(final_points, real_img, False)
             edgeim = self.projection_with_spare(final_points, edgeim, False)
             bigim = self.projection_with_spare(final_points, real_img, True)
-            if (DEBUG):
-                cv2.imshow('sss', bigim)
-                cv2.waitKey(0)
+            #if (DEBUG):
+                #cv2.imshow('sss', bigim)
+                #cv2.waitKey(0)
             return img, edgeim, bigim
         except:
             if (DEBUG):
