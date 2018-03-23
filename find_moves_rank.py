@@ -45,6 +45,8 @@ class find_moves_rank:
 
     def __init__(self, chess_helper, net_dir_name = None):
         self.neuron_counter = 0
+        if SAVE_ALLOT:
+            tester_helper.make_squares_dirs()
         self.chess_helper = chess_helper
         self.mistake_idxes = []
         if net_dir_name:
