@@ -38,6 +38,7 @@ WHITE_DEF_RT = 2
 MIN_WHITE_RT = 5
 
 PRINTS = False
+SAVE_ALLOT = False
 
 class find_moves_rank:
 
@@ -83,7 +84,7 @@ class find_moves_rank:
 
             sources_rank = self.check_squares(sources_self,
                                          sources_above,real_change_s, real_idx_source)
-            if to_save:
+            if to_save and SAVE_ALLOT:
                 for idx in self.mistake_idxes:
                     tester_helper.save_bw(img=np.array(sources_self[idx]), place=sources_place[idx], move_num=move_num,
                                           angle_idx=angle_idx, desc='dif')
@@ -113,7 +114,7 @@ class find_moves_rank:
             targets_rank = self.check_squares(targets_self,
                                          targets_above,real_change_t, real_idx_target)
 
-            if to_save:
+            if to_save and SAVE_ALLOT:
                 for idx in self.mistake_idxes:
                     tester_helper.save_bw(img=np.array(targets_self[idx]), place=targets_place[idx], move_num=move_num,
                                           angle_idx=angle_idx)
