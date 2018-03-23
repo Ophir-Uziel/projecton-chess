@@ -37,6 +37,8 @@ WINDOW_RT = 10
 WHITE_DEF_RT = 2
 MIN_WHITE_RT = 5
 
+PRINTS = False
+
 class find_moves_rank:
 
 
@@ -57,7 +59,7 @@ class find_moves_rank:
     """
 
     def get_move(self,sources_place, sources_self, sources_above,
-                               targets_place, targets_self, targets_above, tester_info):
+                               targets_place, targets_self, targets_above, tester_info = None):
 
         try:
             to_save = bool(tester_info)
@@ -117,15 +119,15 @@ class find_moves_rank:
                                           angle_idx=angle_idx)
                     tester_helper.save_bw(img=np.array(targets_above[idx]), place=targets_place[idx], move_num=move_num,
                                           angle_idx=angle_idx, desc='abv')
-
-                print("sources : ")
-                print(sources_place)
-                print("ranking : ")
-                print(sources_rank)
-                print("dests : ")
-                print(targets_place)
-                print("ranking : ")
-                print(targets_rank)
+                if(PRINTS):
+                    print("sources : ")
+                    print(sources_place)
+                    print("ranking : ")
+                    print(sources_rank)
+                    print("dests : ")
+                    print(targets_place)
+                    print("ranking : ")
+                    print(targets_rank)
 
             return self.get_pairs_and_ranks(sources_place, targets_place, sources_rank,
                                             targets_rank)

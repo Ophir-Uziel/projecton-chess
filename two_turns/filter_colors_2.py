@@ -22,6 +22,8 @@ TEST = True
 BLACK_TEST = (100, 100, 100)
 WHITE_TEST = (255, 255, 255)
 
+PRINTS = False
+
 class filter_colors_2:
     """
     This file is responsible for filtering and cataloguing the colors in the
@@ -60,8 +62,9 @@ class filter_colors_2:
         main_colors.append(user_color)
         main_colors.append(rival_color)
         self.set_colors_nums(main_colors)
-        print('\nmain colors are:')
-        print(main_colors)
+        if(PRINTS):
+            print('\nmain colors are:')
+            print(main_colors)
         self.main_colors = main_colors
 
     def get_board_colors(self, im):
@@ -151,11 +154,13 @@ class filter_colors_2:
                 player_color = white
         if TEST:
             if player:
-                print("dist between user to black is: " + str(self.color_dist(player_color, black)))
-                print("dist between user to white is: " + str(self.color_dist(player_color, white)))
+                if (PRINTS):
+                    print("dist between user to black is: " + str(self.color_dist(player_color, black)))
+                    print("dist between user to white is: " + str(self.color_dist(player_color, white)))
             else:
-                print("dist between rival to black is: " + str(self.color_dist(player_color, black)))
-                print("dist between rival to white is: " + str(self.color_dist(player_color, white)))
+                if(PRINTS):
+                    print("dist between rival to black is: " + str(self.color_dist(player_color, black)))
+                    print("dist between rival to white is: " + str(self.color_dist(player_color, white)))
         if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST or self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
             if player == self.user_starts:
                 player_color = white

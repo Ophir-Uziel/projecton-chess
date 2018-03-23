@@ -12,8 +12,9 @@ REQUEST_SHOT_MSG = "please take photo"
 MOVE_MSG = "move"
 RIGHT = "0"
 LEFT = "1"
+CLOSE = "close"
 
-LAPTOP_IP = '192.168.43.194'
+LAPTOP_IP = '192.168.43.185'
 GATEWAY = '192.168.43.1'
 SUBNET_MASK = '255.255.255.0'
 SEND_TIMEOUT = 20.0 #seconds
