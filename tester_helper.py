@@ -96,6 +96,14 @@ def make_two_ims_dir(game_dir, y_or_n,counter):
         counter +=1
     return counter
 
+
+def make_minimal_squares_dirs():
+    make_dir(RESULTS_DIR)
+    make_dir(RESULTS_DIR + '\\' + 'by_square')
+    make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board')
+    for k in range(2):
+        make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board' + '\\' + 'angle_num_' + str(k))
+
 def make_squares_dirs():
     make_dir(RESULTS_DIR)
     make_dir(RESULTS_DIR + '\\' + 'by_move')

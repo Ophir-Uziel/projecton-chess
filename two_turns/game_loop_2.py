@@ -26,7 +26,7 @@ MAX_DIFF_RATIO = 0.15
 class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
         self.if_save_and_print = if_save_and_print
-
+        tester_helper.make_minimal_squares_dirs()
         self.moves_counter = 0
         self.last_move = None
 
@@ -143,7 +143,6 @@ class game_loop_2:
             except:
                 move = ' both direction failed'
                 print(move)
-                raise
 
         if self.if_save_and_print:
             if(PRINTS):
@@ -204,7 +203,6 @@ class game_loop_2:
             return (pairs, pairs_rank)
         except:
             print("angle " + str(angle_idx) + " failed")
-            raise
             return ([], [])
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
