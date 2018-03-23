@@ -24,11 +24,10 @@ if not os.path.exists(IMAGE_FOLDER + "fixed8/"):
     os.makedirs(os.path.join(IMAGE_FOLDER, 'fixed8'))
 if not os.path.exists(IMAGE_FOLDER + "fixer failed/"):
     os.makedirs(os.path.join(IMAGE_FOLDER, 'fixer failed'))
-moves = open(IMAGE_FOLDER + "fixed/moves.txt", 'w')
 
-
+movestr = ""
 while True:
-    last_error_dir = board_cut_fixer.FixerErrorType.NoDirection
+    last_error_dir = board_cut_fixer.FixerErrorType.NoDirection.value
     while True:
         try:
 
@@ -55,16 +54,17 @@ while True:
                 IMAGE_FOLDER + "fixed8/" + direction + "_" + str(
                     int(img_num))
                 + '.jpg', fix_im[len(fix_im) // 9:, :])
-            x = input('please accept')
-            if x == "exit":
-                moves.close()
-                break
-            if (len(x) != 0):
-                cv2.imwrite(
-                    IMAGE_FOLDER + "fixer failed/" + direction + "_" + str(
-                        int(img_num))
-                    + '.jpg', im)
-                raise Exception()
+            # x = input('please accept')
+            # if x == "exit":
+            #     moves.close()
+            #     break
+            # if (len(x) != 0):
+            #     cv2.imwrite(
+            #         IMAGE_FOLDER + "fixer failed/" + direction + "_" + str(
+            #             int(img_num))
+            #         + '.jpg', im)
+            #     raise board_cut_fixer.FixerError("",
+            #                                      board_cut_fixer.FixerErrorType.NoDirection)
             if (direction == connection.LEFT):
                 last_im_left = fix_im
             else:
@@ -73,18 +73,22 @@ while True:
             break
         except board_cut_fixer.FixerError as e:
             print('bad image, error: ' + str(e.error))
-            last_error_dir = e.error
+            last_error_dir = e.error.value
             cv2.imwrite(
                 IMAGE_FOLDER + "bad/" + direction + "_" + str(
                     int(bad_im_ctr)) +
                 '.jpg', im)
             bad_im_ctr += 1
     # flip direction
-    if x=='exit':
-        break
+    # if x=='exit':
+    #     break
     if direction == connection.LEFT:
         direction = connection.RIGHT
     else:
-        moves.write(input("Plz enter user move honz")+'\n')
-        moves.write(input("Plz enter rival move honz")+'\n')
+        input('exit now')
+        movestr += input("Plz enter user move honz") + '\n'
+        movestr += input("Plz enter rival move honz")+'\n'
+        moves = open(IMAGE_FOLDER + "fixed/moves.txt", 'w+')
+        moves.write(movestr)
+        moves.close()
         direction = connection.LEFT

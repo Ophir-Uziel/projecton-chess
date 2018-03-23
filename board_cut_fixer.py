@@ -932,10 +932,13 @@ def test(foldername):
     # get lines from image, and edge-image
     id = identify_board.identify_board()
     fixer = board_cut_fixer()
-    for j in range(13, 200):
+    for j in range(0, 200):
         try:
-            realim = id.get_image_from_filename(foldername + "\\1_" + str(j)
+            realim = id.get_image_from_filename(foldername + "\\0_" + str(j)
                                                 + ".jpg")
+            # rows, cols = realim.shape[0:2]
+            # M = cv2.getRotationMatrix2D((cols / 2, rows / 2),5 , 1)
+            # realim = cv2.warpAffine(realim, M, (cols, rows))
             fixed_im = fixer.main(realim)
             fixer.set_prev_im(fixed_im)
             cv2.imwrite(foldername + '\\fixed\\0_' + str(j) + '.jpg',
@@ -946,4 +949,4 @@ def test(foldername):
 
 
 #test("D:\\Talpiot\\Semester C\\Projecton-Git\\projecton-chess\\taken "
-#     "photoss\\taken photos10")
+ #    "photoss\\taken photos9\\bad")
