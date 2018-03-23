@@ -727,6 +727,7 @@ class identify_board:
             # a.test('two_turns\\angle1')
 
 
+
             # a = identify_board()
             # img = cv2.imread("images/cam0.jpg", cv2.IMREAD_COLOR)
             # new , edg_new = a.main(img)
