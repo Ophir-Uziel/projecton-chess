@@ -49,8 +49,8 @@ def if_one_dir(dir):
                                                                          sorted_img_names[j], cv2.IMREAD_COLOR))
 def if_one_dir_new(dir):
     img_names = os.listdir(dir)
-    make_dir("angle0")
-    make_dir("angle1")
+    tester_helper.make_dir("angle0")
+    tester_helper.make_dir("angle1")
     for img_name in img_names:
         if img_name[-4:] == ".jpg":
             dir_name = "angle" + img_name[0]
@@ -76,10 +76,9 @@ def first_2_chars(x):
 
 
 
-
-
+# tester_helper.line_by_line("fixed/user_moves.txt", "fixed/rival_moves.txt")
 if_one_dir_new("fixed")
-super_tester_2("fixed\\moves.txt", ["angle0", "angle1"], WITH_SAVES, net_idx=1)
+super_tester_2("fixed\\moves.txt", ["angle0", "angle1"], WITH_SAVES, net_idx=3)
 
 
 

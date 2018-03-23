@@ -10,6 +10,17 @@ COL_NUM = 8
 PRINT = True
 
 
+def line_by_line(userFileName, rivalFileName):
+    moves = open("moves",'w')
+    user_lines = open(userFileName).read().split("\n")
+    rival_lines = open(rivalFileName).read().split("\n")
+    for i in range(len(user_lines)):
+        moves.write(user_lines[i]+"\n")
+        moves.write(rival_lines[i]+"\n")
+    moves.close()
+    return moves
+
+
 def save_bw(img, place, move_num, angle_idx, desc =''):
     try:
         cv2.imwrite(RESULTS_DIR + '\\' +'by_move' + '\\' + 'move_num_' + str(move_num) + '\\' + 'angle_num_' + str(angle_idx) + '\\' + place + '_' + desc + '.jpg', img)
@@ -85,20 +96,20 @@ def make_two_ims_dir(game_dir, y_or_n,counter):
         counter +=1
     return counter
 
-def make_squares_dirs(self):
-    tester_helper.make_dir(RESULTS_DIR)
-    tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_move')
-    tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square')
+def make_squares_dirs():
+    make_dir(RESULTS_DIR)
+    make_dir(RESULTS_DIR + '\\' + 'by_move')
+    make_dir(RESULTS_DIR + '\\' + 'by_square')
     for i in range(ROWS_NUM+1):
         if i == ROWS_NUM:
-            tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board')
+            make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board')
             for k in range(2):
-                tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board' + '\\' + 'angle_num_' + str(k))
+                make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + 'board' + '\\' + 'angle_num_' + str(k))
         else:
             for j in range(ROWS_NUM):
-                tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1))
+                make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1))
                 for k in range(2):
-                    tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1) + '\\' + 'angle_num_' + str(k))
+                    make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1) + '\\' + 'angle_num_' + str(k))
 
 # for y_or_no in ["y", "n"]:
 #     counter = 300
