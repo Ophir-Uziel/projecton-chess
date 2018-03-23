@@ -21,6 +21,8 @@ RESULTS_DIR = 'super_tester_results'
 
 PRINTS = True
 
+MAX_DIFF_RATIO = 0.15
+
 class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
         self.if_save_and_print = if_save_and_print
@@ -178,10 +180,13 @@ class game_loop_2:
 
             angle = self.ph_angles[angle_idx]
             cut_board_im = angle.get_new_img(tester_info=(self.moves_counter, angle_idx))
-            sourcesims, sourcesabvims = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
+            sourcesims, sourcesabvims, srcdiff = self.get_diff_im_and_dif_abv_im_list(sources, cut_board_im, angle,
                                                                              SOURCE)
-            destsims, destsabvims = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
+            destsims, destsabvims, dstdiff = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                          not SOURCE)
+            difftot = (srcdiff + dstdiff)/(len(cut_board_im)*len(cut_board_im[0]))
+            if difftot>MAX_DIFF_RATIO: ## too much white in img
+                raise Exception()
             pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
                                                          tester_info = (rival_move, self.moves_counter,angle_idx))
             board_before = angle.get_board_test(True)
@@ -207,6 +212,8 @@ class game_loop_2:
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
         try:
+            diffarea = 0
+            diffcount = 0
             locsims = []
             locsabvims = []
             for loc in locs:
@@ -215,7 +222,15 @@ class game_loop_2:
                 diff_abv_im = angle.get_square_diff(cut_board_im, abv_loc, is_source)
                 locsims.append(diff_im)
                 locsabvims.append(diff_abv_im)
-            return locsims, locsabvims
+                diffarea+=cv2.countNonZero(diff_im)
+                diffcount+=1
+                if not abv_loc in locs:
+                    diffarea += cv2.countNonZero(diff_abv_im)
+                    diffcount += 1
+            diffnormalised = 0
+            if diffcount>0:
+                diffnormalised = diffarea*64/diffcount
+            return locsims, locsabvims, diffnormalised
 
         except Exception as e:
             if is_source:
