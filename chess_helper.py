@@ -27,6 +27,8 @@ class chess_helper:
     def do_turn(self, src, dest):
         stringmove = src+dest
         move2do = chess.Move.from_uci(stringmove)
+        if [src, dest] not in self.get_relevant_locations():
+            raise Exception("illegal move")
         if (move2do not in self.board.legal_moves):
             return False
         self.board.push(move2do)

@@ -7,10 +7,11 @@ import chess
 import cv2
 import math
 import os
+import copy
 
-BLACK = (0.0, 0.0, 0.0)
+BLACK = (0, 0, 100)
 MINIMAL_PLAYER_BOARD_RATIO = 0.2
-MINIMAL_COLOR_DIST = 35
+MINIMAL_COLOR_DIST = 45
 PIXELS_FOR_MAIN_COLORS = (400, 450)
 PIXELS_SQUARE = (20, 20)
 BLACK_NUM = 1
@@ -18,8 +19,10 @@ WHITE_NUM = 2
 USER = True
 RIVAL = False
 TEST = True
-BLACK_TEST = (0, 0, 0)
+BLACK_TEST = (100, 100, 100)
 WHITE_TEST = (255, 255, 255)
+
+PRINTS = False
 
 class filter_colors_2:
     """
@@ -30,10 +33,14 @@ class filter_colors_2:
     def __init__(self, im, chess_helper_2, delay_chess_helper_2):
         self.chess_helper_2 = chess_helper_2
         self.delay_chess_helper_2 = delay_chess_helper_2
+        self.user_starts = self.chess_helper_2.user_starts
         self.bad_user = False
         self.bad_rival = False
         self.bad_board = False
-
+        self.squares_before = {}
+        self.squares_after = {}
+        self.squares_before_test = {}
+        self.squares_after_test = {}
         self.initialize_colors(im)
 
     def color_dist(self, color1, color2):
@@ -55,8 +62,9 @@ class filter_colors_2:
         main_colors.append(user_color)
         main_colors.append(rival_color)
         self.set_colors_nums(main_colors)
-        print('\nmain colors are:')
-        print(main_colors)
+        if(PRINTS):
+            print('\nmain colors are:')
+            print(main_colors)
         self.main_colors = main_colors
 
     def get_board_colors(self, im):
@@ -95,7 +103,7 @@ class filter_colors_2:
         """
         black = board_colors[0]
         white = board_colors[1]
-        user_starts = self.chess_helper_2.user_starts
+        user_starts = self.user_starts
         ar = im
         ar_sz = len(ar)
         if player == RIVAL:
@@ -135,9 +143,11 @@ class filter_colors_2:
         rank = num_of_player_pix / num_of_pix
         if TEST:
             if player:
-                print('user rank: ' + str(rank))
+                if(PRINTS):
+                    print('user rank: ' + str(rank))
             else:
-                print('rival rank: ' + str(rank))
+                if (PRINTS):
+                    print('rival rank: ' + str(rank))
 
         if rank < MINIMAL_PLAYER_BOARD_RATIO:
             if (user_starts and not player) or (not user_starts and player):
@@ -146,16 +156,19 @@ class filter_colors_2:
                 player_color = white
         if TEST:
             if player:
-                print("dist between user to black is: " + str(self.color_dist(player_color, black)))
-                print("dist between user to white is: " + str(self.color_dist(player_color, white)))
+                if (PRINTS):
+                    print("dist between user to black is: " + str(self.color_dist(player_color, black)))
+                    print("dist between user to white is: " + str(self.color_dist(player_color, white)))
             else:
-                print("dist between rival to black is: " + str(self.color_dist(player_color, black)))
-                print("dist between rival to white is: " + str(self.color_dist(player_color, white)))
+                if (PRINTS):
+                    print("dist between rival to black is: " + str(self.color_dist(player_color, black)))
+                    print("dist between rival to white is: " + str(self.color_dist(player_color, white)))
         if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST:
-            player_color = black
-
+            if player != self.user_starts:
+                player_color = black
         elif self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
-            player_color = white
+            if player == self.user_starts:
+                player_color = white
         return player_color
 
     def set_colors_nums(self, main_colors):
@@ -186,16 +199,16 @@ class filter_colors_2:
         self.U2R = self.RIVAL_NUM - self.USER_NUM
 
         if TEST:
-            self.user_color_test = (0.2, 0.7, 0.7)
-            self.rival_color_test = (130, 50, 50)
+            self.user_color_test = (255, 100, 255)
+            self.rival_color_test = (50, 100, 0)
             if self.cmpT(main_colors[2], main_colors[0]):
                 self.user_color_test = BLACK_TEST
             elif self.cmpT(main_colors[2], main_colors[1]):
                 self.user_color_test = WHITE_TEST
             if self.cmpT(main_colors[3], main_colors[0]):
-                self.user_color_test = BLACK_TEST
+                self.rival_color_test = BLACK_TEST
             elif self.cmpT(main_colors[3], main_colors[1]):
-                self.user_color_test = WHITE_TEST
+                self.rival_color_test = WHITE_TEST
         return
 
     def set_prev_im(self, img):
@@ -203,23 +216,26 @@ class filter_colors_2:
 
     ###########################################################################
 
-    def get_square_image(self, im, loc):
+    def get_square_image(self, im, loc,before):
         """
         :param im:
         :param loc:
         :return subimage of a square in the board:
         """
-        user_starts = self.chess_helper_2.user_starts
         locidx = self.chess_helper_2.ucitoidx(loc)
         sq_sz = len(im[0]) // 8
         sq_sz_y = len(im) // 9
         x = locidx[0]
-        if user_starts:
+        if self.user_starts:
             y = 9 - locidx[1]
         else:
             y = locidx[1]
         area = (x * sq_sz, y * sq_sz_y, (x + 1) * sq_sz, (y + 1) * sq_sz_y)
         sqr_im = im[area[1]:area[3], area[0]:area[2]]
+        if before:
+            self.squares_before[loc] = sqr_im
+        else:
+            self.squares_after[loc] = sqr_im
         return sqr_im
 
     def fit_colors(self, im):
@@ -268,7 +284,7 @@ class filter_colors_2:
         return new_im, test_im
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
-        user_is_white = self.chess_helper_2.user_starts
+        user_is_white = self.user_starts
         is_white = self.chess_helper_2.square_color(square)
         if int(square[1]) == 9:
             above_board = True
@@ -327,17 +343,31 @@ class filter_colors_2:
         :param is_source:
         :return binary image of relevant changes only (according alot of parameters):
         """
-        temp_im = self.get_square_image(im, square_loc)
-        after_square = cv2.resize(temp_im, PIXELS_SQUARE)
-        after_square, after2save = self.fit_colors(after_square)
-        before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc),
-                                   PIXELS_SQUARE)
-        before_square, befor2save = self.fit_colors(before_square)
+        if square_loc in self.squares_before.keys():
+            before_square = self.squares_before[square_loc]
+        else:
+            before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc, True),
+                                       PIXELS_SQUARE)
+            before_square, before2save = self.fit_colors(before_square)
+            self.squares_before[square_loc] = before_square
+            self.squares_before_test[square_loc] = before2save
+        if square_loc in self.squares_after.keys():
+            after_square = self.squares_after[square_loc]
+        else:
+            after_square = cv2.resize(self.get_square_image(im, square_loc, False), PIXELS_SQUARE)
+            after_square, after2save = self.fit_colors(after_square)
+            self.squares_after[square_loc] = after_square
+            self.squares_after_test[square_loc] = after2save
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
-
-        return square_diff, befor2save, after2save
+        return square_diff
 
         ###########################################################################
+
+    def update_board(self):
+        self.squares_before = copy.deepcopy(self.squares_after)
+        self.squares_before_test = copy.deepcopy(self.squares_after_test)
+        self.squares_after = {}
+        self.squares_after_test = {}
 
 
 def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
