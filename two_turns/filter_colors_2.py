@@ -143,11 +143,9 @@ class filter_colors_2:
         rank = num_of_player_pix / num_of_pix
         if TEST:
             if player:
-                if(PRINTS):
-                    print('user rank: ' + str(rank))
+                print('user rank: ' + str(rank))
             else:
-                if (PRINTS):
-                    print('rival rank: ' + str(rank))
+                print('rival rank: ' + str(rank))
 
         if rank < MINIMAL_PLAYER_BOARD_RATIO:
             if (user_starts and not player) or (not user_starts and player):
@@ -160,15 +158,14 @@ class filter_colors_2:
                     print("dist between user to black is: " + str(self.color_dist(player_color, black)))
                     print("dist between user to white is: " + str(self.color_dist(player_color, white)))
             else:
-                if (PRINTS):
+                if(PRINTS):
                     print("dist between rival to black is: " + str(self.color_dist(player_color, black)))
                     print("dist between rival to white is: " + str(self.color_dist(player_color, white)))
-        if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST:
-            if player != self.user_starts:
-                player_color = black
-        elif self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
+        if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST or self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
             if player == self.user_starts:
                 player_color = white
+            else:
+                player_color = black
         return player_color
 
     def set_colors_nums(self, main_colors):
@@ -238,7 +235,7 @@ class filter_colors_2:
             self.squares_after[loc] = sqr_im
         return sqr_im
 
-    def fit_colors(self, im):
+    def fit_colors(self, im,loc):
         """
         :param im:
         :return image fit to 4 main colors:
@@ -255,13 +252,16 @@ class filter_colors_2:
                     if dist < min_dist:
                         min_dist = dist
                         new_im[rowidx][pixidx] = WHITE_NUM
-                    dist = self.color_dist(pix, self.main_colors[2])
-                    if dist < min_dist:
-                        min_dist = dist
-                        new_im[rowidx][pixidx] = self.USER_NUM
-                    dist = self.color_dist(pix, self.main_colors[3])
-                    if dist < min_dist:
-                        new_im[rowidx][pixidx] = self.RIVAL_NUM
+                    if self.chess_helper_2.piece_color(loc) or self.chess_helper_2.piece_color(chess_helper_2.get_square_below(loc)):
+                        dist = self.color_dist(pix, self.main_colors[2])
+                        if dist < min_dist:
+                            min_dist = dist
+                            new_im[rowidx][pixidx] = self.USER_NUM
+                    if not self.chess_helper_2.piece_color(loc) or not self.chess_helper_2.piece_color(
+                            chess_helper_2.get_square_below(loc)):
+                        dist = self.color_dist(pix, self.main_colors[3])
+                        if dist < min_dist:
+                            new_im[rowidx][pixidx] = self.RIVAL_NUM
         else:
             for rowidx in range(im_sz):
                 for pixidx in range(im_sz):
@@ -272,15 +272,18 @@ class filter_colors_2:
                         min_dist = dist
                         new_im[rowidx][pixidx] = WHITE_NUM
                         test_im[rowidx][pixidx] = WHITE_TEST
-                    dist = self.color_dist(pix, self.main_colors[2])
-                    if dist < min_dist:
-                        min_dist = dist
-                        new_im[rowidx][pixidx] = self.USER_NUM
-                        test_im[rowidx][pixidx] = self.user_color_test
-                    dist = self.color_dist(pix, self.main_colors[3])
-                    if dist < min_dist:
-                        new_im[rowidx][pixidx] = self.RIVAL_NUM
-                        test_im[rowidx][pixidx] = self.rival_color_test
+                    if self.chess_helper_2.piece_color(loc) or self.chess_helper_2.piece_color(chess_helper_2.get_square_below(loc)):
+                        dist = self.color_dist(pix, self.main_colors[2])
+                        if dist < min_dist:
+                            min_dist = dist
+                            new_im[rowidx][pixidx] = self.USER_NUM
+                            test_im[rowidx][pixidx] = self.user_color_test
+                    if not self.chess_helper_2.piece_color(loc) or not self.chess_helper_2.piece_color(
+                            chess_helper_2.get_square_below(loc)):
+                        dist = self.color_dist(pix, self.main_colors[3])
+                        if dist < min_dist:
+                            new_im[rowidx][pixidx] = self.RIVAL_NUM
+                            test_im[rowidx][pixidx] = self.rival_color_test
         return new_im, test_im
 
     def make_binary_relevant_diff_im(self, im1, im2, square, is_source):
@@ -348,14 +351,14 @@ class filter_colors_2:
         else:
             before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc, True),
                                        PIXELS_SQUARE)
-            before_square, before2save = self.fit_colors(before_square)
+            before_square, before2save = self.fit_colors(before_square,square_loc)
             self.squares_before[square_loc] = before_square
             self.squares_before_test[square_loc] = before2save
         if square_loc in self.squares_after.keys():
             after_square = self.squares_after[square_loc]
         else:
             after_square = cv2.resize(self.get_square_image(im, square_loc, False), PIXELS_SQUARE)
-            after_square, after2save = self.fit_colors(after_square)
+            after_square, after2save = self.fit_colors(after_square,square_loc)
             self.squares_after[square_loc] = after_square
             self.squares_after_test[square_loc] = after2save
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
