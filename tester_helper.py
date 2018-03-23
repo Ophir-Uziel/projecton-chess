@@ -10,6 +10,17 @@ COL_NUM = 8
 PRINT = True
 
 
+def line_by_line(userFileName, rivalFileName):
+    moves = open("moves",'w')
+    user_lines = open(userFileName).read().split("\n")
+    rival_lines = open(rivalFileName).read().split("\n")
+    for i in range(len(user_lines)):
+        moves.write(user_lines[i]+"\n")
+        moves.write(rival_lines[i]+"\n")
+    moves.close()
+    return moves
+
+
 def save_bw(img, place, move_num, angle_idx, desc =''):
     try:
         cv2.imwrite(RESULTS_DIR + '\\' +'by_move' + '\\' + 'move_num_' + str(move_num) + '\\' + 'angle_num_' + str(angle_idx) + '\\' + place + '_' + desc + '.jpg', img)
