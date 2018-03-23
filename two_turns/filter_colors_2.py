@@ -22,7 +22,7 @@ TEST = True
 BLACK_TEST = (100, 100, 100)
 WHITE_TEST = (255, 255, 255)
 
-PRINTS = False
+PRINTS = True
 
 class filter_colors_2:
     """
@@ -272,14 +272,14 @@ class filter_colors_2:
                         min_dist = dist
                         new_im[rowidx][pixidx] = WHITE_NUM
                         test_im[rowidx][pixidx] = WHITE_TEST
-                    if self.chess_helper_2.piece_color(loc) or self.chess_helper_2.piece_color(chess_helper_2.get_square_below(loc)):
+                    if self.chess_helper_2.piece_color(loc) or self.chess_helper_2.piece_color(self.chess_helper_2.get_square_below(loc)):
                         dist = self.color_dist(pix, self.main_colors[2])
                         if dist < min_dist:
                             min_dist = dist
                             new_im[rowidx][pixidx] = self.USER_NUM
                             test_im[rowidx][pixidx] = self.user_color_test
                     if not self.chess_helper_2.piece_color(loc) or not self.chess_helper_2.piece_color(
-                            chess_helper_2.get_square_below(loc)):
+                            self.chess_helper_2.get_square_below(loc)):
                         dist = self.color_dist(pix, self.main_colors[3])
                         if dist < min_dist:
                             new_im[rowidx][pixidx] = self.RIVAL_NUM

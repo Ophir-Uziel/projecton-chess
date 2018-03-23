@@ -19,7 +19,7 @@ RIGHT = 1
 ROWS_NUM = 8
 RESULTS_DIR = 'super_tester_results'
 
-PRINTS = False
+PRINTS = True
 
 class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
@@ -30,13 +30,19 @@ class game_loop_2:
         self.moves_counter = 0
         self.last_move = None
 
+
         if user_moves_if_test is not None:
             self.is_test = True
             self.net_dir_name = net_dir_name
             self.user_moves = user_moves_if_test
             self.rival_moves = rival_moves_if_test
+            if imgs_if_test:
+                self.is_live_test = False
+            else:
+                self.is_live_test = True
         else:
             self.is_test = False
+            self.is_live_test = False
 
         self.hardware = hw.hardware(angles_num, imgs_if_test)
         self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.USER)
@@ -63,10 +69,11 @@ class game_loop_2:
     def main(self):
         while True:
             if self.is_test and self.moves_counter >= len(self.user_moves) \
-                    or self.moves_counter>= len(self.rival_moves):
+                    or self.moves_counter >= len(self.rival_moves):
                 if (PRINTS):
                     print('Done')
-                self.hardware.close()
+                if self.is_live_test or not self.is_test:
+                    self.hardware.close()
                 break
             gui_img_manager.set_finished(False)
             print(self.user_moves[self.moves_counter])
@@ -113,18 +120,21 @@ class game_loop_2:
         to_continue = True
         while to_continue and (len(pairs) == 0 or len(pairs_ranks) == 0):
             try:
-                if self.is_test:
-                   junkvariable = 0
-                   # to_continue = False
+                if self.is_test and not self.is_live_test:
+                    to_continue = False
                 for i in range(len(self.ph_angles)):
                     if cnt > 0:
                         print("id error plz take another photo k thnx")
                     gui_img_manager.set_camera(i)
-                    while True:
+
+                    if self.is_live_test:
+                        while True:
+                            pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                            if not (len(pairs_and_ranks[0]) == 0 and len(
+                                            pairs_and_ranks[1]) == 0):
+                                break
+                    else:
                         pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                        if not (len(pairs_and_ranks[0]) == 0 and len(
-                                        pairs_and_ranks[1]) == 0):
-                            break
                     gui_img_manager.reset_images(i)
                     pairs = pairs + pairs_and_ranks[0]
                     pairs_ranks = pairs_ranks + pairs_and_ranks[1]
@@ -134,6 +144,7 @@ class game_loop_2:
             except:
                 move = ' both direction failed'
                 print(move)
+                raise
 
         if self.if_save_and_print:
             if(PRINTS):
@@ -191,6 +202,7 @@ class game_loop_2:
             return (pairs, pairs_rank)
         except:
             print("angle " + str(angle_idx) + " failed")
+            raise
             return ([], [])
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):

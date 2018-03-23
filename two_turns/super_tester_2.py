@@ -30,8 +30,7 @@ def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
         elif len(move) != 0:
             raise Exception("illegal move:" + move)
         x+=1
-    # angles_num = len(img_dir_lst)
-    angles_num = 2
+    angles_num = len(img_dir_lst)
     game = game_loop_2.game_loop_2(angles_num, user_moves,real_rival_moves,img_dir_lst, with_saves, net_dir_name)
     detected_moves = []
     game.main()
@@ -83,8 +82,8 @@ def make_dir(dir_name):
 
 
 
-#if_one_dir_new("game")
-super_tester_2("move_files\\moves2", None, WITH_SAVES,1)
+if_one_dir_new("fixed")
+super_tester_2("fixed\\moves.txt", ["angle0"], WITH_SAVES,1)
 
 
 
