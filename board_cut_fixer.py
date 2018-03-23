@@ -10,8 +10,8 @@ from enum import Enum
 # import gui_img_manager
 
 ### DEBUG FLAG ###
-DEBUG = False
 
+DEBUG = False
 
 
 ##### Edge detection parameters #####

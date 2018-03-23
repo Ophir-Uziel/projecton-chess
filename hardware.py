@@ -46,7 +46,7 @@ class hardware:
             return img
         else:
 
-            self.socket.send_msg(connection.REQUEST_SHOT_MSG + direction +
+            self.socket.send_msg(connection.REQUEST_SHOT_MSG + str(direction) +
                                  str(last_error_dir))
             img =self.socket.get_image()
             gui_img_manager.add_img(img)
@@ -59,7 +59,10 @@ class hardware:
     # TODO write this func
 
     def player_indication(self, move):
-        self.socket.send_msg(connection.MOVE+move)
+        self.socket.send_msg(connection.MOVE_MSG+move)
+
+    def close(self):
+        self.socket.send_msg(connection.CLOSE)
 
 def first_2_chars(x):
     return int(x[2:-4])

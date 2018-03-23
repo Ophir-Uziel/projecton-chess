@@ -9,7 +9,7 @@ WITH_SAVES = True
 def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
     if net_idx:
         net_dir_name = "net" +str(net_idx)
-        tester_helper.make_dir(net_dir_name)
+        make_dir(net_dir_name)
     else:
         net_dir_name = None
     corrects = []
@@ -30,8 +30,8 @@ def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
         elif len(move) != 0:
             raise Exception("illegal move:" + move)
         x+=1
-    moves_num = len(os.listdir(img_dir_lst[0]))-1
-    angles_num = len(img_dir_lst)
+    # angles_num = len(img_dir_lst)
+    angles_num = 2
     game = game_loop_2.game_loop_2(angles_num, user_moves,real_rival_moves,img_dir_lst, with_saves, net_dir_name)
     detected_moves = []
     game.main()
@@ -74,12 +74,17 @@ def first_2_chars(x):
 # gameloop = game_loop_2.game_loop_2(angles_num = 2)
 # gameloop.main()
 
+def make_dir(dir_name):
+    try:
+        os.makedirs(dir_name)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 
 
-
-if_one_dir_new("fixed")
-super_tester_2("fixed\\moves.txt", ["angle0", "angle1"], WITH_SAVES, net_idx=1)
+#if_one_dir_new("game")
+super_tester_2("move_files\\moves2", None, WITH_SAVES,1)
 
 
 

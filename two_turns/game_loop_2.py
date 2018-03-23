@@ -19,6 +19,7 @@ RIGHT = 1
 ROWS_NUM = 8
 RESULTS_DIR = 'super_tester_results'
 
+PRINTS = False
 
 class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
@@ -48,7 +49,6 @@ class game_loop_2:
             if not self.is_test:
                 gui_img_manager.set_camera(i)
             self.ph_angles.append(photos_angle_2.photos_angle_2(self.hardware, self.chesshelper, self.delay_chesshelper, i))
-            self.ph_angles[i].prep_img()
 
         for ang in self.ph_angles:
             ang.init_colors()
@@ -62,31 +62,37 @@ class game_loop_2:
 
     def main(self):
         while True:
-            if self.is_test and self.moves_counter >= len(self.user_moves):
-                print('Done')
+            if self.is_test and self.moves_counter >= len(self.user_moves) \
+                    or self.moves_counter>= len(self.rival_moves):
+                if (PRINTS):
+                    print('Done')
+                self.hardware.close()
                 break
             gui_img_manager.set_finished(False)
+            print(self.user_moves[self.moves_counter])
+            print(self.rival_moves[self.moves_counter])
             self.play_user_turn()
             if self.if_save_and_print:
-                print(self.chesshelper.board)
-            last_move = self.get_rival_move()
+                if (PRINTS):
+                    print(self.chesshelper.board)
+            self.play_rival_move()
             if self.if_save_and_print:
-                print(self.chesshelper.board)
+                if (PRINTS):
+                    print(self.chesshelper.board)
             gui_img_manager.set_finished(True)
 
     def play_user_turn(self):
         self.best_move = self.chess_engine.get_best_move(self.last_move)
         if self.if_save_and_print:
             print("I recommend: " + self.best_move)
-        if not self.is_test:
-            self.hardware.player_indication(self.best_move)
-        else:
+        #self.hardware.player_indication(self.best_move)
+        if self.is_test:
             self.best_move = self.user_moves[self.moves_counter]
             print("sorry, I changed my mind. play" + str(self.best_move))
 
         self.chesshelper.do_turn(self.best_move[0], self.best_move[1])
 
-    def get_rival_move(self):
+    def play_rival_move(self):
         if self.if_save_and_print:
             print("\n" + "move num" + str(self.moves_counter))
 
@@ -108,13 +114,17 @@ class game_loop_2:
         while to_continue and (len(pairs) == 0 or len(pairs_ranks) == 0):
             try:
                 if self.is_test:
-                    to_continue = False
+                   junkvariable = 0
+                   # to_continue = False
                 for i in range(len(self.ph_angles)):
                     if cnt > 0:
                         print("id error plz take another photo k thnx")
                     gui_img_manager.set_camera(i)
-                    self.ph_angles[i].prep_img()
-                    pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                    while True:
+                        pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                        if not (len(pairs_and_ranks[0]) == 0 and len(
+                                        pairs_and_ranks[1]) == 0):
+                            break
                     gui_img_manager.reset_images(i)
                     pairs = pairs + pairs_and_ranks[0]
                     pairs_ranks = pairs_ranks + pairs_and_ranks[1]
@@ -123,12 +133,14 @@ class game_loop_2:
                 move = pairs[best_pair_idx]
             except:
                 move = ' both direction failed'
+                print(move)
 
         if self.if_save_and_print:
-            print("detected_move")
-            print(move)
-            print('rival_move')
-            print(rival_move)
+            if(PRINTS):
+                print("detected_move")
+                print(move)
+                print('rival_move')
+                print(rival_move)
 
         if self.is_test:
             move = rival_move
@@ -143,9 +155,10 @@ class game_loop_2:
 
     def check_one_direction(self, sources, dests, angle_idx):
         try:
-
+            self.ph_angles[angle_idx].prep_img()
             if self.if_save_and_print:
-                print("angle_num_" + str(angle_idx))
+                if (PRINTS):
+                    print("angle_num_" + str(angle_idx))
                 tester_helper.make_dir(RESULTS_DIR + '\\' + 'by_move/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
 
             rival_move = None
@@ -175,10 +188,10 @@ class game_loop_2:
             ### save prev picture ###
             angle.set_prev_im(cut_board_im)
 
-            return pairs, pairs_rank
+            return (pairs, pairs_rank)
         except:
             print("angle " + str(angle_idx) + " failed")
-            return [], []
+            return ([], [])
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
         try:

@@ -18,7 +18,14 @@ class photos_angle_2:
         self.fixer = board_cut_fixer.board_cut_fixer()
 
     def init_colors(self):
-        cut_board_im = self.get_new_img(tester_info=(-1, self.idx))
+        ## first time - must be a good photo!
+        while True:
+            try:
+                self.prep_img()
+                cut_board_im = self.get_new_img(tester_info=(-1, self.idx))
+                break
+            except:
+                print("init colors - please take another photo")
         self.color_filter = two_turns.filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper,
                                                                       self.delay_chess_helper)
 
@@ -31,19 +38,23 @@ class photos_angle_2:
 
             new_board_im = self.prep_im
 
-            # better_cut_board_im = self.fixer.main(new_board_im)
-            better_cut_board_im = new_board_im
-            # TODO: switch two upper rows
+
+            better_cut_board_im = self.fixer.main(new_board_im)
+            #better_cut_board_im = new_board_im
 
             if to_save:
                 move_num = tester_info[0]
                 angle_idx = tester_info[1]
+                tester_helper.save_bw(new_board_im,'board', move_num,
+                                          angle_idx, 'first')
                 tester_helper.save_bw(better_cut_board_im, 'board', move_num, angle_idx, 'second')
 
             return better_cut_board_im
         except:
+            cv2.imshow("image", new_board_im)
+            cv2.waitKey(0)
             print("get new im failed")
-            raise
+            raise Exception()
 
     def get_square_diff(self, cut_board_im, src, is_source):
         return self.color_filter.get_square_diff(cut_board_im, src, is_source)

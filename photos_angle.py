@@ -14,6 +14,7 @@ class photos_angle:
         self.fixer = board_cut_fixer.board_cut_fixer()
         
     def init_colors(self):
+        self.prep_im()
         cut_board_im = self.get_new_img()
         self.color_filter = filter_colors.filter_colors(cut_board_im, self.chess_helper)
      
