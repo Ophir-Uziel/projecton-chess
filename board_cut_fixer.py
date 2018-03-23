@@ -68,8 +68,8 @@ GAUSS_C = 13
 
 ##### nuber of iterations for the board cut fixer#####
 NUM_ITERATIONS = 2
-NUM_ANGLE_ITERATIONS = 5
-ANGLE_FIX = 1
+NUM_ANGLE_ITERATIONS = 7
+ANGLE_FIX = 2
 
 
 # Line-finding parameters
