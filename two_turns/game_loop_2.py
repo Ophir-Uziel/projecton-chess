@@ -19,7 +19,7 @@ RIGHT = 1
 ROWS_NUM = 8
 RESULTS_DIR = 'super_tester_results'
 
-PRINTS = True
+PRINTS = False
 
 MAX_DIFF_RATIO = 0.15
 
@@ -180,7 +180,10 @@ class game_loop_2:
                                                                              SOURCE)
             destsims, destsabvims, dstdiff = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                          not SOURCE)
-            difftot = (srcdiff + dstdiff)/(len(cut_board_im)*len(cut_board_im[0]))
+            difftot = (srcdiff + dstdiff)/(160*180)
+            if(PRINTS):
+                print("angle " + str(angle_idx) + ", move " + str(
+                    self.moves_counter) + " diff " + str(difftot))
             if difftot>MAX_DIFF_RATIO: ## too much white in img
                 raise Exception()
             pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
