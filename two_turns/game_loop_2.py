@@ -70,14 +70,15 @@ class game_loop_2:
                     or self.moves_counter >= len(self.rival_moves):
                 if (PRINTS):
                     print('Done')
-                    print(self.user_moves[self.moves_counter])
-                    print(self.rival_moves[self.moves_counter])
+
                     print(self.chesshelper.board)
                 if self.is_live_test or not self.is_test:
                     self.hardware.close()
                 break
             gui_img_manager.set_finished(False)
-
+            if PRINTS:
+                print(self.user_moves[self.moves_counter])
+                print(self.rival_moves[self.moves_counter])
             self.play_user_turn()
             self.play_rival_move()
 
