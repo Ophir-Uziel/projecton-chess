@@ -48,7 +48,7 @@ class filter_colors_2:
         self.initialize_colors(im)
 
     def color_dist(self, color1, color2):
-        return abs(sum(color1)-sum(color2))
+        return abs(color1[0]-color2[0])+abs(color1[1]-color2[1])+abs(color1[2]-color2[2])
         # return abs(max(color1) - max(color2) - min(color2) + min(color1))
 
     def cmpT(self, t1, t2):
