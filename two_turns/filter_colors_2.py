@@ -66,7 +66,8 @@ class filter_colors_2:
             img = self.get_square_image(im, loc)
             average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
             black_mean_colors.append(average_color)
-        black_color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*black_mean_colors)))
+        color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*black_mean_colors)))
+        black_color = int(color[0]), int(color[1]), int(color[2])
         main_colors.append(black_color)
 
         white_mean_colors = []
@@ -74,7 +75,8 @@ class filter_colors_2:
             img = self.get_square_image(im, loc)
             average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
             white_mean_colors.append(average_color)
-        white_color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*white_mean_colors)))
+        color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*white_mean_colors)))
+        white_color = int(color[0]), int(color[1]), int(color[2])
         main_colors.append(white_color)
 
         user_mean_colors = []
@@ -82,10 +84,11 @@ class filter_colors_2:
             img = self.get_square_image(im, loc)[8:16, 8:12]
             average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
             user_mean_colors.append(average_color)
-        user_color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*user_mean_colors)))
+        color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*user_mean_colors)))
+        user_color = int(color[0]), int(color[1]), int(color[2])
         if PRINTS:
-            print("dist( user , black ) = " + str(self.color_dist(black_color,user_color)))
-            print("dist( user , white ) = " + str(self.color_dist(white_color,user_color)))
+            print("dist( user , black ) = " + str(int(self.color_dist(black_color,user_color))))
+            print("dist( user , white ) = " + str(int(self.color_dist(white_color,user_color))))
         if self.color_dist(black_color,user_color) < MINIMAL_COLOR_DIST or self.color_dist(white_color,user_color) < MINIMAL_COLOR_DIST:
             if self.user_starts:
                 user_color = white_color
@@ -98,10 +101,11 @@ class filter_colors_2:
             img = self.get_square_image(im, loc)[8:16, 8:12]
             average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
             rival_mean_colors.append(average_color)
-        rival_color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*rival_mean_colors)))
+        color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*rival_mean_colors)))
+        rival_color = int(color[0]), int(color[1]), int(color[2])
         if PRINTS:
-            print("dist( rival , black ) = " + str(self.color_dist(black_color,rival_color)))
-            print("dist( rival , white ) = " + str(self.color_dist(white_color,rival_color)))
+            print("dist( rival , black ) = " + str(int(self.color_dist(black_color,rival_color))))
+            print("dist( rival , white ) = " + str(int(self.color_dist(white_color,rival_color))))
         if self.color_dist(black_color, rival_color) < MINIMAL_COLOR_DIST or self.color_dist(white_color,rival_color) < MINIMAL_COLOR_DIST:
             if self.user_starts:
                 rival_color = black_color
@@ -111,8 +115,8 @@ class filter_colors_2:
 
         self.set_colors_nums(main_colors)
         if(PRINTS):
-            print('\nmain colors are:')
-            print(main_colors)
+            print('main colors are:')
+            print(str(main_colors)+'\n')
         self.main_colors = main_colors
 
     def set_colors_nums(self, main_colors):
@@ -314,6 +318,9 @@ class filter_colors_2:
         self.squares_before_test = copy.deepcopy(self.squares_after_test)
         self.squares_after = {}
         self.squares_after_test = {}
+
+    def is_rival_equals_black(self):
+        return self.cmpT(self.main_colors[0],self.main_colors[3]) or self.cmpT(self.main_colors[1],self.main_colors[3])
 
 def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
     im_bef = cv2.imread(im_bef_name)
