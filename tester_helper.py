@@ -89,6 +89,7 @@ def connect_two_ims_lst(im_lst, im_abv_lst):
     return list(map(connect_two_ims, im_lst, im_abv_lst))
 
 
+
 def make_two_ims_dir(game_dir, y_or_n,counter):
     make_dir(y_or_n)
     slf_ims = os.listdir(game_dir + "\\" + "self_" + y_or_n + "_dir" )
