@@ -3,6 +3,7 @@ import os
 import errno
 import numpy as np
 import scipy.misc
+import functools
 
 RESULTS_DIR = 'super_tester_results'
 ROWS_NUM = 9
@@ -82,18 +83,25 @@ def connect_two_ims(im,im_abv):
         new_im[i+(row_num//2)] = im[i]
     return new_im
 
+def connect_two_ims_lst(im_lst, im_abv_lst):
+    return list(map(connect_two_ims, (im_lst, im_abv_lst)))
+
 
 def make_two_ims_dir(game_dir, y_or_n,counter):
-    make_dir(game_dir)
-    make_dir(y_or_n+"check")
+    make_dir(y_or_n)
     slf_ims = os.listdir(game_dir + "\\" + "self_" + y_or_n + "_dir" )
+    slf_ims = sorted(slf_ims, key=im_num)
     abv_ims = os.listdir(game_dir + "\\" + "abv_" + y_or_n + "_dir" )
-    for i in range(len(slf_ims)):
-        im = cv2.imread(game_dir + "\\" + "self_" + y_or_n + "_dir"  + "\\"+slf_ims[i], cv2.IMREAD_GRAYSCALE).tolist()
-        im_abv = cv2.imread(game_dir + "\\" + "abv_" + y_or_n + "_dir" +"\\"+ abv_ims[i], cv2.IMREAD_GRAYSCALE).tolist()
-        new_im = connect_two_ims(im, im_abv)
-        cv2.imwrite(y_or_n + "check" + "\\" + str(counter)+ ".jpg", np.array(new_im))
-        counter +=1
+    abv_ims = sorted(abv_ims, key=im_num)
+    lst_idx = max(im_num(slf_ims[-1]), im_num(abv_ims[-1]))
+    for j in range(lst_idx):
+        im_name = "im" + str(j) + ".jpg"
+        if im_name in slf_ims and im_name in abv_ims:
+            im = cv2.imread(game_dir + "\\" + "self_" + y_or_n + "_dir"  + "\\"+im_name, cv2.IMREAD_GRAYSCALE).tolist()
+            im_abv = cv2.imread(game_dir + "\\" + "abv_" + y_or_n + "_dir" +"\\"+ im_name, cv2.IMREAD_GRAYSCALE).tolist()
+            new_im = connect_two_ims(im, im_abv)
+            cv2.imwrite(y_or_n + "\\" + str(counter) + ".jpg", np.array(new_im))
+            counter += 1
     return counter
 
 
@@ -119,10 +127,18 @@ def make_squares_dirs():
                 for k in range(2):
                     make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1) + '\\' + 'angle_num_' + str(k))
 
+def im_num(x):
+    return int(x[2:-4])
+
 # for y_or_no in ["y", "n"]:
-#     counter = 300
-#     for i in range(1):
-#          counter = make_two_ims_dir("game"+str(i+6), y_or_no, counter)
+#     counter = 0
+#     for i in range(21):
+#         fold_name = "net" + str(i+1)
+#         folds = os.listdir("to_train")
+#         if fold_name in folds:
+#             counter = make_two_ims_dir("to_train\\" + fold_name, y_or_no, counter)
+
+
 
 
 

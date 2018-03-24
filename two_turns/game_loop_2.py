@@ -2,7 +2,7 @@ import os
 import errno
 import hardware as hw
 import chess_helper_2 as ch
-import find_moves_rank as fm
+import find_moves_rank2 as fm
 import photos_angle_2
 import chess_engine_wrapper
 import gui_img_manager
@@ -138,8 +138,16 @@ class game_loop_2:
                     pairs = pairs + pairs_and_ranks[0]
                     pairs_ranks = pairs_ranks + pairs_and_ranks[1]
                 cnt += 1
-                best_pair_idx = [i for i in range(len(pairs_ranks)) if pairs_ranks[i] == max(pairs_ranks)][0]
-                move = pairs[best_pair_idx]
+                best_pair_idxes = [i for i in range(len(pairs_ranks)) if pairs_ranks[i] == max(pairs_ranks)]
+                if len(best_pair_idxes) == 1:
+                    move = pairs[best_pair_idxes[0]]
+                else:
+                    hidden_moves = self.get_hidden_moves()
+                    if len(hidden_moves) == 1:
+                        move = hidden_moves[0]
+                    else:
+                        raise Exception("inconclusive move")
+
             except:
                 move = ' both direction failed'
                 print(move)
@@ -162,6 +170,11 @@ class game_loop_2:
         self.moves_counter += 1
         return move
 
+
+    def get_hidden_moves(self):
+        return []
+
+
     def check_one_direction(self, sources, dests, angle_idx):
         try:
             self.ph_angles[angle_idx].prep_img()
@@ -180,7 +193,7 @@ class game_loop_2:
                                                                              SOURCE)
             destsims, destsabvims, dstdiff = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                          not SOURCE)
-            difftot = (srcdiff + dstdiff)/(len(cut_board_im)*len(cut_board_im[0]))
+            difftot = (srcdiff + dstdiff)/(180*160)
             if difftot>MAX_DIFF_RATIO: ## too much white in img
                 raise Exception()
             pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
