@@ -11,7 +11,7 @@ import copy
 
 BLACK = (0, 0, 100)
 MINIMAL_PLAYER_BOARD_RATIO = 0.2
-MINIMAL_COLOR_DIST = 45
+MINIMAL_COLOR_DIST = 60
 PIXELS_FOR_MAIN_COLORS = (400, 450)
 PIXELS_SQUARE = (20, 20)
 BLACK_NUM = 1
@@ -21,7 +21,10 @@ RIVAL = False
 TEST = True
 BLACK_TEST = (100, 100, 100)
 WHITE_TEST = (255, 255, 255)
-
+BLACK_LOCS = ['a5','b4','c5','d4','e5','f4','g5','h4']
+WHITE_LOCS = ['a4','b5','c4','d5','e4','f5','g4','h5']
+USER_LOCS = ['a1','b1','c1','d1','e1','f1','g1','h1','a2','b2','c2','d2','e2','f2','g2','h2']
+RIVAL_LOCS = ['a7','b7','c7','d7','e7','f7','g7','h7','a8','b8','c8','d8','e8','f8','g8','h8']
 PRINTS = True
 
 class filter_colors_2:
@@ -41,10 +44,12 @@ class filter_colors_2:
         self.squares_after = {}
         self.squares_before_test = {}
         self.squares_after_test = {}
+        self.prev_im = im
         self.initialize_colors(im)
 
     def color_dist(self, color1, color2):
-        return abs(max(color1) - max(color2) - min(color2) + min(color1))
+        return abs(sum(color1)-sum(color2))
+        # return abs(max(color1) - max(color2) - min(color2) + min(color1))
 
     def cmpT(self, t1, t2):
         return t1[0] == t2[0] and t1[1] == t2[1] and t1[2] == t2[2]
@@ -54,119 +59,61 @@ class filter_colors_2:
         :param im:
         :return black,white,user soldier color, rival soldier color:
         """
-        self.prev_im = im
-        board_colors = self.get_board_colors(im)
-        user_color = self.get_player_color(im, board_colors, USER)
-        rival_color = self.get_player_color(im, board_colors, RIVAL)
-        main_colors = board_colors
+        main_colors = []
+
+        black_mean_colors = []
+        for loc in BLACK_LOCS:
+            img = self.get_square_image(im, loc)
+            average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
+            black_mean_colors.append(average_color)
+        black_color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*black_mean_colors)))
+        main_colors.append(black_color)
+
+        white_mean_colors = []
+        for loc in WHITE_LOCS:
+            img = self.get_square_image(im, loc)
+            average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
+            white_mean_colors.append(average_color)
+        white_color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*white_mean_colors)))
+        main_colors.append(white_color)
+
+        user_mean_colors = []
+        for loc in USER_LOCS:
+            img = self.get_square_image(im, loc)[8:16, 8:12]
+            average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
+            user_mean_colors.append(average_color)
+        user_color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*user_mean_colors)))
+        if PRINTS:
+            print("dist( user , black ) = " + str(self.color_dist(black_color,user_color)))
+            print("dist( user , white ) = " + str(self.color_dist(white_color,user_color)))
+        if self.color_dist(black_color,user_color) < MINIMAL_COLOR_DIST or self.color_dist(white_color,user_color) < MINIMAL_COLOR_DIST:
+            if self.user_starts:
+                user_color = white_color
+            else:
+                user_color = black_color
         main_colors.append(user_color)
+
+        rival_mean_colors = []
+        for loc in RIVAL_LOCS:
+            img = self.get_square_image(im, loc)[8:16, 8:12]
+            average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
+            rival_mean_colors.append(average_color)
+        rival_color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*rival_mean_colors)))
+        if PRINTS:
+            print("dist( rival , black ) = " + str(self.color_dist(black_color,rival_color)))
+            print("dist( rival , white ) = " + str(self.color_dist(white_color,rival_color)))
+        if self.color_dist(black_color, rival_color) < MINIMAL_COLOR_DIST or self.color_dist(white_color,rival_color) < MINIMAL_COLOR_DIST:
+            if self.user_starts:
+                rival_color = black_color
+            else:
+                rival_color = white_color
         main_colors.append(rival_color)
+
         self.set_colors_nums(main_colors)
         if(PRINTS):
             print('\nmain colors are:')
             print(main_colors)
         self.main_colors = main_colors
-
-    def get_board_colors(self, im):
-        """
-        :param im:
-        :return 2 primary colors from board image:
-        """
-        im_sz = len(im)
-        ar = im[(im_sz // 3):(2 * im_sz // 3)]
-        shape = ar.shape
-        ar = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
-        codes, dist = scipy.cluster.vq.kmeans(ar, 2)
-        vecs, dist = scipy.cluster.vq.vq(ar, codes)  # assign codes
-        counts, bins = scipy.histogram(vecs, len(codes))  # count occurrences
-        indices = [i[0] for i in
-                   sorted(enumerate(-counts), key=lambda x: x[1])]
-        new_indices = []
-        new_codes = []
-        for i in indices:
-            new_codes.append(codes[i])
-        if self.color_dist(new_codes[0], BLACK) < self.color_dist(new_codes[1],
-                                                                  BLACK):
-            new_indices.append(indices[0])
-            new_indices.append(indices[1])
-        else:
-            new_indices.append(indices[1])
-            new_indices.append(indices[0])
-        return [codes[i] for i in new_indices]
-
-    def get_player_color(self, im, board_colors, player):
-        """
-        :param im:
-        :param board_colors:
-        :param player (user or rival):
-        :return player color in RGB:
-        """
-        black = board_colors[0]
-        white = board_colors[1]
-        user_starts = self.user_starts
-        ar = im
-        ar_sz = len(ar)
-        if player == RIVAL:
-            ar = ar[ar_sz // 9:(ar_sz // 3)]
-            if TEST:
-                cv2.imwrite("rival_board.jpg", ar)
-        else:
-            ar = ar[7 * (ar_sz // 9):]
-            if TEST:
-                cv2.imwrite("user_board.jpg", ar)
-        shape = ar.shape
-        ar2 = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
-        codes, dist = scipy.cluster.vq.kmeans(ar2, 3)
-        for i in range(3):
-            color_dist_1 = self.color_dist(codes[i], black)
-            color_dist_2 = self.color_dist(codes[i], white)
-            if i == 0:
-                max_dist = min(color_dist_1, color_dist_2)
-                max_dist_index = i
-            else:
-                dist_i = min(color_dist_1, color_dist_2)
-                if dist_i > max_dist:
-                    max_dist = dist_i
-                    max_dist_index = i
-        player_color = codes[max_dist_index]
-        num_of_player_pix = 0.0
-        for rowidx in range(len(ar)):
-            row = ar[rowidx]
-            for pix in row:
-                color_dist_from_player = self.color_dist(pix, player_color)
-                color_dist_from_black = self.color_dist(pix, black)
-                color_dist_from_white = self.color_dist(pix, white)
-                if color_dist_from_player < color_dist_from_black and \
-                        color_dist_from_player < color_dist_from_white:
-                    num_of_player_pix += 1
-        num_of_pix = len(ar) * len(ar[0])
-        rank = num_of_player_pix / num_of_pix
-        if TEST:
-            if player:
-                print('user rank: ' + str(rank))
-            else:
-                print('rival rank: ' + str(rank))
-
-        if rank < MINIMAL_PLAYER_BOARD_RATIO:
-            if (user_starts and not player) or (not user_starts and player):
-                player_color = black
-            else:
-                player_color = white
-        if TEST:
-            if player:
-                if (PRINTS):
-                    print("dist between user to black is: " + str(self.color_dist(player_color, black)))
-                    print("dist between user to white is: " + str(self.color_dist(player_color, white)))
-            else:
-                if(PRINTS):
-                    print("dist between rival to black is: " + str(self.color_dist(player_color, black)))
-                    print("dist between rival to white is: " + str(self.color_dist(player_color, white)))
-        if self.color_dist(player_color, black) < MINIMAL_COLOR_DIST or self.color_dist(player_color, white) < MINIMAL_COLOR_DIST:
-            if player == self.user_starts:
-                player_color = white
-            else:
-                player_color = black
-        return player_color
 
     def set_colors_nums(self, main_colors):
         self.USER_NUM = 4
@@ -213,7 +160,7 @@ class filter_colors_2:
 
     ###########################################################################
 
-    def get_square_image(self, im, loc,before):
+    def get_square_image(self, im, loc):
         """
         :param im:
         :param loc:
@@ -229,10 +176,6 @@ class filter_colors_2:
             y = locidx[1]
         area = (x * sq_sz, y * sq_sz_y, (x + 1) * sq_sz, (y + 1) * sq_sz_y)
         sqr_im = im[area[1]:area[3], area[0]:area[2]]
-        if before:
-            self.squares_before[loc] = sqr_im
-        else:
-            self.squares_after[loc] = sqr_im
         return sqr_im
 
     def fit_colors(self, im,loc):
@@ -335,7 +278,7 @@ class filter_colors_2:
         binary_im = np.zeros((im_sz, im_sz), dtype=int)
         for rowidx in range(im_sz):
             for pixidx in range(im_sz):
-                if im2[rowidx][pixidx] - im1[rowidx][pixidx] in RC:
+                if (im2[rowidx][pixidx] - im1[rowidx][pixidx]) in RC:
                     binary_im[rowidx][pixidx] = 255
         return binary_im
 
@@ -349,7 +292,7 @@ class filter_colors_2:
         if square_loc in self.squares_before.keys():
             before_square = self.squares_before[square_loc]
         else:
-            before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc, True),
+            before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc),
                                        PIXELS_SQUARE)
             before_square, before2save = self.fit_colors(before_square,square_loc)
             self.squares_before[square_loc] = before_square
@@ -357,7 +300,7 @@ class filter_colors_2:
         if square_loc in self.squares_after.keys():
             after_square = self.squares_after[square_loc]
         else:
-            after_square = cv2.resize(self.get_square_image(im, square_loc, False), PIXELS_SQUARE)
+            after_square = cv2.resize(self.get_square_image(im, square_loc), PIXELS_SQUARE)
             after_square, after2save = self.fit_colors(after_square,square_loc)
             self.squares_after[square_loc] = after_square
             self.squares_after_test[square_loc] = after2save
@@ -372,7 +315,6 @@ class filter_colors_2:
         self.squares_after = {}
         self.squares_after_test = {}
 
-
 def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
     im_bef = cv2.imread(im_bef_name)
     im_aft = cv2.imread(im_aft_name)
@@ -384,7 +326,6 @@ def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
     scipy.misc.imsave("test_after.jpg", after2save)
     cv2.imwrite("test_diff.jpg", square_diff)
     return
-
 
 def main_colors_tester(folder_name):
     chess_helper = chess_helper_2.chess_helper_2(True)
