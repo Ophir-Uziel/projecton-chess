@@ -42,9 +42,11 @@ class filter_colors_2:
         self.squares_after_test = {}
         self.prev_im = im
         self.initialize_colors(im)
+        self.set_colors_nums(self.main_colors)
+
 
     def color_dist(self, color1, color2):
-        return abs(color1[0]-color2[0])+abs(color1[1]-color2[1])+abs(color1[2]-color2[2])
+        return abs(color1[0]-color2[0]) + abs(color1[1]-color2[1]) + abs(color1[2]-color2[2])
 
     def cmpT(self, t1, t2):
         return t1[0] == t2[0] and t1[1] == t2[1] and t1[2] == t2[2]
@@ -58,7 +60,7 @@ class filter_colors_2:
 
         black_mean_colors = []
         for loc in BLACK_LOCS:
-            img = self.get_square_image(im, loc)
+            img = self.get_square_image(im, loc)[8:16, 8:12]
             average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
             black_mean_colors.append(average_color)
         color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*black_mean_colors)))
@@ -67,7 +69,7 @@ class filter_colors_2:
 
         white_mean_colors = []
         for loc in WHITE_LOCS:
-            img = self.get_square_image(im, loc)
+            img = self.get_square_image(im, loc)[8:16, 8:12]
             average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
             white_mean_colors.append(average_color)
         color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*white_mean_colors)))
@@ -108,7 +110,6 @@ class filter_colors_2:
                 rival_color = white_color
         main_colors.append(rival_color)
 
-        self.set_colors_nums(main_colors)
         if(PRINTS):
             print('main colors are:')
             print(str(main_colors)+'\n')
@@ -315,7 +316,7 @@ class filter_colors_2:
         self.squares_after_test = {}
 
     def is_rival_equals_black(self):
-        return self.cmpT(self.main_colors[0],self.main_colors[3]) or self.cmpT(self.main_colors[1],self.main_colors[3])
+        return self.bad_rival
 
 def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
     im_bef = cv2.imread(im_bef_name)
