@@ -75,16 +75,18 @@ def make_board_im(squares_im_lst, pic_hi, pic_wid, dtype = np.int):
 
 
 def connect_two_ims(im,im_abv):
+    im = im.tolist()
+    im_abv = im_abv.tolist()
     row_num = len(im)*2
     col_num = len(im[0])
     new_im = np.zeros((row_num,col_num), np.int).tolist()
     for i in range(row_num//2):
         new_im[i] = im_abv[i]
         new_im[i+(row_num//2)] = im[i]
-    return new_im
+    return list(new_im)
 
 def connect_two_ims_lst(im_lst, im_abv_lst):
-    return list(map(connect_two_ims, (im_lst, im_abv_lst)))
+    return list(map(connect_two_ims, im_lst, im_abv_lst))
 
 
 def make_two_ims_dir(game_dir, y_or_n,counter):

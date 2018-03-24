@@ -39,6 +39,7 @@ def train_net(net, y_img, n_img):
 
 
 def check_net(net, imgs, dir_name = None):
+    imgs = im_to_lst(imgs, len(imgs[0]))
     if(dir_name):
         tester_helper.make_dir(dir_name)
         cnt = 0
@@ -93,6 +94,16 @@ def test(size,im_num):
     out = check_net(net, n_img)
     print(out)
 
+
+def im_to_lst(lst, row_num):
+    imgs = []
+    for i in range(len(lst)):
+        new_im =[]
+        for row in lst[i]:
+            for pixel in row:
+                new_im.append(pixel)
+        imgs.append(new_im)
+    return imgs
 
 def read_imgs(lst, fold):
     imgs = []
@@ -157,6 +168,6 @@ def read_test():
     print(str(sum(y_results)) + " out of " + str(len(y_results)))
 
 
-read_test()
+#read_test()
 
 

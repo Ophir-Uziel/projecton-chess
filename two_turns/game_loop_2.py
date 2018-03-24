@@ -2,7 +2,7 @@ import os
 import errno
 import hardware as hw
 import chess_helper_2 as ch
-import find_moves_rank2 as fm
+import find_move_rank2 as fm
 import photos_angle_2
 import chess_engine_wrapper
 import gui_img_manager
@@ -60,7 +60,6 @@ class game_loop_2:
 
         if not self.is_test:
             gui_img_manager.set_finished(True)
-
         self.movefinder = fm.find_moves_rank(self.chesshelper, self.net_dir_name)
         self.chess_engine = chess_engine_wrapper.chess_engine_wrapper()
 
