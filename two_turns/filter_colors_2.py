@@ -3,23 +3,19 @@ import scipy
 import scipy.misc
 import scipy.cluster
 import chess_helper_2
-import chess
 import cv2
-import math
 import os
 import copy
 
 BLACK = (0, 0, 100)
-MINIMAL_PLAYER_BOARD_RATIO = 0.2
 MINIMAL_COLOR_DIST = 60
-PIXELS_FOR_MAIN_COLORS = (400, 450)
 PIXELS_SQUARE = (20, 20)
 BLACK_NUM = 1
 WHITE_NUM = 2
 USER = True
 RIVAL = False
 TEST = True
-BLACK_TEST = (100, 100, 100)
+BLACK_TEST = (0, 0, 0)
 WHITE_TEST = (255, 255, 255)
 BLACK_LOCS = ['a5','b4','c5','d4','e5','f4','g5','h4']
 WHITE_LOCS = ['a4','b5','c4','d5','e4','f5','g4','h5']
@@ -49,7 +45,6 @@ class filter_colors_2:
 
     def color_dist(self, color1, color2):
         return abs(color1[0]-color2[0])+abs(color1[1]-color2[1])+abs(color1[2]-color2[2])
-        # return abs(max(color1) - max(color2) - min(color2) + min(color1))
 
     def cmpT(self, t1, t2):
         return t1[0] == t2[0] and t1[1] == t2[1] and t1[2] == t2[2]
