@@ -6,7 +6,7 @@ import tester_helper
 import numpy as np
 
 print_and_save = True
-
+DEBUG = False
 
 class photos_angle_2:
     def __init__(self, hardware1, chess_helper, delay_chess_helper, self_idx):
@@ -39,8 +39,10 @@ class photos_angle_2:
             new_board_im = self.prep_im
 
 
-            better_cut_board_im = self.fixer.main(new_board_im)
-            #better_cut_board_im = new_board_im
+            #better_cut_board_im = self.fixer.main(new_board_im)
+            better_cut_board_im = new_board_im
+            # TODO: this^
+
 
             if to_save:
                 move_num = tester_info[0]
@@ -51,8 +53,9 @@ class photos_angle_2:
 
             return better_cut_board_im
         except:
-            cv2.imshow("image", new_board_im)
-            cv2.waitKey(0)
+            if self.hardware.is_live:
+                cv2.imshow("image", new_board_im)
+                cv2.waitKey(0)
             print("get new im failed")
             raise Exception()
 

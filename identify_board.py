@@ -4,7 +4,8 @@ import math
 import copy
 import os
 import errno
-#import gui_img_manager
+
+# import gui_img_manager
 
 # import filter_colors
 # import chess_helper
@@ -13,8 +14,6 @@ import errno
 This file is responsible for getting an image and returning only the board's
 image, projected to be rectangular.
 """
-
-ANGLE_FIX = 1
 
 ##### Image resize and cut dimensions #####
 RESIZE_WIDTH = 600
@@ -29,13 +28,13 @@ HOR_MIN_INTERSECT = 6
 
 ##### Angle Ranges #####
 VER_MIN_ANGLE = 0.9
-VER_MAX_ANGLE = 2.2
+VER_MAX_ANGLE = 2.3
 VER_LEFT_MIN_ANGLE = 1.5
-VER_LEFT_MAX_ANGLE = 2.2
+VER_LEFT_MAX_ANGLE = 2.3
 VER_RIGHT_MIN_ANGLE = 0.9
 VER_RIGHT_MAX_ANGLE = 1.5
 HOR_MIN_ANGLE = 0.15
-HOR_MAX_ANGLE = 3
+HOR_MAX_ANGLE = 3.0
 HOR_DIFF_ANGLE = 0.09
 
 # VER_MIN_ANGLE = 0.9
@@ -83,18 +82,18 @@ FOURTH_LINE_MIN_LENGTH = 115
 FOURTH_LINE_MAX_GAP = 30
 PROJECTION_IMAGE_PADDING_RATIO = 1.0 / 7
 
-
 PROJECTION_SPARE_GRID_SIZE = 12
-PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE-8)/2
-PROJECTION_SPARE_GRID_SIZE_BIG = 2*PROJECTION_SPARE_GRID_SIZE
-PROJECTION_SPARE_DIFF_BIG = (PROJECTION_SPARE_GRID_SIZE_BIG-8)/2
+PROJECTION_SPARE_DIFF = (PROJECTION_SPARE_GRID_SIZE - 8) / 2
+PROJECTION_SPARE_GRID_SIZE_BIG = 2 * PROJECTION_SPARE_GRID_SIZE
+PROJECTION_SPARE_DIFF_BIG = (PROJECTION_SPARE_GRID_SIZE_BIG - 8) / 2
 
-BIG_RESIZE_WIDTH = int(PROJECTION_SPARE_GRID_SIZE_BIG*RESIZE_WIDTH\
-                   /PROJECTION_SPARE_GRID_SIZE)
-BIG_RESIZE_HEIGHT = int(PROJECTION_SPARE_GRID_SIZE_BIG*RESIZE_HEIGHT\
-                   /PROJECTION_SPARE_GRID_SIZE)
+BIG_RESIZE_WIDTH = int(PROJECTION_SPARE_GRID_SIZE_BIG * RESIZE_WIDTH \
+                       / PROJECTION_SPARE_GRID_SIZE)
+BIG_RESIZE_HEIGHT = int(PROJECTION_SPARE_GRID_SIZE_BIG * RESIZE_HEIGHT \
+                        / PROJECTION_SPARE_GRID_SIZE)
 
-DEBUG = True
+DEBUG = False
+
 
 def make_dir(dir_name):
     try:
@@ -105,13 +104,13 @@ def make_dir(dir_name):
 
 
 class identify_board:
-
     def __init__(self):
         self.first = False
 
     """
     :return image of board, including an extra line above the board
     """
+
     def get_image_from_img(self, image, should_cut):
         real_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         img = cv2.cvtColor(real_img, cv2.COLOR_RGB2GRAY)
@@ -121,7 +120,8 @@ class identify_board:
             resizeImg = cv2.resize(img, (len(img[0]), len(img)), fx=fx_shrink,
                                    fy=fy_shrink)
             resizeImg = resizeImg[CUT_UP:CUT_DOWN, :]
-            real_img = cv2.resize(real_img, (len(img[0]), len(img)), fx=fx_shrink,
+            real_img = cv2.resize(real_img, (len(img[0]), len(img)),
+                                  fx=fx_shrink,
                                   fy=fy_shrink)
             real_img \
                 = real_img[CUT_UP:CUT_DOWN, :]
@@ -131,40 +131,36 @@ class identify_board:
         threshim = self.gausThresholdChess(resizeImg)
         edgeim = self.edgeDetectionChess(threshim)
         edgeim = cv2.convertScaleAbs(edgeim)
-        if(DEBUG):
+        if (DEBUG):
             cv2.imshow("sahar", edgeim)
             cv2.waitKey(0)
         return edgeim, real_img
 
-    def gausThresholdChess(self, img):#use
+    def gausThresholdChess(self, img):  # use
         gaus = cv2.adaptiveThreshold(img, GAUSS_MAX_VALUE,
                                      cv2.ADAPTIVE_THRESH_MEAN_C,
-                                     cv2.THRESH_BINARY, GAUSS_BLOCK_SIZE, GAUSS_C)
+                                     cv2.THRESH_BINARY, GAUSS_BLOCK_SIZE,
+                                     GAUSS_C)
 
         return gaus
 
     def edgeDetectionChess(self, img):
-        lapalacian = cv2.Laplacian(img, cv2.CV_64F, EDGE_DST, EDGE_KSIZE, EDGE_SCALE)
+        lapalacian = cv2.Laplacian(img, cv2.CV_64F, EDGE_DST, EDGE_KSIZE,
+                                   EDGE_SCALE)
 
         return lapalacian
-
-    def i_strongest_value(self,list,i):
-        sorted(list,reverse=True)
-        return list[i-1]
 
     def lines_filter(self, img):
         ver, hor = self.find_lines(img)
         rank_ver = [self.num_of_cutting(item, hor) for item in ver]
         rank_hor = [self.num_of_cutting(item, ver) for item in hor]
-        ver_min_inspect = self.i_strongest_value(rank_ver,8)
-        hor_min_inspect = self.i_strongest_value(rank_hor,4)
         for i in range(len(rank_ver)):
             i2 = len(rank_ver) - 1 - i
-            if (rank_ver[i2] < ver_min_inspect):
+            if (rank_ver[i2] < VER_MIN_INTERSECT):
                 ver = ver[:i2] + ver[i2 + 1:]
         for i in range(len(rank_hor)):
             i2 = len(rank_hor) - 1 - i
-            if (rank_hor[i2] < hor_min_inspect):
+            if (rank_hor[i2] < HOR_MIN_INTERSECT):
                 hor = hor[:i2] + hor[i2 + 1:]
         return ver, hor
 
@@ -182,7 +178,6 @@ class identify_board:
                         l) > HOR_MAX_ANGLE:  # WTF
                     left_right.append(l)
 
-
         return up_down, left_right
 
     def num_of_cutting(self, line, lines):
@@ -190,7 +185,7 @@ class identify_board:
         for l in lines:
             point = self.get_cutoff_point(line, l)
             if self.is_in_line(point, l) and self.is_in_line(point, line):
-                count += (self.line_length(l))**2
+                count += 1
         return count
 
     def lines_filter2(self, verticel_lines_lst, horizontal_lines_lst):
@@ -250,7 +245,8 @@ class identify_board:
         if line[2] == line[0]:
             theta = math.pi / 2
         else:
-            theta = (float)(math.atan2(float(line[3] - line[1]), float(line[2] - line[0])))
+            theta = (float)(
+                math.atan2(float(line[3] - line[1]), float(line[2] - line[0])))
         return (theta % math.pi);
 
     def find_m_n(self, line):
@@ -311,7 +307,8 @@ class identify_board:
     def find_specific_line(self, croped_img, bottom_theta, threelines,
                            x_tikun, y_tikun):
         croped_img = cv2.convertScaleAbs(croped_img)
-        linesP = cv2.HoughLinesP(croped_img, FOURTH_LINE_RHO_RES, FOURTH_LINE_THETA_RES,
+        linesP = cv2.HoughLinesP(croped_img, FOURTH_LINE_RHO_RES,
+                                 FOURTH_LINE_THETA_RES,
                                  FOURTH_LINE_MIN_VOTES, None,
                                  FOURTH_LINE_MIN_LENGTH, FOURTH_LINE_MAX_GAP)
         l = []
@@ -370,15 +367,12 @@ class identify_board:
         point.append(y)
         return point
 
-
-
-
     def get_board_image(self, img):
         fy_shrink = RESIZE_HEIGHT / len(img)
         fx_shrink = RESIZE_WIDTH / len(img[0])
         resizeImg = cv2.resize(img, (len(img[0]), len(img)), fx=fx_shrink,
                                fy=fy_shrink)
-        resizeImg = resizeImg[CUT_UP:CUT_DOWN,:]
+        resizeImg = resizeImg[CUT_UP:CUT_DOWN, :]
         resizeImgGrey = cv2.cvtColor(resizeImg, cv2.COLOR_RGB2GRAY)
         # get lines from image, and edge-image
         edgeim = self.get_edge_image(resizeImgGrey)
@@ -396,37 +390,44 @@ class identify_board:
 
         # self.draw_lines([],croped_img)
 
-        forth_line = self.find_specific_line(croped_img, bottom_theta, lines, x_tikun,
+        forth_line = self.find_specific_line(croped_img, bottom_theta, lines,
+                                             x_tikun,
                                              y_tikun)
         # self.draw_lines(forth_line,croped_img)
         # get final points
-        final_points = self.get_final_points(lines, forth_line, x_tikun, y_tikun)
+        final_points = self.get_final_points(lines, forth_line, x_tikun,
+                                             y_tikun)
         # self.draw_lines_by_points(final_points,egdeim_copy)
         board_img = self.projection(final_points, resizeImg)
 
         return board_img
 
-
     def is_in_line(self, point, line):
-        if line[0] >= point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and line[2] <= point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and \
-                line[1] >= point[1] - MAX_PIXEL_DISTANCE_FROM_LINE and line[3] <= point[
-            1] + MAX_PIXEL_DISTANCE_FROM_LINE:
+        if line[0] >= point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and line[2] <= \
+                        point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and \
+                        line[1] >= point[1] - MAX_PIXEL_DISTANCE_FROM_LINE and \
+                        line[3] <= point[
+                    1] + MAX_PIXEL_DISTANCE_FROM_LINE:
             return True
-        if line[0] >= point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and line[2] <= point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and \
-                line[1] <= point[1] + MAX_PIXEL_DISTANCE_FROM_LINE and line[3] >= point[
-            1] - MAX_PIXEL_DISTANCE_FROM_LINE:
+        if line[0] >= point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and line[2] <= \
+                        point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and \
+                        line[1] <= point[1] + MAX_PIXEL_DISTANCE_FROM_LINE and \
+                        line[3] >= point[
+                    1] - MAX_PIXEL_DISTANCE_FROM_LINE:
             return True
-        if line[0] <= point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and line[2] >= point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and \
-                line[1] >= point[1] - MAX_PIXEL_DISTANCE_FROM_LINE and line[3] <= point[
-            1] + MAX_PIXEL_DISTANCE_FROM_LINE:
+        if line[0] <= point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and line[2] >= \
+                        point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and \
+                        line[1] >= point[1] - MAX_PIXEL_DISTANCE_FROM_LINE and \
+                        line[3] <= point[
+                    1] + MAX_PIXEL_DISTANCE_FROM_LINE:
             return True
-        if line[0] <= point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and line[2] >= point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and \
-                line[1] <= point[1] + MAX_PIXEL_DISTANCE_FROM_LINE and line[3] >= point[
-            1] - MAX_PIXEL_DISTANCE_FROM_LINE:
+        if line[0] <= point[0] + MAX_PIXEL_DISTANCE_FROM_LINE and line[2] >= \
+                        point[0] - MAX_PIXEL_DISTANCE_FROM_LINE and \
+                        line[1] <= point[1] + MAX_PIXEL_DISTANCE_FROM_LINE and \
+                        line[3] >= point[
+                    1] - MAX_PIXEL_DISTANCE_FROM_LINE:
             return True
         return False
-
-
 
     def get_lines_theta(self, lines):
         new_lines = []
@@ -435,11 +436,6 @@ class identify_board:
             theta = self.get_theta(current)
             new_lines.append(theta)
         return new_lines
-
-
-
-
-
 
     def find_avg_line_color(self, line, img):
         dx = 2
@@ -463,8 +459,6 @@ class identify_board:
         color[1] = (color[1] / (x_max - x_min)) / (y_max - y_min)
         color[2] = (color[2] / (x_max - x_min)) / (y_max - y_min)
         return color
-
-
 
     def get_real_theta_right(self, line1, line2):
         theta1 = self.get_theta(line1)
@@ -498,7 +492,6 @@ class identify_board:
 
         return [x1, y1, x2, y2]
 
-
     def fix_points_for_projection(self, points_lst):
         fix_point = 20
         p1 = points_lst[0]
@@ -528,17 +521,18 @@ class identify_board:
         pts1 = np.float32(pointslst)
         x_hi = (diff + 8) * width \
                / grid
-        x_lo = (diff+ 0) * width\
+        x_lo = (diff + 0) * width \
                / grid
-        y_hi = (diff) * height/ \
+        y_hi = (diff) * height / \
                grid
         y_lo = (diff + 8
-                ) * height/ grid
+                ) * height / grid
         pts2 = np.float32([[x_lo, y_hi], [x_hi, y_hi],
                            [x_lo, y_lo], [x_hi, y_lo]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
-        if(big_picture):
-            dst = cv2.warpPerspective(img, M, (BIG_RESIZE_WIDTH, BIG_RESIZE_HEIGHT))
+        if (big_picture):
+            dst = cv2.warpPerspective(img, M,
+                                      (BIG_RESIZE_WIDTH, BIG_RESIZE_HEIGHT))
         else:
             dst = cv2.warpPerspective(img, M, (RESIZE_WIDTH, RESIZE_HEIGHT))
         if (DEBUG):
@@ -549,10 +543,6 @@ class identify_board:
     """
     returns perpendicular line that bisects given line.
     """
-
-    def line_length(self,line):
-        return (float((line[2]-line[0])**2 + (line[3]-line[1])**2))**0.5
-
 
     def get_perpendicular(self, line):
         midx = (line[0] + line[2]) * 1.0 / 2
@@ -569,7 +559,6 @@ class identify_board:
         topx = midx - midy * m_inv
         return [int(midx), int(midy), int(topx), int(topy)]
 
-
     def draw_lines_by_points(self, points, img):
         line0 = points[0] + points[1]
         line1 = points[2] + points[0]
@@ -585,10 +574,10 @@ class identify_board:
 
         for i in range(0, len(new_lines)):
             l = new_lines[i]
-            cv2.line(bin, (l[0], l[1]), (l[2], l[3]), (255, 0, 0), 3, cv2.LINE_AA)
+            cv2.line(bin, (l[0], l[1]), (l[2], l[3]), (255, 0, 0), 3,
+                     cv2.LINE_AA)
         cv2.imshow("ophir hamelech", bin)
         k = cv2.waitKey(0)
-
 
     def get_line_image(self, points, img):
         line0 = points[0] + points[1]
@@ -605,16 +594,15 @@ class identify_board:
 
         for i in range(0, len(new_lines)):
             l = new_lines[i]
-            cv2.line(bin, (l[0], l[1]), (l[2], l[3]), (255, 0, 0), 3, cv2.LINE_AA)
+            cv2.line(bin, (l[0], l[1]), (l[2], l[3]), (255, 0, 0), 3,
+                     cv2.LINE_AA)
         return bin
-
-
 
     def get_image_from_filename(self, imgFileName):
         real_img = cv2.imread(imgFileName, cv2.IMREAD_COLOR)
         return real_img
 
-    def process_im(self,real_img, should_cut):
+    def process_im(self, real_img, should_cut):
         img = cv2.cvtColor(real_img, cv2.COLOR_RGB2GRAY)
         fy_shrink = 500 / len(img)
         fx_shrink = 500 / len(img[0])
@@ -622,7 +610,8 @@ class identify_board:
             resizeImg = cv2.resize(img, (len(img[0]), len(img)), fx=fx_shrink,
                                    fy=fy_shrink)
             resizeImg = resizeImg[CUT_UP:CUT_DOWN, :]
-            real_img = cv2.resize(real_img, (len(img[0]), len(img)), fx=fx_shrink,
+            real_img = cv2.resize(real_img, (len(img[0]), len(img)),
+                                  fx=fx_shrink,
                                   fy=fy_shrink)
             real_img \
                 = real_img[CUT_UP:CUT_DOWN, :]
@@ -645,7 +634,8 @@ class identify_board:
         new_img = cv2.cvtColor(new_img, cv2.COLOR_GRAY2BGR)
         for i in range(0, len(lineslst)):
             l = lineslst[i]
-            cv2.line(new_img, (l[0], l[1]), (l[2], l[3]), (255, 0, 0), 3, cv2.LINE_AA)
+            cv2.line(new_img, (l[0], l[1]), (l[2], l[3]), (255, 0, 0), 3,
+                     cv2.LINE_AA)
             #        img = cv2.resize(img, (0, 0), fx=1, fy=1)
         cv2.imshow('ophir', new_img)
         k = cv2.waitKey(0)
@@ -653,7 +643,9 @@ class identify_board:
 
     def get_final_points(self, lines, fourth_line, x_tikun, y_tikun):
         # print(fourth_line)
-        real_forth_line = [fourth_line[0][0] + x_tikun, fourth_line[0][1] + y_tikun, fourth_line[0][2] + x_tikun,
+        real_forth_line = [fourth_line[0][0] + x_tikun,
+                           fourth_line[0][1] + y_tikun,
+                           fourth_line[0][2] + x_tikun,
                            fourth_line[0][3] + y_tikun]
 
         final_points = []
@@ -675,62 +667,24 @@ class identify_board:
             try:
 
                 real_img = self.get_image_from_filename(
-                    foldername +'\\' +img_name)
+                    foldername + '\\' + img_name)
 
-                img , edgiem = self.main(real_img)
-                cv2.imwrite(foldername + "\\" +'projected\\' + img_name, img)
-                print (img_name + ' sucsseed!!')
+                img, edgiem = self.main(real_img)
+                cv2.imwrite(foldername + "\\" + 'projected\\' + img_name, img)
+                print(img_name + ' sucsseed!!')
             except:
                 print(img_name + " failed")
-
-    def find_hor_lines_avg_theta(self,lines):
-        thetas = []
-        for line in lines:
-            if self.get_theta(line) < 0.15:
-                thetas.append(self.get_theta(line))
-            elif self.get_theta(line) > 3:
-                thetas.append(self.get_theta(line) - math.pi)
-        return np.median(thetas)
-
-    def rotate_image_fix(self, image, angle_fix):
-        rows,cols = image.shape[0:2]
-        M = cv2.getRotationMatrix2D((cols/2,rows/2),angle_fix, 1)
-        return cv2.warpAffine(image, M, (cols,rows))
-
 
     def main(self, img):
 
         edgeim, real_img = self.process_im(img, should_cut=True)
-        
-#        gui_img_manager.add_img(edgeim)
 
-        egdeim_copy = copy.deepcopy(edgeim)
-        '''
-        linesP = cv2.HoughLinesP(egdeim_copy, RHO_RES, THETA_RES,300, None, 200, 1)
-        new_linesP = []
-        for l in linesP:
-            new_linesP.append(l[0])
-        #self.draw_lines(new_linesP, egdeim_copy)
-        avg_theta = self.find_hor_lines_avg_theta(new_linesP)
-        print('avf=' + str(avg_theta))
-        new_edge  = self.rotate_image_fix(egdeim_copy,avg_theta*180/math.pi)
-        cv2.imshow('sad',new_edge)
-        cv2.waitKey(0)
-        egdeim_copy = new_edge
-        '''
-        '''
-        kernel = np.ones((6, 6), np.uint8)
-        egdeim_copy = cv2.morphologyEx(egdeim_copy, cv2.MORPH_CLOSE, kernel)
-        egdeim_copy = cv2.morphologyEx(egdeim_copy, cv2.MORPH_OPEN, kernel)
-        egdeim_copy = cv2.dilate(egdeim_copy,kernel,iterations=2)
-        egdeim_copy = cv2.erode(egdeim_copy,kernel,iterations=2)
-        '''
-
-
+        #        gui_img_manager.add_img(edgeim)
 
 
         try:
-            ver, her = self.lines_filter(egdeim_copy)
+            egdeim_copy = copy.deepcopy(edgeim)
+            ver, her = self.lines_filter(edgeim)
             if (DEBUG):
                 self.draw_lines(ver, egdeim_copy)
                 self.draw_lines(her, egdeim_copy)
@@ -743,7 +697,8 @@ class identify_board:
 
             # find exectly the forth line
             croped_img, x_tikun, y_tikun = self.rect_cutter(egdeim_copy,
-                                                            [points[0], points[1]])
+                                                            [points[0],
+                                                             points[1]])
             # self.draw_lines([],croped_img)
 
             forth_line = self.find_specific_line(croped_img,
@@ -752,31 +707,33 @@ class identify_board:
             #                self.draw_lines(forth_line,croped_img)
 
             # get final points
-            final_points = self.get_final_points(lines, forth_line, x_tikun, y_tikun)
+            final_points = self.get_final_points(lines, forth_line, x_tikun,
+                                                 y_tikun)
 
             #                self.draw_lines_by_points(final_points,egdeim_copy)
             img = self.projection_with_spare(final_points, real_img, False)
             edgeim = self.projection_with_spare(final_points, edgeim, False)
             bigim = self.projection_with_spare(final_points, real_img, True)
-            #if (DEBUG):
-                #cv2.imshow('sss', bigim)
-                #cv2.waitKey(0)
+            if (DEBUG):
+                cv2.imshow('sss', bigim)
+                cv2.waitKey(0)
             return img, edgeim, bigim
         except:
             if (DEBUG):
                 print("identify board has failed")
             return real_img, edgeim, real_img
 
-# a = identify_board()
-# a.test('two_turns\\angle1')
+            # a = identify_board()
+            # a.test('two_turns\\angle1')
 
 
-            #a = identify_board()
-#img = cv2.imread("images/cam0.jpg", cv2.IMREAD_COLOR)
-#new , edg_new = a.main(img)
 
-# if you want to see the image:
-#new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
-#a.draw_lines([],new)
-#a.test('images\\source')
-#check
+            # a = identify_board()
+            # img = cv2.imread("images/cam0.jpg", cv2.IMREAD_COLOR)
+            # new , edg_new = a.main(img)
+
+            # if you want to see the image:
+            # new = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
+            # a.draw_lines([],new)
+            # a.test('images\\source')
+            # check
