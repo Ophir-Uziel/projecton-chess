@@ -44,7 +44,6 @@ def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
     detected_moves = []
     game.main()
 
-
 def berkos_tester(fold_name):
     make_dir("berkos")
     if fold_name in os.listdir("berkos"):
@@ -68,6 +67,31 @@ def berkos_tester(fold_name):
                     break
                 except:
                     print("pls take_another_img")
+
+def berkos_tester_2(fold_name):
+    make_dir("berkos")
+    if fold_name in os.listdir("berkos"):
+        raise Exception("change the name of tje folder!")
+    else:
+        make_dir("berkos\\" + fold_name)
+    ch = chess_helper_2.chess_helper_2(True)
+    hw = hardware.hardware(1)
+    cnt = 0
+    while True:
+        cnt += 1
+        for i in range(1):
+            while True:
+                try:
+                    ph = photos_angle_2.photos_angle_2(hw, ch, ch, i)
+                    ph.prep_img()
+                    img = ph.get_new_img()
+                    cv2.imwrite("berkos\\" + fold_name + "\\" + str(cnt) +
+                                "_" +
+                                str(i) + ".jpg", img)
+                    break
+                except:
+                    print("pls take_another_img")
+
 
 def if_one_dir(dir):
     img_names = os.listdir(dir)

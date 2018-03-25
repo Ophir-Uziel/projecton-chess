@@ -17,11 +17,12 @@ RIVAL = False
 TEST = True
 BLACK_TEST = (0, 0, 0)
 WHITE_TEST = (255, 255, 255)
-BLACK_LOCS = ['a5','b4','c5','d4','e5','f4','g5','h4']
-WHITE_LOCS = ['a4','b5','c4','d5','e4','f5','g4','h5']
-USER_LOCS = ['a1','b1','c1','d1','e1','f1','g1','h1','a2','b2','c2','d2','e2','f2','g2','h2']
-RIVAL_LOCS = ['a7','b7','c7','d7','e7','f7','g7','h7','a8','b8','c8','d8','e8','f8','g8','h8']
+BLACK_LOCS = ['a5', 'b4', 'c5', 'd4', 'e5', 'f4', 'g5', 'h4']
+WHITE_LOCS = ['a4', 'b5', 'c4', 'd5', 'e4', 'f5', 'g4', 'h5']
+USER_LOCS = ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2']
+RIVAL_LOCS = ['a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7', 'a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8']
 PRINTS = True
+
 
 class filter_colors_2:
     """
@@ -44,9 +45,8 @@ class filter_colors_2:
         self.initialize_colors(im)
         self.set_colors_nums(self.main_colors)
 
-
     def color_dist(self, color1, color2):
-        return abs(color1[0]-color2[0]) + abs(color1[1]-color2[1]) + abs(color1[2]-color2[2])
+        return abs(color1[0] - color2[0]) + abs(color1[1] - color2[1]) + abs(color1[2] - color2[2])
 
     def cmpT(self, t1, t2):
         return t1[0] == t2[0] and t1[1] == t2[1] and t1[2] == t2[2]
@@ -84,35 +84,39 @@ class filter_colors_2:
         color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*user_mean_colors)))
         user_color = int(color[0]), int(color[1]), int(color[2])
         if PRINTS:
-            print("dist( user , black ) = " + str(int(self.color_dist(black_color,user_color))))
-            print("dist( user , white ) = " + str(int(self.color_dist(white_color,user_color))))
-        if self.color_dist(black_color,user_color) < MINIMAL_COLOR_DIST or self.color_dist(white_color,user_color) < MINIMAL_COLOR_DIST:
+            print("dist( user , black ) = " + str(int(self.color_dist(black_color, user_color))))
+            print("dist( user , white ) = " + str(int(self.color_dist(white_color, user_color))))
+        if self.color_dist(black_color, user_color) < MINIMAL_COLOR_DIST or self.color_dist(white_color,
+                                                                                            user_color) < MINIMAL_COLOR_DIST:
             if self.user_starts:
                 user_color = white_color
             else:
                 user_color = black_color
         main_colors.append(user_color)
 
-        rival_mean_colors = []
-        for loc in RIVAL_LOCS:
-            img = self.get_square_image(im, loc)[8:16, 8:12]
-            average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
-            rival_mean_colors.append(average_color)
-        color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*rival_mean_colors)))
-        rival_color = int(color[0]), int(color[1]), int(color[2])
-        if PRINTS:
-            print("dist( rival , black ) = " + str(int(self.color_dist(black_color,rival_color))))
-            print("dist( rival , white ) = " + str(int(self.color_dist(white_color,rival_color))))
-        if self.color_dist(black_color, rival_color) < MINIMAL_COLOR_DIST or self.color_dist(white_color,rival_color) < MINIMAL_COLOR_DIST:
-            if self.user_starts:
-                rival_color = black_color
-            else:
-                rival_color = white_color
+        # rival_mean_colors = []
+        # for loc in RIVAL_LOCS:
+        #     img = self.get_square_image(im, loc)[8:16, 8:12]
+        #     average_color = [img[:, :, i].mean() for i in range(img.shape[-1])]
+        #     rival_mean_colors.append(average_color)
+        # color = tuple(map(lambda y: sum(y) / float(len(y)), zip(*rival_mean_colors)))
+        # rival_color = int(color[0]), int(color[1]), int(color[2])
+        # if PRINTS:
+        #     print("dist( rival , black ) = " + str(int(self.color_dist(black_color, rival_color))))
+        #     print("dist( rival , white ) = " + str(int(self.color_dist(white_color, rival_color))))
+        # if self.color_dist(black_color, rival_color) < MINIMAL_COLOR_DIST or self.color_dist(white_color,
+        #                                                                                      rival_color) < MINIMAL_COLOR_DIST:
+        #     if self.user_starts:
+        #         rival_color = black_color
+        #     else:
+        #         rival_color = white_color
+        rival_color = black_color
+        # TODO change it only if we choose to play with 4 colors
         main_colors.append(rival_color)
 
-        if(PRINTS):
+        if (PRINTS):
             print('main colors are:')
-            print(str(main_colors)+'\n')
+            print(str(main_colors) + '\n')
         self.main_colors = main_colors
 
     def set_colors_nums(self, main_colors):
@@ -178,7 +182,7 @@ class filter_colors_2:
         sqr_im = im[area[1]:area[3], area[0]:area[2]]
         return sqr_im
 
-    def fit_colors(self, im,loc):
+    def fit_colors(self, im, loc):
         """
         :param im:
         :return image fit to 4 main colors:
@@ -195,7 +199,8 @@ class filter_colors_2:
                     if dist < min_dist:
                         min_dist = dist
                         new_im[rowidx][pixidx] = WHITE_NUM
-                    if self.chess_helper_2.piece_color(loc) or self.chess_helper_2.piece_color(chess_helper_2.get_square_below(loc)):
+                    if self.chess_helper_2.piece_color(loc) or self.chess_helper_2.piece_color(
+                            chess_helper_2.get_square_below(loc)):
                         dist = self.color_dist(pix, self.main_colors[2])
                         if dist < min_dist:
                             min_dist = dist
@@ -215,7 +220,8 @@ class filter_colors_2:
                         min_dist = dist
                         new_im[rowidx][pixidx] = WHITE_NUM
                         test_im[rowidx][pixidx] = WHITE_TEST
-                    if self.chess_helper_2.piece_color(loc) or self.chess_helper_2.piece_color(self.chess_helper_2.get_square_below(loc)):
+                    if self.chess_helper_2.piece_color(loc) or self.chess_helper_2.piece_color(
+                            self.chess_helper_2.get_square_below(loc)):
                         dist = self.color_dist(pix, self.main_colors[2])
                         if dist < min_dist:
                             min_dist = dist
@@ -294,14 +300,14 @@ class filter_colors_2:
         else:
             before_square = cv2.resize(self.get_square_image(self.prev_im, square_loc),
                                        PIXELS_SQUARE)
-            before_square, before2save = self.fit_colors(before_square,square_loc)
+            before_square, before2save = self.fit_colors(before_square, square_loc)
             self.squares_before[square_loc] = before_square
             self.squares_before_test[square_loc] = before2save
         if square_loc in self.squares_after.keys():
             after_square = self.squares_after[square_loc]
         else:
             after_square = cv2.resize(self.get_square_image(im, square_loc), PIXELS_SQUARE)
-            after_square, after2save = self.fit_colors(after_square,square_loc)
+            after_square, after2save = self.fit_colors(after_square, square_loc)
             self.squares_after[square_loc] = after_square
             self.squares_after_test[square_loc] = after2save
         square_diff = self.make_binary_relevant_diff_im(before_square, after_square, square_loc, is_source)
@@ -317,6 +323,95 @@ class filter_colors_2:
 
     def is_rival_equals_black(self):
         return self.bad_rival
+
+def make_binary_relevant_diff_im_test(self, im1, im2, square, is_source):
+    user_is_white = self.user_starts
+    is_white = self.chess_helper_2.square_color(square)
+    if int(square[1]) == 9:
+        above_board = True
+    else:
+        above_board = False
+    RC = []
+    if is_source:
+        if above_board:
+            RC.append(self.R2W)
+            RC.append(self.R2B)
+        elif is_white:
+            RC.append(self.R2W)
+        else:
+            RC.append(self.R2B)
+        if self.chess_helper_2.piece_color(square):
+            if is_white != user_is_white:
+                if not self.bad_rival:
+                    RC.append(self.R2U)
+            else:
+                RC.append(self.R2U)
+    else:
+        if above_board:
+            RC.append(self.W2R)
+            RC.append(self.B2R)
+        elif is_white:
+            RC.append(self.W2R)
+        else:
+            RC.append(self.B2R)
+        sq_below = self.chess_helper_2.get_square_below(square)
+        if self.bad_rival and is_white != user_is_white:
+            if self.delay_chess_helper_2.piece_color(square) and self.chess_helper_2.piece_color(
+                    square):
+                if self.delay_chess_helper_2.piece_color(sq_below) == self.chess_helper_2.piece_color(sq_below):
+                    RC.append(self.U2R)
+            if self.delay_chess_helper_2.piece_color(sq_below) and self.chess_helper_2.piece_color(
+                    sq_below):
+                if self.delay_chess_helper_2.piece_color(square) == self.chess_helper_2.piece_color(square):
+                    RC.append(self.U2R)
+        elif self.delay_chess_helper_2.piece_color(square) or self.delay_chess_helper_2.piece_color(sq_below):
+            RC.append(self.U2R)
+
+    while 0 in RC:
+        RC.remove(0)
+    im_sz = len(im1)
+    binary_im = np.zeros((im_sz, im_sz), dtype=int)
+    for rowidx in range(im_sz):
+        for pixidx in range(im_sz):
+            if (im2[rowidx][pixidx] - im1[rowidx][pixidx]) in RC:
+                binary_im[rowidx][pixidx] = 255
+    return binary_im
+
+def fit_colors_test(im,piece, piece_below,filter):
+    """
+    :param im:
+    :return image fit to 4 main colors:
+    """
+    im_sz = len(im)
+    new_im = np.ones((im_sz, im_sz), dtype=int)
+    for rowidx in range(im_sz):
+        for pixidx in range(im_sz):
+            pix = im[rowidx][pixidx]
+            min_dist = filter.color_dist(pix, filter.main_colors[0])
+            dist = filter.color_dist(pix, filter.main_colors[1])
+            if dist < min_dist:
+                min_dist = dist
+                new_im[rowidx][pixidx] = WHITE_NUM
+            if piece or piece_below:
+                dist = filter.color_dist(pix, filter.main_colors[2])
+                if dist < min_dist:
+                    min_dist = dist
+                    new_im[rowidx][pixidx] = filter.USER_NUM
+            if not piece or not piece_below:
+                dist = filter.color_dist(pix, filter.main_colors[3])
+                if dist < min_dist:
+                    new_im[rowidx][pixidx] = filter.RIVAL_NUM
+    return new_im
+
+def get_square_diffs_test(im1, im2, piece_before, piece_below_before,piece_after, piece_below_after, loc, is_source):
+    chesshelper = chess_helper_2.chess_helper_2()
+    filter = filter_colors_2(im1,chesshelper,chesshelper)
+    before_square = cv2.resize(filter.get_square_image(im1, loc), PIXELS_SQUARE)
+    before_square = fit_colors_test(before_square,piece_before,piece_below_before,filter)
+    after_square = cv2.resize(filter.get_square_image(im2, loc), PIXELS_SQUARE)
+    after_square = fit_colors_test(after_square,piece_after,piece_below_after,filter)
+    square_diff = filter.make_binary_relevant_diff_im(before_square, after_square, loc, is_source)
+    return square_diff
 
 def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
     im_bef = cv2.imread(im_bef_name)
@@ -340,5 +435,5 @@ def main_colors_tester(folder_name):
         filter = filter_colors_2(image, chess_helper, delay_chess_helper)
     return
 
-# filter_color_tester("im1.jpg","im2.jpg",'g5',False)
-# main_colors_tester("images")
+    # filter_color_tester("im1.jpg","im2.jpg",'g5',False)
+    # main_colors_tester("images")
