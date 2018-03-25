@@ -6,7 +6,7 @@ import find_moves_rank as fm
 import photos_angle
 import chess_engine_wrapper
 import gui_img_manager
-
+import two_turns.super_tester_2
 """
 Main logic file.
 """
@@ -121,7 +121,9 @@ class game_loop:
         return move
 
     def check_one_direction(self, sources, dests, angle_idx):
-        make_dir( 'super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx))
+        make_dir( 'super tester '
+                  'results'+two_turns.super_tester_2.IDX+'/move_num_' + str(
+            self.moves_counter) + '/angle_num_' + str(angle_idx))
         angle_dir = 'super tester results/move_num_' + str(self.moves_counter) + '/angle_num_' + str(angle_idx) + '/'
         real_move = None
         angle = self.ph_angles[angle_idx]
