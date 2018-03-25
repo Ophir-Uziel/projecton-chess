@@ -5,7 +5,7 @@ import board_cut_fixer
 import tester_helper
 import numpy as np
 
-print_and_save = True
+print_and_save = False
 
 
 class photos_angle_2:
@@ -35,9 +35,7 @@ class photos_angle_2:
     def get_new_img(self, tester_info=None):
         try:
             to_save = bool(tester_info)
-
             new_board_im = self.prep_im
-
 
             better_cut_board_im = self.fixer.main(new_board_im)
             #better_cut_board_im = new_board_im

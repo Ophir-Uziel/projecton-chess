@@ -12,7 +12,7 @@ save_and_print = True
 RESIZE_SIZE = 600
 
 class hardware:
-    def __init__(self, angle_num, imgs_if_tester):
+    def __init__(self, angle_num, imgs_if_tester = None):
         if imgs_if_tester is not None: 
             self.is_live = False
             self.angles_imgs_lst = []

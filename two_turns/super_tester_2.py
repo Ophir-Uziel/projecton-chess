@@ -3,15 +3,17 @@ import os
 import cv2
 import errno
 import tester_helper
-
+import shutil
 WITH_SAVES = True
 
 def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
     if net_idx:
         net_dir_name = "net" +str(net_idx)
-        make_dir(net_dir_name)
+        make_dir(game_loop_2.RESULTS_DIR+ net_dir_name+"\\"+net_dir_name)
     else:
         net_dir_name = None
+    shutil.copyfile(moves_file,game_loop_2.RESULTS_DIR+
+                    net_dir_name+"\\moves.txt")
     corrects = []
     non_corects = []
     user_moves = []
@@ -32,7 +34,9 @@ def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
         x+=1
     # angles_num = len(img_dir_lst)
     angles_num = 2
-    game = game_loop_2.game_loop_2(angles_num, user_moves,real_rival_moves,img_dir_lst, with_saves, net_dir_name)
+    game = game_loop_2.game_loop_2(angles_num, user_moves,
+                                            real_rival_moves,
+                                    img_dir_lst, with_saves, net_dir_name)
     detected_moves = []
     game.main()
 
@@ -84,7 +88,8 @@ def make_dir(dir_name):
 
 
 #if_one_dir_new("game")
-super_tester_2("move_files\\moves13", None, WITH_SAVES,1)
+IDX = 30
+super_tester_2("move_files\\moves"+str(IDX), None, WITH_SAVES,IDX)
 
 
 
