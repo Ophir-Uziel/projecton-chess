@@ -85,6 +85,7 @@ def connect_two_ims(im,im_abv):
     return new_im
 
 
+
 def make_two_ims_dir(game_dir, y_or_n,counter):
     make_dir(game_dir)
     make_dir(y_or_n+"check")
