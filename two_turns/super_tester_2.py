@@ -4,7 +4,11 @@ import cv2
 import errno
 import tester_helper
 import shutil
+import hardware
+import board_cut_fixer
 WITH_SAVES = True
+from two_turns import photos_angle_2
+from  two_turns import chess_helper_2
 
 def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
     if net_idx:
@@ -41,6 +45,29 @@ def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
     game.main()
 
 
+def berkos_tester(fold_name):
+    make_dir("berkos")
+    if fold_name in os.listdir("berkos"):
+        raise Exception("change the name of tje folder!")
+    else:
+        make_dir("berkos\\" + fold_name)
+    ch = chess_helper_2.chess_helper_2(True)
+    hw = hardware.hardware(2)
+    cnt = 0
+    while True:
+        cnt += 1
+        for i in range(2):
+            while True:
+                try:
+                    ph = photos_angle_2.photos_angle_2(hw,ch,ch,i)
+                    ph.prep_img()
+                    img = ph.get_new_img()
+                    cv2.imwrite("berkos\\" + fold_name +"\\" + str(cnt) +
+                                "_" +
+                                str(i) +".jpg", img)
+                    break
+                except:
+                    print("pls take_another_img")
 
 def if_one_dir(dir):
     img_names = os.listdir(dir)
@@ -87,9 +114,10 @@ def make_dir(dir_name):
 
 
 
-#if_one_dir_new("game")
-IDX = 30
-super_tester_2("move_files\\moves"+str(IDX), None, WITH_SAVES,IDX)
+# if_one_dir_new("game")
+IDX = 33
+# super_tester_2("move_files\\moves"+str(IDX), None, WITH_SAVES,IDX)
 
 
 
+berkos_tester("1_4_3")

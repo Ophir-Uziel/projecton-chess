@@ -104,7 +104,8 @@ class game_loop_2:
             print("I recommend: " + self.best_move)
         self.hardware.player_indication(self.best_move)
         if self.is_test:
-            self.best_move = self.user_moves[self.moves_counter]
+            self.best_move = self.user_moves[self.moves_counter][0] + \
+                             self.user_moves[self.moves_counter][1]
             print("sorry, I changed my mind. play" + str(self.best_move))
 
         self.chesshelper.do_turn(self.best_move[0:2], self.best_move[2:4])
@@ -253,10 +254,10 @@ class game_loop_2:
             print(str(e))
             raise
 
-
-game = game_loop_2(2)
-game.main()
-
+#
+# game = game_loop_2(2)
+# game.main()
+#
 
 
 
