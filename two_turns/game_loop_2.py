@@ -1,15 +1,16 @@
 import os
 import errno
 import hardware as hw
-import chess_helper_2 as ch
+from two_turns import chess_helper_2 as ch
 import find_move_rank2 as fm
-import photos_angle_2
+from two_turns import photos_angle_2
 import chess_engine_wrapper
 import gui_img_manager
 import cv2
 import numpy as np
 import tester_helper
-import filter_colors_2
+import copy
+from two_turns import filter_colors_2
 """
 Main logic file.
 """
@@ -112,13 +113,17 @@ class game_loop_2:
         relevant_squares = self.chesshelper.get_relevant_locations()
         sources = relevant_squares[0]
         dests = relevant_squares[1]
-        pairs = []
-        pairs_ranks = []
+
+
+        src_ranks = [0]*len(sources)
+        trgt_ranks = [0]* len(dests)
+        # pairs = []
+        # pairs_ranks = []
 
         #get two images per iteration, untill has one abs good move
         cnt = 0
         to_continue = True
-        while to_continue and (len(pairs) == 0 or len(pairs_ranks) == 0):
+        while to_continue:
             try:
                 if self.is_test and not self.is_live_test:
                     to_continue = False
@@ -130,30 +135,85 @@ class game_loop_2:
 
                     if self.is_live_test:
                         while True:
-                            pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                            if not (len(pairs_and_ranks[0]) == 0 and len(
-                                            pairs_and_ranks[1]) == 0):
-                                break
+                            # pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                            new_src_ranks, new_trgt_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                            # if not (len(pairs_and_ranks[0]) == 0 and len(
+                            #                 pairs_and_ranks[1]) == 0):
+                            break
                     else:
-                        pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                        new_src_ranks, new_trgt_ranks = self.check_one_direction(sources, dests, angle_idx=i)
                     gui_img_manager.reset_images(i)
-                    pairs = pairs + pairs_and_ranks[0]
-                    pairs_ranks = pairs_ranks + pairs_and_ranks[1]
+                    src_ranks = list(map(lambda x, y: x + y, src_ranks, new_src_ranks))
+                    trgt_ranks = list(map(lambda x, y: x + y, trgt_ranks, new_trgt_ranks))
+
+                    # new_pairs = pairs_and_ranks[0]
+                    # new_ranks = pairs_and_ranks[1]
+                    # for j in range(len(pairs)):
+                    #     if pairs[j] in new_pairs:
+                    #         idx = new_pairs.index(pairs[j])
+                    #         pairs_ranks[j] += new_ranks[idx]
+                    #         new_ranks.remove(new_ranks[idx])
+                    #         new_pairs.remove(new_pairs[idx])
+                    # pairs = pairs + new_pairs
+                    # pairs_ranks = pairs_ranks + new_ranks
                 cnt += 1
+
+                pairs, pairs_ranks = self.movefinder.get_pairs_and_ranks(sources, dests, src_ranks, trgt_ranks)
+                if PRINTS:
+                    print("src: ")
+                    print(sources)
+                    print("src_ranks: ")
+                    print(src_ranks)
+                    print("trgt: ")
+                    print(dests)
+                    print("trgt_ranks: ")
+                    print(trgt_ranks)
+                    print(pairs)
+                    print(pairs_ranks)
                 best_pair_idxes = [i for i in range(len(pairs_ranks)) if pairs_ranks[i] == max(pairs_ranks)]
+                potential_moves = [pairs[best_pair_idxes[j]] for j in range(len(best_pair_idxes))]
+                potential_moves_copy = copy.deepcopy(potential_moves)
+                for i in range(2):
+                    if len(potential_moves) > 1:
+                        for j in range(len(potential_moves)):
+                            tmp = potential_moves_copy[j]
+                            if self.get_hidden_move_rank((potential_moves_copy[j][0], potential_moves_copy[j][1][0])) == (2-i):
+                                potential_moves.remove(tmp)
                 if len(best_pair_idxes) == 1:
-                    move = pairs[best_pair_idxes[0]]
-                else:
-                    hidden_moves = self.get_hidden_moves()
-                    if len(hidden_moves) == 1:
-                        move = hidden_moves[0]
+                    potential_trgts = pairs[best_pair_idxes[0]][1]
+                    potential_trgts_copy = copy.deepcopy(potential_trgts)
+                    if len(potential_trgts) > 1:
+                        for i in range(len(potential_trgts)):
+                            tmp = potential_trgts_copy[i]
+                            if not self.is_hidden_square(potential_trgts_copy[i], not SOURCE):
+                                potential_trgts.remove(tmp)
+                    if len(potential_trgts) == 1:
+                        move = (pairs[best_pair_idxes[0]][0], pairs[best_pair_idxes[0]][1][0])
                     else:
+                        move = "inconclusive move"
+                        if PRINTS:
+                            print("inconclusive move")
                         raise Exception("inconclusive move")
 
-            except:
+                else:
+                    if PRINTS:
+                        print("inconclusive move")
+                    raise Exception("inconclusive move")
+                    # raise Exception("inconclusive move")
+                # else:
+                #     hidden_moves = self.get_hidden_moves()
+                #     if len(hidden_moves) == 1:
+                #         move = hidden_moves[0]
+                #     else:
+                #         raise Exception("inconclusive move")
+
+
+            except Exception as e:
                 if PRINTS:
                     move = ' both direction failed'
                     print(move)
+                    if str(Exception) != "inconclusive move":
+                        raise
 
         if(PRINTS):
             print("detected_move")
@@ -164,6 +224,7 @@ class game_loop_2:
         if self.is_test:
             move = rival_move
         self.last_move = move
+
         self.chesshelper.do_turn(move[0], move[1])
 
         # delayed helper do his turn now for filter_colors needs
@@ -172,10 +233,30 @@ class game_loop_2:
         self.moves_counter += 1
         return move
 
+    def get_hidden_move_rank(self, move):
+        return int(self.is_hidden_square(move[0], SOURCE))+int(self.is_hidden_square(move[1], not SOURCE))
 
-    def get_hidden_moves(self):
-        return []
+    def get_hidden_moves(self, src = None):
+        hidden_moves = []
+        if src:
+            locs = self.chesshelper.square_dests(src)
+        else:
+            locs = self.chesshelper.get_relevant_locations()[0]
+        for loc in locs:
+            if self.is_hidden_square(loc, not bool(src)):
+                hidden_moves.append(loc)
+        return hidden_moves
 
+    def is_hidden_square(self, square, is_src):
+        bel_sqr = self.chesshelper.get_square_below(square)
+        is_black_square = not self.chesshelper.square_color(square)
+        is_static_piece_bel = ((self.chesshelper.piece_color(bel_sqr) is not None) and (self.delay_chesshelper.piece_color(bel_sqr) is not None))
+        was_white_bel = self.delay_chesshelper.piece_color(bel_sqr)
+        is_white_bel = self.chesshelper.piece_color(bel_sqr)
+        is_white_interapt = (was_white_bel and not is_white_bel and is_src) or (is_white_bel and not was_white_bel and not is_src)
+        if (is_black_square or is_static_piece_bel or is_white_interapt) is None:
+            return False
+        return is_black_square or is_static_piece_bel or is_white_interapt
 
     def check_one_direction(self, sources, dests, angle_idx):
         try:
@@ -196,10 +277,14 @@ class game_loop_2:
             destsims, destsabvims, dstdiff = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                          not SOURCE)
             difftot = (srcdiff + dstdiff)/(180*160)
-            if difftot>MAX_DIFF_RATIO: ## too much white in img
-                raise Exception()
-            pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
-                                                         tester_info = (rival_move, self.moves_counter,angle_idx))
+            # if difftot>MAX_DIFF_RATIO: ## too much white in img
+            #     raise Exception()
+
+            src_ranks, trgt_ranks = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims,
+                                                         destsabvims,
+                                                         tester_info=(rival_move, self.moves_counter, angle_idx))
+            # pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
+            #                                              tester_info = (rival_move, self.moves_counter,angle_idx))
             board_before = angle.get_board_test(True)
             angle.update_board()
             if self.if_save:
@@ -215,11 +300,11 @@ class game_loop_2:
             ### save prev picture ###
             angle.set_prev_im(cut_board_im)
 
-            return (pairs, pairs_rank)
+            return src_ranks, trgt_ranks
         except:
             if PRINTS:
                 print("angle " + str(angle_idx) + " failed")
-            return ([], [])
+            return [0]*len(sources), [0]*len(dests)
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
         try:

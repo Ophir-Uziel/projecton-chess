@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import tester_helper
 import scikit_learn
+import os
 
 
 """
@@ -40,7 +41,9 @@ class find_moves_rank:
 
 
     def __init__(self, chess_helper, net_dir_name = None):
-        self.net = scikit_learn.read_net(scikit_learn.NET_FILE)
+        # self.net = scikit_learn.read_net(scikit_learn.NET_FILE)
+        classes = os.listdir("classes")
+        self.net = scikit_learn.classes_test(classes)
         self.neuron_counter = 0
         if SAVE_ALLOT:
             tester_helper.make_squares_dirs()
@@ -129,8 +132,9 @@ class find_moves_rank:
                     print("ranking : ")
                     print(targets_rank)
 
-            return self.get_pairs_and_ranks(sources_place, targets_place, sources_rank,
-                                            targets_rank)
+            return sources_rank, targets_rank
+            # return self.get_pairs_and_ranks(sources_place, targets_place, sources_rank,
+            #                                 targets_rank)
         except:
             print("get_move_failed")
             raise
@@ -140,7 +144,16 @@ class find_moves_rank:
     '''
     def check_squares(self, squares, above_squares, real_change = None, real_change_idx = None):
         self.mistake_idxes = []
-        rank_lst = scikit_learn.check_net(self.net, tester_helper.connect_two_ims_lst(squares, above_squares))
+        rank_lst = []
+        idx_lst = scikit_learn.check_net(self.net, tester_helper.connect_two_ims_lst(squares, above_squares))
+        for i in range(len(idx_lst)):
+            idx = idx_lst[i]
+            if idx == 9 or idx == 8 or idx == 4:
+                rank_lst.append(0)
+            elif idx == 1 or idx == 2:
+                rank_lst.append(1)
+            else:
+                rank_lst.append(2)
         if real_change is not None:
             for i in range(len(squares)):
                 rank = rank_lst[i]
@@ -166,11 +179,11 @@ class find_moves_rank:
         pairs_rank = []
         pairs = []
         for i in range(len(source_ranks)):
-            tmp, best_match_rank = \
+            tmps, best_match_rank = \
                 self.best_target_for_given_source(sources_place[i], targets_place, target_ranks)
-            best_targets_per_source.append(tmp)
+            best_targets_per_source.append(tmps)
             pairs_rank.append(source_ranks[i] + best_match_rank)
-            pairs.append((sources_place[i], tmp))
+            pairs.append((sources_place[i], tmps))
         return pairs, pairs_rank
 
     '''
@@ -183,12 +196,20 @@ class find_moves_rank:
         inv_target_img_dict = dict(zip(target_ranks, targets_place))
         matches = self.chess_helper.square_dests(source_place)  # all the
         # natches of a given square
-        best_match_rank = 0
-        for match in matches:
-            best_match_rank = max(target_img_dict[match], best_match_rank)
-        best_match_place = inv_target_img_dict[best_match_rank]
-
-        return best_match_place, best_match_rank
+        best_match_rank = 0.01
+        best_match_places = []
+        if source_place == "f8":
+            print("hello")
+        for i in range(len(targets_place)):
+            if targets_place[i] in matches:
+                if target_ranks[i] > best_match_rank:
+                    best_match_rank = target_ranks[i]
+                    best_match_places = [targets_place[i]]
+                elif target_ranks[i] == best_match_rank:
+                    best_match_places.append(targets_place[i])
+        if len(best_match_places) == 0:
+            best_match_places = matches
+        return best_match_places, best_match_rank
 
 
 

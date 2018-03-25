@@ -57,7 +57,7 @@ def if_one_dir_new(dir):
             cv2.imwrite(dir_name + "/" + img_name, im)
 
 def first_2_chars(x):
-    return int(x[3:-4])
+    return int(x[0:-10])
     # for i in range(moves_num):
     #     detected_moves.append(game.get_new_move())
     #     if detected_moves[i][0] == real_rival_moves[i][0] and detected_moves[i][1] == real_rival_moves[i][1]:
@@ -81,9 +81,27 @@ def make_dir(dir_name):
             raise
 
 
+def from_folds(folds):
+    for fold in folds:
+        make_dir(fold+"U")
+        imgs = os.listdir(fold)
+        new_imgs = []
+        for img in imgs:
+            if img[-10:-4] == "_second":
+                new_imgs.append(img)
+        new_imgs = sorted(new_imgs, key=first_2_chars)
+        for img in new_imgs:
+            if img[-10:-4] == "_second":
+                img = cv2.imread(fold)
+                cv2.imwrite(fold+"U\\" + fold[-1] +"_" + img[0:-10] + ".jpg",img)
 
-if_one_dir_new("fixed")
-super_tester_2("fixed\\moves.txt", ["angle0"], WITH_SAVES,1)
+
+
+
+
+# if_one_dir_new("fixed")
+# from_folds(["angle_num_0","angle_num_1"])
+super_tester_2("moves.txt", ["angle2","angle3"], WITH_SAVES,1)
 
 
 
