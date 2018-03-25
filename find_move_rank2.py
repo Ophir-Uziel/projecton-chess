@@ -55,6 +55,8 @@ class find_moves_rank:
             tester_helper.make_dir(net_dir_name + "\\" + 'self_n_dir')
             tester_helper.make_dir(net_dir_name + "\\" + 'abv_y_dir')
             tester_helper.make_dir(net_dir_name + "\\" + 'abv_n_dir')
+        else:
+            self.net_dir_name = None
     """
     :arg square_im a binary image of changes in the square
     :return whether there's been a move on the square, below it, or none,
@@ -67,7 +69,8 @@ class find_moves_rank:
         try:
             to_save = bool(tester_info)
 
-            if to_save:
+
+            if tester_info:
                 real_move = tester_info[0]
                 move_num = tester_info[1]
                 angle_idx = tester_info[2]
@@ -93,25 +96,25 @@ class find_moves_rank:
                     tester_helper.save_bw(img=np.array(sources_above[idx]), place=sources_place[idx], move_num=move_num,
                                           angle_idx=angle_idx, desc='dif_abv')
 
+            if self.net_dir_name:
+                #save neuron's images:
+                cv2.imwrite(self.net_dir_name + "\\" + 'self_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_self[real_idx_source]))
+                cv2.imwrite(self.net_dir_name + "\\" + 'abv_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_above[real_idx_source]))
+                if len(sources_self) > 1:
+                    n_source_idx = real_idx_source
+                    while n_source_idx == real_idx_source:
+                        n_source_idx = np.random.randint(0, len(sources_self))
+                    cv2.imwrite(self.net_dir_name + "\\" + 'self_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_self[n_source_idx]))
+                    cv2.imwrite(self.net_dir_name + "\\" + 'abv_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_above[n_source_idx]))
 
-            #save neuron's images:
-            cv2.imwrite(self.net_dir_name + "\\" + 'self_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_self[real_idx_source]))
-            cv2.imwrite(self.net_dir_name + "\\" + 'abv_y_dir/im'+str(self.neuron_counter)+'.jpg', np.array(sources_above[real_idx_source]))
-            if len(sources_self) > 1:
-                n_source_idx = real_idx_source
-                while n_source_idx == real_idx_source:
-                    n_source_idx = np.random.randint(0, len(sources_self))
-                cv2.imwrite(self.net_dir_name + "\\" + 'self_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_self[n_source_idx]))
-                cv2.imwrite(self.net_dir_name + "\\" + 'abv_n_dir/im' + str(self.neuron_counter) + '.jpg', np.array(sources_above[n_source_idx]))
-
-            cv2.imwrite(self.net_dir_name + "\\" + 'self_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[real_idx_target]))
-            cv2.imwrite(self.net_dir_name + "\\" +'abv_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[real_idx_target]))
-            n_target_idx = real_idx_target
-            while n_target_idx == real_idx_target:
-                n_target_idx = np.random.randint(0, len(targets_self))
-            cv2.imwrite(self.net_dir_name + "\\" + 'self_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[n_target_idx]))
-            cv2.imwrite(self.net_dir_name + "\\" + 'abv_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[n_target_idx]))
-            self.neuron_counter += 2
+                cv2.imwrite(self.net_dir_name + "\\" + 'self_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[real_idx_target]))
+                cv2.imwrite(self.net_dir_name + "\\" +'abv_y_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[real_idx_target]))
+                n_target_idx = real_idx_target
+                while n_target_idx == real_idx_target:
+                    n_target_idx = np.random.randint(0, len(targets_self))
+                cv2.imwrite(self.net_dir_name + "\\" + 'self_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_self[n_target_idx]))
+                cv2.imwrite(self.net_dir_name + "\\" + 'abv_n_dir/im' + str(self.neuron_counter + 1) + '.jpg', np.array(targets_above[n_target_idx]))
+                self.neuron_counter += 2
 
             targets_rank = self.check_squares(targets_self,
                                          targets_above,real_change_t, real_idx_target)

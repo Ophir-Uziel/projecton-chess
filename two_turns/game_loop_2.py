@@ -18,16 +18,24 @@ SOURCE = True
 LEFT = 0
 RIGHT = 1
 ROWS_NUM = 8
-RESULTS_DIR = 'super_tester_results'
+RESULTS_DIR = 'professional games 3\\super_tester_results'
 
 PRINTS = True
 
 MAX_DIFF_RATIO = 0.15
 
 class game_loop_2:
-    def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save=True, net_dir_name = None):
-        self.if_save = if_save
-        tester_helper.make_minimal_squares_dirs()
+    def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
+        global RESULTS_DIR
+        RESULTS_DIR += str(net_dir_name)
+        tester_helper.RESULTS_DIR += str(net_dir_name)
+        if net_dir_name:
+            net_dir_name = os.path.join(RESULTS_DIR,net_dir_name)
+        else:
+            net_dir_name = None
+        self.if_save = if_save_and_print
+        if self.if_save:
+            tester_helper.make_minimal_squares_dirs()
         self.moves_counter = 0
         self.last_move = None
 
@@ -43,6 +51,8 @@ class game_loop_2:
         else:
             self.is_test = False
             self.is_live_test = False
+            self.net_dir_name = None
+            self.rival_moves = None
 
         self.hardware = hw.hardware(angles_num, imgs_if_test)
         self.chesshelper = ch.chess_helper_2(ch.chess_helper_2.USER)
@@ -61,14 +71,15 @@ class game_loop_2:
 
         if not self.is_test:
             gui_img_manager.set_finished(True)
+
         self.movefinder = fm.find_moves_rank(self.chesshelper, self.net_dir_name)
         self.chess_engine = chess_engine_wrapper.chess_engine_wrapper()
 
 
     def main(self):
         while True:
-            if self.is_test and self.moves_counter >= len(self.user_moves) \
-                    or self.moves_counter >= len(self.rival_moves):
+            if self.is_test and (self.moves_counter >= len(self.user_moves) \
+                    or self.moves_counter >= len(self.rival_moves)):
                 if (PRINTS):
                     print('Done')
 
@@ -77,10 +88,12 @@ class game_loop_2:
                     self.hardware.close()
                 break
             gui_img_manager.set_finished(False)
-            if PRINTS:
+            if self.is_test:
                 print(self.user_moves[self.moves_counter])
                 print(self.rival_moves[self.moves_counter])
             self.play_user_turn()
+            if (PRINTS):
+                print(self.chesshelper.board)
             self.play_rival_move()
 
             if (PRINTS):
@@ -98,7 +111,7 @@ class game_loop_2:
         else:
             self.hardware.player_indication(self.best_move)
 
-        self.chesshelper.do_turn(self.best_move[0], self.best_move[1])
+        self.chesshelper.do_turn(self.best_move[0:2], self.best_move[2:4])
 
     def play_rival_move(self):
         if PRINTS:
@@ -135,11 +148,10 @@ class game_loop_2:
 
                     if self.is_live_test:
                         while True:
-                            # pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                            new_src_ranks, new_trgt_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                            # if not (len(pairs_and_ranks[0]) == 0 and len(
-                            #                 pairs_and_ranks[1]) == 0):
-                            break
+                            pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                            if not (len(pairs_and_ranks[0]) == 0 and len(
+                                            pairs_and_ranks[1]) == 0):
+                                break
                     else:
                         new_src_ranks, new_trgt_ranks = self.check_one_direction(sources, dests, angle_idx=i)
                     gui_img_manager.reset_images(i)
@@ -223,12 +235,11 @@ class game_loop_2:
 
         if self.is_test:
             move = rival_move
-        self.last_move = move
-
+        self.last_move = move[0] + move[1]
         self.chesshelper.do_turn(move[0], move[1])
 
         # delayed helper do his turn now for filter_colors needs
-        self.delay_chesshelper.do_turn(self.best_move[0],self.best_move[1])
+        self.delay_chesshelper.do_turn(self.best_move[0:2],self.best_move[2:4])
         self.delay_chesshelper.do_turn(move[0], move[1])
         self.moves_counter += 1
         return move
@@ -277,14 +288,23 @@ class game_loop_2:
             destsims, destsabvims, dstdiff = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                          not SOURCE)
             difftot = (srcdiff + dstdiff)/(180*160)
-            # if difftot>MAX_DIFF_RATIO: ## too much white in img
-            #     raise Exception()
+            if difftot>MAX_DIFF_RATIO: ## too much white in img
+                raise Exception()
 
             src_ranks, trgt_ranks = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims,
                                                          destsabvims,
                                                          tester_info=(rival_move, self.moves_counter, angle_idx))
-            # pairs, pairs_rank = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims, destsabvims,
-            #                                              tester_info = (rival_move, self.moves_counter,angle_idx))
+
+            difftot = (srcdiff + dstdiff)/(160*180)
+
+            if difftot>MAX_DIFF_RATIO: ## too much white in img
+                print("img diff was too big!")
+                raise Exception()
+            if self.is_test:
+                tester_info = rival_move, self.moves_counter,angle_idx
+            else:
+                tester_info = None
+
             board_before = angle.get_board_test(True)
             angle.update_board()
             if self.if_save:
@@ -337,8 +357,11 @@ class game_loop_2:
                 print("get_dif_im ("+b_val+")_failed" )
                 print(str(e))
             raise
-    
 
+#
+# game = game_loop_2(2)
+# game.main()
+#
 
 
 

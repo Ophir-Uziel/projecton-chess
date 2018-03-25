@@ -12,7 +12,7 @@ save_and_print = True
 RESIZE_SIZE = 600
 
 class hardware:
-    def __init__(self, angle_num, imgs_if_tester):
+    def __init__(self, angle_num, imgs_if_tester = None):
         if imgs_if_tester is not None: 
             self.is_live = False
             self.angles_imgs_lst = []
@@ -27,7 +27,7 @@ class hardware:
                                               sorted_img_names[j], cv2.IMREAD_COLOR))
 
                 print(sorted_img_names)
-                self.angles_imgs_lst.append(img_array)
+                lf.angles_imgs_lst.append(img_array)
                 self.angles_imgs_counter.append(0)
         else:
             self.is_live = True

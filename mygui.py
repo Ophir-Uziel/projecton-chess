@@ -1,17 +1,10 @@
 from tkinter import *
-import chess
-import scipy
+
 
 from scipy import misc
 from PIL import Image
 from PIL import ImageTk
-import listener
-from threading import Thread
 import time
-from multiprocessing import Process
-import cv2
-import gui_img_manager
-import copy
 
 ###dictionary
 DICTIONARY = {"a":0,"b":1,"c":2,"d":3,"e":4,"f":5,"g":6,"h":7}

@@ -1,4 +1,3 @@
-import game_loop
 from threading import Thread
 
 ### STATIC VARIABLES - GLOBAL - this is black sorcery so DON'T TOUCH it.

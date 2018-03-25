@@ -3,15 +3,21 @@ import os
 import cv2
 import errno
 import tester_helper
-
+import shutil
+import hardware
+import board_cut_fixer
 WITH_SAVES = True
+from two_turns import photos_angle_2
+from  two_turns import chess_helper_2
 
 def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
     if net_idx:
         net_dir_name = "net" +str(net_idx)
-        make_dir(net_dir_name)
+        make_dir(game_loop_2.RESULTS_DIR+ net_dir_name+"\\"+net_dir_name)
     else:
         net_dir_name = None
+    shutil.copyfile(moves_file,game_loop_2.RESULTS_DIR+
+                    net_dir_name+"\\moves.txt")
     corrects = []
     non_corects = []
     user_moves = []
@@ -30,11 +36,61 @@ def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
         elif len(move) != 0:
             raise Exception("illegal move:" + move)
         x+=1
-    angles_num = len(img_dir_lst)
-    game = game_loop_2.game_loop_2(angles_num, user_moves,real_rival_moves,img_dir_lst, with_saves, net_dir_name)
+    # angles_num = len(img_dir_lst)
+    angles_num = 2
+    game = game_loop_2.game_loop_2(angles_num, user_moves,
+                                            real_rival_moves,
+                                    img_dir_lst, with_saves, net_dir_name)
     detected_moves = []
     game.main()
 
+def berkos_tester(fold_name):
+    make_dir("berkos")
+    if fold_name in os.listdir("berkos"):
+        raise Exception("change the name of tje folder!")
+    else:
+        make_dir("berkos\\" + fold_name)
+    ch = chess_helper_2.chess_helper_2(True)
+    hw = hardware.hardware(2)
+    cnt = 0
+    while True:
+        cnt += 1
+        for i in range(2):
+            while True:
+                try:
+                    ph = photos_angle_2.photos_angle_2(hw,ch,ch,i)
+                    ph.prep_img()
+                    img = ph.get_new_img()
+                    cv2.imwrite("berkos\\" + fold_name +"\\" + str(cnt) +
+                                "_" +
+                                str(i) +".jpg", img)
+                    break
+                except:
+                    print("pls take_another_img")
+
+def berkos_tester_2(fold_name):
+    make_dir("berkos")
+    if fold_name in os.listdir("berkos"):
+        raise Exception("change the name of tje folder!")
+    else:
+        make_dir("berkos\\" + fold_name)
+    ch = chess_helper_2.chess_helper_2(True)
+    hw = hardware.hardware(1)
+    cnt = 0
+    while True:
+        cnt += 1
+        for i in range(1):
+            while True:
+                try:
+                    ph = photos_angle_2.photos_angle_2(hw, ch, ch, i)
+                    ph.prep_img()
+                    img = ph.get_new_img()
+                    cv2.imwrite("berkos\\" + fold_name + "\\" + str(cnt) +
+                                "_" +
+                                str(i) + ".jpg", img)
+                    break
+                except:
+                    print("pls take_another_img")
 
 
 def if_one_dir(dir):
@@ -57,7 +113,7 @@ def if_one_dir_new(dir):
             cv2.imwrite(dir_name + "/" + img_name, im)
 
 def first_2_chars(x):
-    return int(x[0:-10])
+    return int(x[3:-4])
     # for i in range(moves_num):
     #     detected_moves.append(game.get_new_move())
     #     if detected_moves[i][0] == real_rival_moves[i][0] and detected_moves[i][1] == real_rival_moves[i][1]:
@@ -81,27 +137,15 @@ def make_dir(dir_name):
             raise
 
 
-def from_folds(folds):
-    for fold in folds:
-        make_dir(fold+"U")
-        imgs = os.listdir(fold)
-        new_imgs = []
-        for img in imgs:
-            if img[-10:-4] == "_second":
-                new_imgs.append(img)
-        new_imgs = sorted(new_imgs, key=first_2_chars)
-        for img in new_imgs:
-            if img[-10:-4] == "_second":
-                img = cv2.imread(fold)
-                cv2.imwrite(fold+"U\\" + fold[-1] +"_" + img[0:-10] + ".jpg",img)
+
+
+
+# if_one_dir_new("game")
+IDX = 33
+# super_tester_2("move_files\\moves"+str(IDX), None, WITH_SAVES,IDX)
 
 
 
 
 
-# if_one_dir_new("fixed")
-# from_folds(["angle_num_0","angle_num_1"])
-super_tester_2("moves.txt", ["angle2","angle3"], WITH_SAVES,1)
-
-
-
+berkos_tester("1_4_3")
