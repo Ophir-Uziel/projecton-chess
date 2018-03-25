@@ -324,9 +324,9 @@ class filter_colors_2:
     def is_rival_equals_black(self):
         return self.bad_rival
 
-def make_binary_relevant_diff_im_test(self, im1, im2, square, is_source):
-    user_is_white = self.user_starts
-    is_white = self.chess_helper_2.square_color(square)
+def make_binary_relevant_diff_im_test(filter, im1, im2, square, is_source,piece_before,piece_after,piece_below_before,piece_below_after):
+    user_is_white = filter.user_starts
+    is_white = filter.chess_helper_2.square_color(square)
     if int(square[1]) == 9:
         above_board = True
     else:
@@ -334,38 +334,36 @@ def make_binary_relevant_diff_im_test(self, im1, im2, square, is_source):
     RC = []
     if is_source:
         if above_board:
-            RC.append(self.R2W)
-            RC.append(self.R2B)
+            RC.append(filter.R2W)
+            RC.append(filter.R2B)
         elif is_white:
-            RC.append(self.R2W)
+            RC.append(filter.R2W)
         else:
-            RC.append(self.R2B)
-        if self.chess_helper_2.piece_color(square):
+            RC.append(filter.R2B)
+        if piece_after:
             if is_white != user_is_white:
-                if not self.bad_rival:
-                    RC.append(self.R2U)
+                if not filter.bad_rival:
+                    RC.append(filter.R2U)
             else:
-                RC.append(self.R2U)
+                RC.append(filter.R2U)
     else:
         if above_board:
-            RC.append(self.W2R)
-            RC.append(self.B2R)
+            RC.append(filter.W2R)
+            RC.append(filter.B2R)
         elif is_white:
-            RC.append(self.W2R)
+            RC.append(filter.W2R)
         else:
-            RC.append(self.B2R)
-        sq_below = self.chess_helper_2.get_square_below(square)
-        if self.bad_rival and is_white != user_is_white:
-            if self.delay_chess_helper_2.piece_color(square) and self.chess_helper_2.piece_color(
-                    square):
-                if self.delay_chess_helper_2.piece_color(sq_below) == self.chess_helper_2.piece_color(sq_below):
-                    RC.append(self.U2R)
-            if self.delay_chess_helper_2.piece_color(sq_below) and self.chess_helper_2.piece_color(
-                    sq_below):
-                if self.delay_chess_helper_2.piece_color(square) == self.chess_helper_2.piece_color(square):
-                    RC.append(self.U2R)
-        elif self.delay_chess_helper_2.piece_color(square) or self.delay_chess_helper_2.piece_color(sq_below):
-            RC.append(self.U2R)
+            RC.append(filter.B2R)
+        sq_below = piece_below_before
+        if filter.bad_rival and is_white != user_is_white:
+            if piece_before and piece_after:
+                if piece_below_before == piece_below_after:
+                    RC.append(filter.U2R)
+            if piece_before and piece_after:
+                if piece_before == piece_after:
+                    RC.append(filter.U2R)
+        elif piece_before or piece_below_before:
+            RC.append(filter.U2R)
 
     while 0 in RC:
         RC.remove(0)
@@ -410,7 +408,7 @@ def get_square_diffs_test(im1, im2, piece_before, piece_below_before,piece_after
     before_square = fit_colors_test(before_square,piece_before,piece_below_before,filter)
     after_square = cv2.resize(filter.get_square_image(im2, loc), PIXELS_SQUARE)
     after_square = fit_colors_test(after_square,piece_after,piece_below_after,filter)
-    square_diff = filter.make_binary_relevant_diff_im(before_square, after_square, loc, is_source)
+    square_diff = make_binary_relevant_diff_im_test(filter,before_square, after_square, loc, is_source,piece_below_before,piece_below_after)
     return square_diff
 
 def filter_color_tester(im_bef_name, im_aft_name, loc, is_source):
