@@ -3,6 +3,7 @@ import os
 import errno
 import numpy as np
 import scipy.misc
+import functools
 
 RESULTS_DIR = 'professional games 3\\super_tester_results'
 ROWS_NUM = 9
@@ -74,8 +75,9 @@ def make_board_im(squares_im_lst, pic_hi, pic_wid, dtype = np.int):
 
 
 def connect_two_ims(im,im_abv):
-    im = im.tolist()
-    im_abv = im_abv.tolist()
+    if type(im) is not list:
+        im = im.tolist()
+        im_abv = im_abv.tolist()
     row_num = len(im)*2
     col_num = len(im[0])
     new_im = np.zeros((row_num,col_num), np.int).tolist()
@@ -128,10 +130,20 @@ def make_squares_dirs():
                 for k in range(2):
                     make_dir(RESULTS_DIR + '\\' + 'by_square' + '\\' + chr(ord('a')+i)+str(j+1) + '\\' + 'angle_num_' + str(k))
 
+def im_num(x):
+    return int(x[2:-4])
+
 # for y_or_no in ["y", "n"]:
-#     counter = 300
-#     for i in range(1):
-#          counter = make_two_ims_dir("game"+str(i+6), y_or_no, counter)
+#     counter = 23
+#     for i in range(27):
+#         fold_name = "net" + str(i+1)
+#         folds = os.listdir("to_train")
+#         if fold_name in folds:
+#             for j in range(2):
+#                 cur_fold_name = fold_name + "\\angle" + str(j)
+#                 counter = make_two_ims_dir("to_train\\" + cur_fold_name, y_or_no, counter)
+#
+
 
 
 
