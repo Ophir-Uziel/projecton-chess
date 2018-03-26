@@ -15,6 +15,7 @@ def try1():
     print(digits.data)
     print(digits.target)
 
+
 def rand_img(size):
     img = []
     for i in range(size):
