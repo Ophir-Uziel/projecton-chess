@@ -153,7 +153,7 @@ class find_moves_rank:
         rank_lst = []
         # idx_lst = scikit_learn.check_net(self.net, tester_helper.connect_two_ims_lst(squares, above_squares))
         bottom_ranks = scikit_learn.check_net(self.net_btm,squares)
-        top_rank = scikit_learn.check_net(self.net_abv, above_squares)
+        top_rank = scikit_learn.check_net(self.net_top, above_squares)
         tot_ranks =   list(map(lambda x, y:2-(x^BOT_RATIO + y^TOP_RATIO), top_rank, bottom_ranks))
         for squares in squares:
             a=0
