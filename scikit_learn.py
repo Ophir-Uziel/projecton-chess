@@ -1,4 +1,5 @@
 from sklearn import svm
+from sklearn.neural_network import MLPClassifier
 import numpy as np
 import os
 from sklearn import datasets
@@ -22,16 +23,18 @@ def rand_img(size):
     return img
 
 
-def create_net():
+def create_svm():
     clf = svm.SVC(gamma=0.000000005)
     return clf
 
+def create_net():
+    clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(400,
+                        3), random_state=1)
+    return clf
 
-def train_net(net, y_img, n_img):
+
+def train(net, y_img, n_img):
     shuffle_img, ans = shuffle(y_img,n_img)
-    digits = datasets.load_digits()
-    ex_inp = digits.data
-    ex_tsr = digits.target
     inp = np.asarray(shuffle_img)
     tar = np.asarray(ans)
     SVC = net.fit(inp, tar)
@@ -90,7 +93,7 @@ def test(size,im_num):
             y_img.append(img)
         else:
             n_img.append(img)
-    net, SVC = train_net(net,y_img,n_img)
+    net, SVC = train(net, y_img, n_img)
     out = check_net(net, n_img)
     print(out)
 
@@ -140,7 +143,27 @@ def test2():
     n_lst = read_imgs(os.listdir("n"),"n")
     y_check = read_imgs(os.listdir("ycheck"),"ycheck")
     n_check = read_imgs(os.listdir("ncheck"),"ncheck")
-    train_net(net,y_lst, n_lst)
+    train(net, y_lst, n_lst)
+    save_net(net, 'net')
+    n_results = check_net(net, n_check, "n_results")
+    print("n_result")
+    print(n_results)
+    print(str(sum(n_results)) + " out of " + str(len(n_results)))
+
+    y_results = check_net(net, y_check, "y_results")
+    print("y_result")
+    print(y_results)
+    print(str(sum(y_results)) + " out of " + str(len(y_results)))
+
+
+def test_network():
+
+    net = create_net()
+    y_lst = read_imgs(os.listdir("y"), "y")
+    n_lst = read_imgs(os.listdir("n"), "n")
+    y_check = read_imgs(os.listdir("ycheck"), "ycheck")
+    n_check = read_imgs(os.listdir("ncheck"), "ncheck")
+    train(net, y_lst, n_lst)
     save_net(net, 'net')
     n_results = check_net(net, n_check, "n_results")
     print("n_result")
@@ -168,6 +191,6 @@ def read_test():
     print(str(sum(y_results)) + " out of " + str(len(y_results)))
 
 
-#read_test()
+test_network()
 
 
