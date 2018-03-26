@@ -7,7 +7,7 @@ import tester_helper
 from sklearn.externals import joblib
 
 
-NET_FILE = "net"
+NET_FILE = "net2"
 
 
 def try1():
@@ -27,6 +27,14 @@ def create_net():
     clf = svm.SVC(gamma=0.000000005)
     return clf
 
+def train_better_net(net, imgs_lst_by_class):
+    shuffle_img, ans = better_shuffle(imgs_lst_by_class)
+    print("shuffled")
+    inp = np.asarray(shuffle_img)
+    tar = np.asarray(ans)
+    SVC = net.fit(inp, tar)
+    print("trained")
+    return net, SVC
 
 def train_net(net, y_img, n_img):
     shuffle_img, ans = shuffle(y_img,n_img)
@@ -52,6 +60,24 @@ def check_net(net, imgs, dir_name = None):
             cv2.imwrite(dir_name + "\\" + str(res) + "_" + str(cnt) + ".jpg", np.array(img))
             cnt += 1
     return net.predict(imgs)
+
+
+def better_shuffle(lsts_lst):
+    cntrs = [0]*len(lsts_lst)
+    non_full = [i for i in range(len(lsts_lst))]
+    shuffle_imgs = []
+    ans = []
+    total_len = sum([len(lst) for lst in lsts_lst])
+    for i in range(total_len):
+        for j in range(len(lsts_lst)):
+            if len(lsts_lst[j]) == cntrs[j] and j in non_full:
+                non_full.remove(j)
+        rnd = np.random.choice(non_full)
+        shuffle_imgs.append(lsts_lst[rnd][cntrs[rnd]])
+        ans.append(rnd)
+        cntrs[rnd] += 1
+    return shuffle_imgs, ans
+
 
 
 def shuffle(arr1,arr2):
@@ -101,21 +127,26 @@ def im_to_lst(lst, row_num):
     for i in range(len(lst)):
         new_im =[]
         for row in lst[i]:
-            for pixel in row:
+            for pixel in list(row):
                 new_im.append(pixel)
         imgs.append(new_im)
     return imgs
 
 def read_imgs(lst, fold):
     imgs = []
+    to_test = []
     for i in range(len(lst)):
+        rnd = np.random.randint(0, 6)
         im = cv2.imread(fold + "\\" +lst[i], cv2.IMREAD_GRAYSCALE)
         new_im =[]
         for row in im:
             for pixel in row:
                 new_im.append(pixel)
-        imgs.append(new_im)
-    return imgs
+        if rnd == 0:
+            to_test.append(new_im)
+        else:
+            imgs.append(new_im)
+    return imgs, to_test
 
 
 def lst_to_im(lst):
@@ -168,7 +199,17 @@ def read_test():
     print(y_results)
     print(str(sum(y_results)) + " out of " + str(len(y_results)))
 
-
-#read_test()
-
+def classes_test(classes_folds):
+    net = create_net()
+    lsts_lst, lsts_to_test = [read_imgs(os.listdir("classes\\" + fold), "classes\\" + fold)[0] for fold in classes_folds],\
+                             [read_imgs(os.listdir("classes\\" + fold), "classes\\" + fold)[1] for fold in classes_folds]
+    train_better_net(net, lsts_lst)
+    return net
+    save_net(net, 'net2')
+    # results = [check_net(net,lsts_to_test[i], "classes\\" + str(i)) for i in range(len(classes_folds))]
+    # print(results)
+#
+# #read_test()
+# classes = os.listdir("classes")
+# classes_test(classes)
 
