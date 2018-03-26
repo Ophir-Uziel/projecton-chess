@@ -7,7 +7,8 @@ import tester_helper
 from sklearn.externals import joblib
 from sklearn.neural_network import MLPClassifier
 import random
-
+TOP_NET_FILENAME = "top_net.pkl"
+BOTTOM_NET_FILENAME = "bottom_net.pkl"
 NET_FILE = "net2"
 
 

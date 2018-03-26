@@ -27,7 +27,7 @@ class hardware:
                                               sorted_img_names[j], cv2.IMREAD_COLOR))
 
                 print(sorted_img_names)
-                lf.angles_imgs_lst.append(img_array)
+                self.angles_imgs_lst.append(img_array)
                 self.angles_imgs_counter.append(0)
         else:
             self.is_live = True
@@ -62,6 +62,6 @@ class hardware:
         self.socket.send_msg(connection.CLOSE)
 
 def first_2_chars(x):
-    return int(x[2:-4])
+    return int(x[0:-11])
 
 

@@ -11,7 +11,8 @@ import os
 This file is responsible for identifying if a move has been made in a square.
 """
 
-
+BOT_RATIO = 1
+TOP_RATIO = 1
 mindensity=0.1
 maxdensity=3.5
 minyahas=0.5
@@ -42,8 +43,10 @@ class find_moves_rank:
 
     def __init__(self, chess_helper, net_dir_name = None):
         # self.net = scikit_learn.read_net(scikit_learn.NET_FILE)
-        classes = os.listdir("classes")
-        self.net = scikit_learn.classes_test(classes)
+        # classes = os.listdir("classes")
+        # self.net = scikit_learn.classes_test(classes)
+
+        self.load_nets()
         self.neuron_counter = 0
         if SAVE_ALLOT:
             tester_helper.make_squares_dirs()
@@ -76,8 +79,8 @@ class find_moves_rank:
                 angle_idx = tester_info[2]
 
                 self.mistake_idxes = []
-                real_change_s = real_move[0]
-                real_change_t = real_move[1]
+                real_change_s = real_move[0:2]
+                real_change_t = real_move[2:4]
                 real_idx_source = sources_place.index(real_change_s)
                 real_idx_target = targets_place.index(real_change_t)
 
@@ -148,15 +151,20 @@ class find_moves_rank:
     def check_squares(self, squares, above_squares, real_change = None, real_change_idx = None):
         self.mistake_idxes = []
         rank_lst = []
-        idx_lst = scikit_learn.check_net(self.net, tester_helper.connect_two_ims_lst(squares, above_squares))
-        for i in range(len(idx_lst)):
-            idx = idx_lst[i]
-            if idx == 9 or idx == 8 or idx == 4:
-                rank_lst.append(0)
-            elif idx == 1 or idx == 2:
-                rank_lst.append(1)
-            else:
-                rank_lst.append(2)
+        # idx_lst = scikit_learn.check_net(self.net, tester_helper.connect_two_ims_lst(squares, above_squares))
+        bottom_ranks = scikit_learn.check_net(self.net_btm,squares)
+        top_rank = scikit_learn.check_net(self.net_abv, above_squares)
+        tot_ranks =   list(map(lambda x, y:2-(x^BOT_RATIO + y^TOP_RATIO), top_rank, bottom_ranks))
+        for squares in squares:
+            a=0
+        # for i in range(len(idx_lst)):
+        #     idx = idx_lst[i]
+        #     if idx == 9 or idx == 8 or idx == 4:
+        #         rank_lst.append(0)
+        #     elif idx == 1 or idx == 2:
+        #         rank_lst.append(1)
+        #     else:
+        #         rank_lst.append(2)
         if real_change is not None:
             for i in range(len(squares)):
                 rank = rank_lst[i]
@@ -167,14 +175,21 @@ class find_moves_rank:
             for i in range(len(squares)):
                 if rank_lst[i] >= real_change_ratio:
                     self.mistake_idxes.append(i)
-            # a metric that consider both the square itself and the square above checks
-        return rank_lst
+        return tot_ranks
+
+                    # a metric that consider both the square itself and the square above checks
+        # return rank_lst
 
     '''
         receives a sources ranks and places, targets ranks and places, and the chess board, and returns the best pair.
         this is done by find the best match of each source (using best_target_for_given_source method),
         and comparing between all theses matches
         '''
+
+    def overlook_size(self, square):
+        return 0
+
+
 
     def get_pairs_and_ranks(self, sources_place, targets_place, source_ranks,
                             target_ranks):
@@ -214,9 +229,9 @@ class find_moves_rank:
             best_match_places = matches
         return best_match_places, best_match_rank
 
-
-
-
+    def load_nets(self):
+        self.net_top = scikit_learn.read_net(scikit_learn.TOP_NET_FILENAME)
+        self.net_btm = scikit_learn.read_net(scikit_learn.BOTTOM_NET_FILENAME)
 
 
 def test_find_move():

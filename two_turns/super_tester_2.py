@@ -141,11 +141,11 @@ def make_dir(dir_name):
 
 
 # if_one_dir_new("game")
-IDX = 33
-# super_tester_2("move_files\\moves"+str(IDX), None, WITH_SAVES,IDX)
+# IDX = 33
+super_tester_2("moves.txt", ["angle2","angle3"], WITH_SAVES,1)
 
 
 
 
 
-berkos_tester("1_4_3")
+# berkos_tester("1_4_3")
