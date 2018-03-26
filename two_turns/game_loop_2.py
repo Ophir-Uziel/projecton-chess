@@ -105,7 +105,7 @@ class game_loop_2:
         if PRINTS:
             print("I recommend: " + self.best_move)
         if self.is_test:
-            self.best_move = self.user_moves[self.moves_counter]
+            self.best_move = self.user_moves[self.moves_counter][0] + self.user_moves[self.moves_counter][1]
             if PRINTS:
                 print("sorry, I changed my mind. play" + str(self.best_move))
         else:
@@ -204,12 +204,14 @@ class game_loop_2:
                     else:
                         move = "inconclusive move"
                         if PRINTS:
-                            print("inconclusive move")
+                            move = "inconclusive move"
+                            print(pairs[best_pair_idxes[0]][0], potential_trgts)
                         raise Exception("inconclusive move")
 
                 else:
                     if PRINTS:
-                        print("inconclusive move")
+                        print(potential_moves)
+                        move = "inconclusive move"
                     raise Exception("inconclusive move")
                     # raise Exception("inconclusive move")
                 # else:
@@ -224,8 +226,6 @@ class game_loop_2:
                 if PRINTS:
                     move = ' both direction failed'
                     print(move)
-                    if str(Exception) != "inconclusive move":
-                        raise
 
         if(PRINTS):
             print("detected_move")
@@ -259,15 +259,22 @@ class game_loop_2:
         return hidden_moves
 
     def is_hidden_square(self, square, is_src):
+        is_black_piece_abv = self.chesshelper.piece_color(self.chesshelper.get_square_above(square))
         bel_sqr = self.chesshelper.get_square_below(square)
         is_black_square = not self.chesshelper.square_color(square)
         is_static_piece_bel = ((self.chesshelper.piece_color(bel_sqr) is not None) and (self.delay_chesshelper.piece_color(bel_sqr) is not None))
         was_white_bel = self.delay_chesshelper.piece_color(bel_sqr)
         is_white_bel = self.chesshelper.piece_color(bel_sqr)
         is_white_interapt = (was_white_bel and not is_white_bel and is_src) or (is_white_bel and not was_white_bel and not is_src)
-        if (is_black_square or is_static_piece_bel or is_white_interapt) is None:
+        self_hidden = is_black_square or is_static_piece_bel or is_white_interapt
+        abv_hidden = (not is_black_square) or is_black_piece_abv
+        if self_hidden and abv_hidden:
+            return True
+        else:
             return False
-        return is_black_square or is_static_piece_bel or is_white_interapt
+        # if (is_black_square or is_static_piece_bel or is_white_interapt) is None:
+        #     return False
+        # return is_black_square or is_static_piece_bel or is_white_interapt
 
     def check_one_direction(self, sources, dests, angle_idx):
         try:

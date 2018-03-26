@@ -23,7 +23,9 @@ def rand_img(size):
 
 
 def create_net():
-    clf = svm.SVC(gamma=0.000000005)
+    # clf = svm.SVC(gamma=0.000000005)
+
+    clf = svm.SVC(gamma=0.000000001)
     return clf
 
 def train_better_net(net, imgs_lst_by_class):
@@ -141,10 +143,10 @@ def read_imgs(lst, fold):
         for row in im:
             for pixel in row:
                 new_im.append(pixel)
-        if rnd == 0:
-            to_test.append(new_im)
-        else:
-            imgs.append(new_im)
+        # if rnd == 0:
+        #     to_test.append(new_im)
+        # else:
+        imgs.append(new_im)
     return imgs, to_test
 
 
