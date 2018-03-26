@@ -5,7 +5,8 @@ from sklearn import datasets
 import cv2
 import tester_helper
 from sklearn.externals import joblib
-
+from sklearn.neural_network import MLPClassifier
+import random
 
 NET_FILE = "net2"
 
@@ -22,11 +23,16 @@ def rand_img(size):
     return img
 
 
-def create_net():
+def create_svm():
     # clf = svm.SVC(gamma=0.000000005)
 
     clf = svm.SVC(gamma=0.000000001)
     return clf
+
+def create_net(size,type):
+    net = MLPClassifier(solver='lbfgs',alpha=5e-5, hidden_layer_sizes=(size,), random_state=1)
+    save_net(net, type + "_net")
+    return net
 
 def train_better_net(net, imgs_lst_by_class):
     shuffle_img, ans = better_shuffle(imgs_lst_by_class)
@@ -36,26 +42,25 @@ def train_better_net(net, imgs_lst_by_class):
     SVC = net.fit(inp, tar)
     print("trained")
     return net, SVC
-
-def train_net(net, y_img, n_img):
-    shuffle_img, ans = shuffle(y_img,n_img)
-    digits = datasets.load_digits()
-    ex_inp = digits.data
-    ex_tsr = digits.target
-    inp = np.asarray(shuffle_img)
-    tar = np.asarray(ans)
-    SVC = net.fit(inp, tar)
-    return net, SVC
+# def train_net(net, y_img, n_img):
+#     shuffle_img, ans = shuffle(y_img,n_img)
+#     digits = datasets.load_digits()
+#     ex_inp = digits.data
+#     ex_tsr = digits.target
+#     inp = np.asarray(shuffle_img)
+#     tar = np.asarray(ans)
+#     SVC = net.fit(inp, tar)
+#     return net, SVC
 
 
 def check_net(net, imgs, dir_name = None):
-    imgs = im_to_lst(imgs, len(imgs[0]))
+    #imgs = im_to_lst(imgs, len(imgs[0]))
     if(dir_name):
         tester_helper.make_dir(dir_name)
         cnt = 0
         for img in imgs:
-            if cnt%10 == 0:
-                print(cnt)
+            if cnt%100 == 0:
+                print(str(cnt) + "checked")
             res = net.predict([img])[0]
             img = lst_to_im(img)
             cv2.imwrite(dir_name + "\\" + str(res) + "_" + str(cnt) + ".jpg", np.array(img))
@@ -77,6 +82,8 @@ def better_shuffle(lsts_lst):
         shuffle_imgs.append(lsts_lst[rnd][cntrs[rnd]])
         ans.append(rnd)
         cntrs[rnd] += 1
+        if i%100==0:
+            print("shuffled " + str(i) + " ims")
     return shuffle_imgs, ans
 
 
@@ -123,9 +130,11 @@ def test(size,im_num):
     print(out)
 
 
-def im_to_lst(lst, row_num):
+def im_to_lst(lst):
     imgs = []
     for i in range(len(lst)):
+        if i%100 == 0:
+            print("ims to lst: " + str(i))
         new_im =[]
         for row in lst[i]:
             for pixel in list(row):
@@ -143,16 +152,16 @@ def read_imgs(lst, fold):
         for row in im:
             for pixel in row:
                 new_im.append(pixel)
-        # if rnd == 0:
-        #     to_test.append(new_im)
-        # else:
-        imgs.append(new_im)
+        if rnd == 0:
+            to_test.append(new_im)
+        else:
+            imgs.append(new_im)
     return imgs, to_test
 
 
 def lst_to_im(lst):
     img = []
-    for i in range(40):
+    for i in range(20):
         row =[]
         img.append(row)
         for j in range(20):
@@ -205,10 +214,51 @@ def classes_test(classes_folds):
     lsts_lst, lsts_to_test = [read_imgs(os.listdir("classes\\" + fold), "classes\\" + fold)[0] for fold in classes_folds],\
                              [read_imgs(os.listdir("classes\\" + fold), "classes\\" + fold)[1] for fold in classes_folds]
     train_better_net(net, lsts_lst)
+    save_net(net, 'net3')
+    results = [check_net(net,lsts_to_test[i], "classes\\" + str(i)) for i in range(len(classes_folds))]
+    print(results)
     return net
-    save_net(net, 'net2')
-    # results = [check_net(net,lsts_to_test[i], "classes\\" + str(i)) for i in range(len(classes_folds))]
+
+def get_random_imgs(dir, count ):
+    names = random.sample(os.listdir(dir),count)
+    ims = [cv2.imread(os.path.join(dir,name),cv2.IMREAD_GRAYSCALE) for name in names]
+    return ims
+
+def train_net(type, numpics):
+    net = read_net(type + '_net')
+    numpics = numpics
+    gooddir = "C:\\Users\\t8291043\\Desktop\\good_squares\\to_classify\\"+type+"_good"
+    baddir = "C:\\Users\\t8291043\\Desktop\\good_squares\\to_classify\\"+type+"_bad"
+    goodims = im_to_lst(get_random_imgs(gooddir, numpics))
+    badims = im_to_lst(get_random_imgs(baddir, numpics))
+    classes = [goodims, badims]
+    print("training!")
+    train_better_net(net, classes)
+    save_net(net,type+'_net')
+
+def test_net(type, numpics):
+    net = read_net(type+'_net')
+    numpics = numpics
+    gooddir = "C:\\Users\\t8291043\\Desktop\\good_squares\\to_classify\\" + type + "_good"
+    baddir = "C:\\Users\\t8291043\\Desktop\\good_squares\\to_classify\\" + type + "_bad"
+    goodims = im_to_lst(get_random_imgs(gooddir, numpics))
+    badims = im_to_lst(get_random_imgs(baddir, numpics))
+    classes_to_test = [goodims, badims]
+    results = [check_net(net, classes_to_test[i], "classes\\" + str(i)) for i in range(len(classes_to_test))]
+    print("false negative rate:" + str(100*(sum(results[0])/len(results[0])))+"%")
+    print("false positive rate:" + str(100 * ((len(results[1])-sum(results[1])) / len(results[1]))) + "%")
     # print(results)
+
+
+# create_net(400, "top")
+create_net(400, "bottom")
+#
+for i in range(1):
+    train_net("bottom", 20000)
+    print(str((i+1)*1000) +" trained")
+    print("CarmelStupidException: 1000 is not 4000. please try resetting your Carmel.")
+#
+test_net("bottom", 5000)
 #
 # #read_test()
 # classes = os.listdir("classes")
