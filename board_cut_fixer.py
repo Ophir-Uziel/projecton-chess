@@ -767,156 +767,157 @@ class board_cut_fixer:
         return final_img
 
     def main(self, real_img):
+        try:
+            """
+            do not use with vertical lines.
+            """
 
-        """
-        do not use with vertical lines.
-        """
+            def get_y_point_on_line(line):
+                x1 = line[0]
+                y1 = line[1]
+                y = y1 - (x1 - RESIZE_WIDTH // 2) * (line[3] - y1) * 1.0 / (line[2] - x1)
+                return y
 
-        def get_y_point_on_line(line):
-            x1 = line[0]
-            y1 = line[1]
-            y = y1 - (x1 - RESIZE_WIDTH // 2) * (line[3] - y1) * 1.0 / (line[2] - x1)
-            return y
+            """
+            do not use with horizontal lines.
+            """
 
-        """
-        do not use with horizontal lines.
-        """
+            def get_x_point_on_line(line):
+                x1 = line[0]
+                y1 = line[1]
+                return x1 - (y1 - RESIZE_HEIGHT // 2) * (line[2] - x1) * 1.0 / \
+                            (line[3] - y1)
 
-        def get_x_point_on_line(line):
-            x1 = line[0]
-            y1 = line[1]
-            return x1 - (y1 - RESIZE_HEIGHT // 2) * (line[2] - x1) * 1.0 / \
-                        (line[3] - y1)
+            def get_theta_hor(line):
+                angle = self.get_theta(line)
+                if angle > math.pi / 2:
+                    return angle - math.pi
+                return angle
 
-        def get_theta_hor(line):
-            angle = self.get_theta(line)
-            if angle > math.pi / 2:
-                return angle - math.pi
-            return angle
+            def get_theta_ver(line):
+                return self.get_theta(line)
 
-        def get_theta_ver(line):
-            return self.get_theta(line)
+            orig_im = real_img
+            black_area = 0
+            gray = None
+            for j in range(NUM_ANGLE_ITERATIONS):
+                try:
 
-        orig_im = real_img
-        black_area = 0
-        gray = None
-        for j in range(NUM_ANGLE_ITERATIONS):
-            try:
+                    tmp_realimg, tmp_edgeim, tmp_bigim= self.board_id.main(real_img)
 
-                tmp_realimg, tmp_edgeim, tmp_bigim= self.board_id.main(real_img)
+                    for i in range(NUM_ITERATIONS):
 
-                for i in range(NUM_ITERATIONS):
+                        angle_constraint = 1 * (ANGLE_CONSTRAINT_DECAY_FACTOR ** i)
+                        hor, ver = self.get_lines(tmp_edgeim, angle_constraint)
 
-                    angle_constraint = 1 * (ANGLE_CONSTRAINT_DECAY_FACTOR ** i)
-                    hor, ver = self.get_lines(tmp_edgeim, angle_constraint)
+                        # hor, start_from_top = self.remove_bad_hor_lines(hor,
+                        #                                         get_y_point_on_line,
+                        #                                  real_img)
 
-                    # hor, start_from_top = self.remove_bad_hor_lines(hor,
-                    #                                         get_y_point_on_line,
-                    #                                  real_img)
+                        # TODO: fix id of lines too low
+                        new_hor, best_hor_idx, hor_d = self.get_line_series(hor,
+                                                                            lambda
+                                                                                x: RESIZE_HEIGHT - get_y_point_on_line(x),
+                                                                            get_theta_hor,
+                                                                            len(
+                                                                                tmp_edgeim) * MIN_GRID_SIZE,
+                                                                            len(
+                                                                                tmp_edgeim) * MAX_GRID_SIZE, 9)
+                        new_ver, best_ver_idx, ver_d = self.get_line_series(ver,
+                                                                            get_x_point_on_line,get_theta_ver, len(tmp_edgeim[0]) * MIN_GRID_SIZE,
+                                                                            len(
+                                                                                tmp_edgeim[0]) * MAX_GRID_SIZE, 9)
+                        if (DEBUG):
+                            self.draw_lines(ver, tmp_edgeim)
+                            self.draw_lines(new_ver, tmp_edgeim)
+                            self.draw_lines(hor, tmp_edgeim)
+                            self.draw_lines(new_hor, tmp_edgeim)
 
-                    # TODO: fix id of lines too low
-                    new_hor, best_hor_idx, hor_d = self.get_line_series(hor,
-                                                                        lambda
-                                                                            x: RESIZE_HEIGHT - get_y_point_on_line(x),
-                                                                        get_theta_hor,
-                                                                        len(
-                                                                            tmp_edgeim) * MIN_GRID_SIZE,
-                                                                        len(
-                                                                            tmp_edgeim) * MAX_GRID_SIZE, 9)
-                    new_ver, best_ver_idx, ver_d = self.get_line_series(ver,
-                                                                        get_x_point_on_line,get_theta_ver, len(tmp_edgeim[0]) * MIN_GRID_SIZE,
-                                                                        len(
-                                                                            tmp_edgeim[0]) * MAX_GRID_SIZE, 9)
+                        best_hor_pair = self.get_best_line_pair_index(new_hor,
+                                                                      best_hor_idx, hor_d,
+                                                                      get_y_point_on_line, get_theta_hor)
+
+                        best_ver_pair = self.get_best_line_pair_index(new_ver,
+                                                                      best_ver_idx,
+                                                                      ver_d,
+                                                                      get_x_point_on_line,
+                                                                      get_theta_ver)
+
+                        left_num = min(best_ver_pair)
+                        right_num = max(best_ver_pair)
+                        up_num = min(best_hor_pair)
+                        down_num = max(best_hor_pair)
+                        up_line = new_hor[up_num]
+                        down_line = new_hor[down_num]
+                        left_line = new_ver[left_num]
+                        right_line = new_ver[right_num]
+                        frame = [up_num, right_num, down_num, left_num]
+
+                        points = self.get_board_limits(up_line, right_line, down_line, left_line)
+
+                        spare = PROJECTION_SPARE_DIFF
+                        grid = PROJECTION_SPARE_GRID_SIZE
+                        bigspare = PROJECTION_SPARE_DIFF_BIG
+                        biggrid = PROJECTION_SPARE_GRID_SIZE_BIG
+                        if(i==0): #spare is from id board
+                            spare = identify_board.PROJECTION_SPARE_DIFF
+                            grid = identify_board.PROJECTION_SPARE_GRID_SIZE
+                            bigspare = identify_board.PROJECTION_SPARE_DIFF_BIG
+                            biggrid = identify_board.PROJECTION_SPARE_GRID_SIZE_BIG
+
+                        bigpts = self.get_bigims_pts(points,tmp_bigim,spare,
+                                                     grid,bigspare,biggrid)
+
+                        if (DEBUG):
+                            self.draw_lines([up_line, left_line, right_line,
+                                             down_line], tmp_edgeim)
+                            self.draw_points(tmp_realimg, points)
+                        self.draw_points(tmp_bigim, bigpts)
+
+
+                        # find where to start cutting (bottom of board)
+                        tmp_realimg, tmp_edgeim, tmp_bigim= self.get_best_cut_image(
+                            tmp_realimg,tmp_edgeim,tmp_bigim,
+                                                                   points, bigpts, frame,
+                                                                   i < NUM_ITERATIONS - 1)
+
+
+                            # gui_img_manager.add_img(self.get_line_image(hor, edgeim))
+                            # gui_img_manager.add_img(self.get_line_image(new_hor, edgeim))
+                            # gui_img_manager.add_img(self.get_line_image([up_line,
+                            # left_line, right_line, down_line], edgeim))
+                            # gui_img_manager.add_img(proim)
+
+
+                    gaus = self.gausThresholdChess(tmp_realimg)
+                    if DEBUG:
+                        cv2.imshow("image", gaus)
+                        k = cv2.waitKey(0)
+                    is_proj_correct = board_cut_checker.board_cut_checker(gaus)
+
+                    if not is_proj_correct:
+                        if(DEBUG):
+                            print("Shimri's test has failed - bad cut")
+                        raise Exception()
+
+                    final_im = self.get_final_image(tmp_bigim)
+                    gray = cv2.cvtColor(final_im, cv2.COLOR_RGB2GRAY)
+                    black_area =len(gray)*len(gray[0]) - cv2.countNonZero(gray)
+                    if black_area>= MAX_BLACK_AREA:
+                        raise Exception()
+                    return self.get_final_image(tmp_bigim)
+
+                except Exception:
+                    if black_area>=MAX_BLACK_AREA:
+                        if(DEBUG):
+                            print("too much black in picture, bad cut")
+                        raise FixerError("",self.find_error_dir(gray))
+                    real_img = self.rotate_image_fix(orig_im, j)
                     if (DEBUG):
-                        self.draw_lines(ver, tmp_edgeim)
-                        self.draw_lines(new_ver, tmp_edgeim)
-                        self.draw_lines(hor, tmp_edgeim)
-                        self.draw_lines(new_hor, tmp_edgeim)
-
-                    best_hor_pair = self.get_best_line_pair_index(new_hor,
-                                                                  best_hor_idx, hor_d,
-                                                                  get_y_point_on_line, get_theta_hor)
-
-                    best_ver_pair = self.get_best_line_pair_index(new_ver,
-                                                                  best_ver_idx,
-                                                                  ver_d,
-                                                                  get_x_point_on_line,
-                                                                  get_theta_ver)
-
-                    left_num = min(best_ver_pair)
-                    right_num = max(best_ver_pair)
-                    up_num = min(best_hor_pair)
-                    down_num = max(best_hor_pair)
-                    up_line = new_hor[up_num]
-                    down_line = new_hor[down_num]
-                    left_line = new_ver[left_num]
-                    right_line = new_ver[right_num]
-                    frame = [up_num, right_num, down_num, left_num]
-
-                    points = self.get_board_limits(up_line, right_line, down_line, left_line)
-
-                    spare = PROJECTION_SPARE_DIFF
-                    grid = PROJECTION_SPARE_GRID_SIZE
-                    bigspare = PROJECTION_SPARE_DIFF_BIG
-                    biggrid = PROJECTION_SPARE_GRID_SIZE_BIG
-                    if(i==0): #spare is from id board
-                        spare = identify_board.PROJECTION_SPARE_DIFF
-                        grid = identify_board.PROJECTION_SPARE_GRID_SIZE
-                        bigspare = identify_board.PROJECTION_SPARE_DIFF_BIG
-                        biggrid = identify_board.PROJECTION_SPARE_GRID_SIZE_BIG
-
-                    bigpts = self.get_bigims_pts(points,tmp_bigim,spare,
-                                                 grid,bigspare,biggrid)
-
-                    if (DEBUG):
-                        self.draw_lines([up_line, left_line, right_line,
-                                         down_line], tmp_edgeim)
-                        self.draw_points(tmp_realimg, points)
-                    self.draw_points(tmp_bigim, bigpts)
-
-
-                    # find where to start cutting (bottom of board)
-                    tmp_realimg, tmp_edgeim, tmp_bigim= self.get_best_cut_image(
-                        tmp_realimg,tmp_edgeim,tmp_bigim,
-                                                               points, bigpts, frame,
-                                                               i < NUM_ITERATIONS - 1)
-
-
-                        # gui_img_manager.add_img(self.get_line_image(hor, edgeim))
-                        # gui_img_manager.add_img(self.get_line_image(new_hor, edgeim))
-                        # gui_img_manager.add_img(self.get_line_image([up_line,
-                        # left_line, right_line, down_line], edgeim))
-                        # gui_img_manager.add_img(proim)
-
-
-                gaus = self.gausThresholdChess(tmp_realimg)
-                if DEBUG:
-                    cv2.imshow("image", gaus)
-                    k = cv2.waitKey(0)
-                is_proj_correct = board_cut_checker.board_cut_checker(gaus)
-
-                if not is_proj_correct:
-                    if(DEBUG):
-                        print("Shimri's test has failed - bad cut")
-                    raise Exception()
-
-                final_im = self.get_final_image(tmp_bigim)
-                gray = cv2.cvtColor(final_im, cv2.COLOR_RGB2GRAY)
-                black_area =len(gray)*len(gray[0]) - cv2.countNonZero(gray)
-                if black_area>= MAX_BLACK_AREA:
-                    raise Exception()
-                return self.get_final_image(tmp_bigim)
-
-            except Exception:
-                if black_area>=MAX_BLACK_AREA:
-                    if(DEBUG):
-                        print("too much black in picture, bad cut")
-                    raise FixerError("",self.find_error_dir(gray))
-                real_img = self.rotate_image_fix(orig_im, j)
-                if (DEBUG):
-                    print("rotating image")
-        raise FixerError("",FixerErrorType.NoDirection)
-
+                        print("rotating image")
+            raise FixerError("",FixerErrorType.NoDirection)
+        except:
+            raise Exception("boaed cut failed")
 
     def get_line_image(self, lines, img):
         bin = copy.deepcopy(img)

@@ -218,14 +218,15 @@ class game_loop_2:
                 #         move = hidden_moves[0]
                 #     else:
                 #         raise Exception("inconclusive move")
-
+                break
 
             except Exception as e:
                 if PRINTS:
                     move = ' both direction failed'
                     print(move)
-                    if str(Exception) != "inconclusive move":
-                        raise
+                    print(e)
+                    # if str(Exception) != "inconclusive move":
+                    #     raise
 
         if(PRINTS):
             print("detected_move")
@@ -291,9 +292,15 @@ class game_loop_2:
             if difftot>MAX_DIFF_RATIO: ## too much white in img
                 raise Exception()
 
+            if self.is_test:
+                tester_info = (rival_move, self.moves_counter, angle_idx)
+            else:
+                tester_info = None
+
+
             src_ranks, trgt_ranks = self.movefinder.get_move(sources, sourcesims, sourcesabvims, dests, destsims,
                                                          destsabvims,
-                                                         tester_info=(rival_move, self.moves_counter, angle_idx))
+                                                         tester_info=tester_info)
 
             difftot = (srcdiff + dstdiff)/(160*180)
 
@@ -321,9 +328,10 @@ class game_loop_2:
             angle.set_prev_im(cut_board_im)
 
             return src_ranks, trgt_ranks
-        except:
+        except Exception as e:
             if PRINTS:
                 print("angle " + str(angle_idx) + " failed")
+                print(e)
             return [0]*len(sources), [0]*len(dests)
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
@@ -358,10 +366,10 @@ class game_loop_2:
                 print(str(e))
             raise
 
-#
-# game = game_loop_2(2)
-# game.main()
-#
+
+game = game_loop_2(2)
+game.main()
+
 
 
 

@@ -131,7 +131,7 @@ class Engine(subprocess.Popen):
     def __init__(self, depth=2, ponder=False, param={}, rand=False,
                  rand_min=-10, rand_max=10, movetime=1000):
         subprocess.Popen.__init__(self,
-                                  './stockfish',
+                                  'stockfish',
                                   universal_newlines=True,
                                   stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE, )

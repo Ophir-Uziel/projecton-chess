@@ -24,5 +24,14 @@ def chess_engine_tester():
         best_move = chess_engine.get_best_move(rival_move)
         print(best_move)
 
-
-#chess_engine_tester()
+# for carmel with luv
+# chess_engine_tester()
+# chess_engine = Engine(depth=SEARCH_DEPTH)
+# chess_engine.setposition(["e2e4"])
+# print(chess_engine.bestmove()['move'])
+# chess_engine.setposition(["e2e4", "e7e5"])
+# print(chess_engine.bestmove()['move'])
+# chess_engine.setposition(["e2e4", "e7e5", "d2d4"])
+# print(chess_engine.bestmove()['move'])
+# chess_engine.setposition(["e2e4", "e7e5", "d2d4", "d7d5"])
+# print(chess_engine.bestmove()['move'])
