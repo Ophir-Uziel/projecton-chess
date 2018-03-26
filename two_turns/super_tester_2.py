@@ -30,9 +30,9 @@ def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
         move = line.rstrip('\n')
         if len(move) == 4:
             if x%2 ==0:
-                user_moves.append((move[0:2], move[2:4]))
+                user_moves.append(move[0:2] + move[2:4])
             else:
-                real_rival_moves.append((move[0:2], move[2:4]))
+                real_rival_moves.append(move[0:2] + move[2:4])
         elif len(move) != 0:
             raise Exception("illegal move:" + move)
         x+=1
@@ -137,11 +137,8 @@ def make_dir(dir_name):
             raise
 
 
-
-
-
 # if_one_dir_new("game")
-IDX = 37
+IDX = 42
 super_tester_2("move_files1\\moves" +str(IDX), None, WITH_SAVES,IDX)
 
 

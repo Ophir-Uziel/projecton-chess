@@ -76,8 +76,8 @@ class find_moves_rank:
                 angle_idx = tester_info[2]
 
                 self.mistake_idxes = []
-                real_change_s = real_move[0]
-                real_change_t = real_move[1]
+                real_change_s = real_move[0:2]
+                real_change_t = real_move[2:4]
                 real_idx_source = sources_place.index(real_change_s)
                 real_idx_target = targets_place.index(real_change_t)
 

@@ -22,7 +22,7 @@ RESULTS_DIR = 'professional games 3\\super_tester_results'
 
 PRINTS = True
 
-MAX_DIFF_RATIO = 0.15
+MAX_DIFF_RATIO = 0.25
 
 class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None):
@@ -146,14 +146,14 @@ class game_loop_2:
                             print("id error plz take another photo k thnx")
                     gui_img_manager.set_camera(i)
 
-                    if self.is_live_test:
-                        while True:
-                            pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
-                            if not (len(pairs_and_ranks[0]) == 0 and len(
-                                            pairs_and_ranks[1]) == 0):
-                                break
-                    else:
-                        new_src_ranks, new_trgt_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                    # if self.is_live_test:
+                    #     while True:
+                    #         pairs_and_ranks = self.check_one_direction(sources, dests, angle_idx=i)
+                    #         if not (len(pairs_and_ranks[0]) == 0 and len(
+                    #                         pairs_and_ranks[1]) == 0):
+                    #             break
+                    # else:
+                    new_src_ranks, new_trgt_ranks = self.check_one_direction(sources, dests, angle_idx=i)
                     gui_img_manager.reset_images(i)
                     src_ranks = list(map(lambda x, y: x + y, src_ranks, new_src_ranks))
                     trgt_ranks = list(map(lambda x, y: x + y, trgt_ranks, new_trgt_ranks))
@@ -182,6 +182,12 @@ class game_loop_2:
                     print(trgt_ranks)
                     print(pairs)
                     print(pairs_ranks)
+
+
+                if self.is_live_test:
+                    move = "live_test"
+                    break
+
                 best_pair_idxes = [i for i in range(len(pairs_ranks)) if pairs_ranks[i] == max(pairs_ranks)]
                 potential_moves = [pairs[best_pair_idxes[j]] for j in range(len(best_pair_idxes))]
                 potential_moves_copy = copy.deepcopy(potential_moves)
@@ -191,6 +197,9 @@ class game_loop_2:
                             tmp = potential_moves_copy[j]
                             if self.get_hidden_move_rank((potential_moves_copy[j][0], potential_moves_copy[j][1][0])) == (2-i):
                                 potential_moves.remove(tmp)
+
+
+
                 if len(best_pair_idxes) == 1:
                     potential_trgts = pairs[best_pair_idxes[0]][1]
                     potential_trgts_copy = copy.deepcopy(potential_trgts)
@@ -199,6 +208,8 @@ class game_loop_2:
                             tmp = potential_trgts_copy[i]
                             if not self.is_hidden_square(potential_trgts_copy[i], not SOURCE):
                                 potential_trgts.remove(tmp)
+
+
                     if len(potential_trgts) == 1:
                         move = (pairs[best_pair_idxes[0]][0], pairs[best_pair_idxes[0]][1][0])
                     else:
@@ -236,12 +247,12 @@ class game_loop_2:
 
         if self.is_test:
             move = rival_move
-        self.last_move = move[0] + move[1]
-        self.chesshelper.do_turn(move[0], move[1])
+        self.last_move = move[0:2] + move[2:4]
+        self.chesshelper.do_turn(move[0:2], move[2:4])
 
         # delayed helper do his turn now for filter_colors needs
         self.delay_chesshelper.do_turn(self.best_move[0:2],self.best_move[2:4])
-        self.delay_chesshelper.do_turn(move[0], move[1])
+        self.delay_chesshelper.do_turn(move[0:2], move[2:4])
         self.moves_counter += 1
         return move
 
@@ -288,9 +299,9 @@ class game_loop_2:
                                                                              SOURCE)
             destsims, destsabvims, dstdiff = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                          not SOURCE)
-            difftot = (srcdiff + dstdiff)/(180*160)
-            if difftot>MAX_DIFF_RATIO: ## too much white in img
-                raise Exception()
+            # difftot = (srcdiff + dstdiff)/(180*160)
+            # if difftot>MAX_DIFF_RATIO: ## too much white in img
+            #     raise Exception()
 
             if self.is_test:
                 tester_info = (rival_move, self.moves_counter, angle_idx)
@@ -332,6 +343,8 @@ class game_loop_2:
             if PRINTS:
                 print("angle " + str(angle_idx) + " failed")
                 print(e)
+            if self.is_live_test:
+                raise
             return [0]*len(sources), [0]*len(dests)
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
@@ -366,9 +379,9 @@ class game_loop_2:
                 print(str(e))
             raise
 
-
-game = game_loop_2(2)
-game.main()
+#
+# game = game_loop_2(2)
+# game.main()
 
 
 
