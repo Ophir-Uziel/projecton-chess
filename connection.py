@@ -130,6 +130,7 @@ class connection:
         msg_size = int(tmp_data[0:SIZE_LEN].decode())+SIZE_LEN
         while len(tmp_data)<msg_size:
             tmp_data = tmp_data + self.socket.recv(IM_SIZE)
+
             
         return tmp_data[SIZE_LEN:]        
 
