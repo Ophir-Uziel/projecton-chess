@@ -154,9 +154,8 @@ class find_moves_rank:
         # idx_lst = scikit_learn.check_net(self.net, tester_helper.connect_two_ims_lst(squares, above_squares))
         bottom_ranks = scikit_learn.check_net(self.net_btm,squares)
         top_rank = scikit_learn.check_net(self.net_top, above_squares)
-        tot_ranks =   list(map(lambda x, y:2-(x^BOT_RATIO + y^TOP_RATIO), top_rank, bottom_ranks))
-        for squares in squares:
-            a=0
+        tot_ranks =   list(map(lambda x, y:(2-(x**BOT_RATIO + y**TOP_RATIO)), top_rank, bottom_ranks))
+
         # for i in range(len(idx_lst)):
         #     idx = idx_lst[i]
         #     if idx == 9 or idx == 8 or idx == 4:
@@ -165,16 +164,19 @@ class find_moves_rank:
         #         rank_lst.append(1)
         #     else:
         #         rank_lst.append(2)
-        if real_change is not None:
-            for i in range(len(squares)):
-                rank = rank_lst[i]
-                if real_change is not None:
-                    if i == real_change_idx:
-                        real_change_ratio = rank
-                        self.mistake_idxes.append(i)
-            for i in range(len(squares)):
-                if rank_lst[i] >= real_change_ratio:
-                    self.mistake_idxes.append(i)
+        # if len(squares) != len(tot_ranks):
+        #     print("primfuck")
+        # if real_change is not None:
+        #     for i in range(len(squares)):
+        #         rank = tot_ranks[i]
+        #         if real_change is not None:
+        #             if i == real_change_idx:
+        #                 real_change_ratio = rank
+        #                 self.mistake_idxes.append(i)
+        #
+        #     for i in range(len(squares)):
+        #         if tot_ranks[i] >= real_change_ratio:
+        #             self.mistake_idxes.append(i)
         return tot_ranks
 
                     # a metric that consider both the square itself and the square above checks

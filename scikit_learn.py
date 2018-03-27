@@ -7,8 +7,10 @@ import tester_helper
 from sklearn.externals import joblib
 from sklearn.neural_network import MLPClassifier
 import random
-TOP_NET_FILENAME = "top_net.pkl"
-BOTTOM_NET_FILENAME = "bottom_net.pkl"
+import time
+import this
+TOP_NET_FILENAME = "top_net"
+BOTTOM_NET_FILENAME = "bottom_net"
 NET_FILE = "net2"
 
 
@@ -30,19 +32,29 @@ def create_svm():
     clf = svm.SVC(gamma=0.000000001)
     return clf
 
-def create_net(size,type):
-    net = MLPClassifier(solver='lbfgs',alpha=5e-5, hidden_layer_sizes=(size,), random_state=1)
-    save_net(net, type + "_net")
-    return net
+def create_nets(size,type, nets_num):
+    nets = []
+    for k in range(nets_num):
+        net = MLPClassifier(solver='lbfgs',alpha=1e-5, hidden_layer_sizes=(size,), random_state=1, activation= "tanh")
+        save_net(net, type + "_net" + "_" + str(k))
+        nets.append(net)
+    return nets
 
-def train_better_net(net, imgs_lst_by_class):
-    shuffle_img, ans = better_shuffle(imgs_lst_by_class)
-    print("shuffled")
-    inp = np.asarray(shuffle_img)
-    tar = np.asarray(ans)
-    SVC = net.fit(inp, tar)
-    print("trained")
-    return net, SVC
+def train_better_net(nets, imgs_lst_by_class, type):
+    i = 0
+    carmel_the_gever = 0
+    j = 0
+    for net in nets:
+        shuffle_img, ans = better_shuffle(imgs_lst_by_class)
+        print("shuffled")
+        inp = np.asarray(shuffle_img)
+        tar = np.asarray(ans)
+        carmel_the_gever = net.fit(inp, tar)
+        print(str(i) + " trained")
+        i += 1
+        save_net(nets[j],type+'_net_' +str(j))
+        j += 1
+    return nets, carmel_the_gever
 # def train_net(net, y_img, n_img):
 #     shuffle_img, ans = shuffle(y_img,n_img)
 #     digits = datasets.load_digits()
@@ -55,7 +67,6 @@ def train_better_net(net, imgs_lst_by_class):
 
 
 def check_net(net, imgs, dir_name = None):
-    #imgs = im_to_lst(imgs, len(imgs[0]))
     if(dir_name):
         tester_helper.make_dir(dir_name)
         cnt = 0
@@ -211,7 +222,7 @@ def read_test():
     print(str(sum(y_results)) + " out of " + str(len(y_results)))
 
 def classes_test(classes_folds):
-    net = create_net()
+    nets = create_nets()
     lsts_lst, lsts_to_test = [read_imgs(os.listdir("classes\\" + fold), "classes\\" + fold)[0] for fold in classes_folds],\
                              [read_imgs(os.listdir("classes\\" + fold), "classes\\" + fold)[1] for fold in classes_folds]
     train_better_net(net, lsts_lst)
@@ -226,7 +237,10 @@ def get_random_imgs(dir, count ):
     return ims
 
 def train_net(type, numpics):
-    net = read_net(type + '_net')
+    nets = []
+    for j in range(3):
+        net = read_net(type + '_net_' +str(j))
+        nets.append(net)
     numpics = numpics
     gooddir = "C:\\Users\\t8291043\\Desktop\\good_squares\\to_classify\\"+type+"_good"
     baddir = "C:\\Users\\t8291043\\Desktop\\good_squares\\to_classify\\"+type+"_bad"
@@ -234,11 +248,11 @@ def train_net(type, numpics):
     badims = im_to_lst(get_random_imgs(baddir, numpics))
     classes = [goodims, badims]
     print("training!")
-    train_better_net(net, classes)
-    save_net(net,type+'_net')
+    train_better_net(nets, classes, type)
 
-def test_net(type, numpics):
-    net = read_net(type+'_net')
+
+def test_nets(type, name, numpics):
+    net = read_net(name)
     numpics = numpics
     gooddir = "C:\\Users\\t8291043\\Desktop\\good_squares\\to_classify\\" + type + "_good"
     baddir = "C:\\Users\\t8291043\\Desktop\\good_squares\\to_classify\\" + type + "_bad"
@@ -249,19 +263,25 @@ def test_net(type, numpics):
     print("false negative rate:" + str(100*(sum(results[0])/len(results[0])))+"%")
     print("false positive rate:" + str(100 * ((len(results[1])-sum(results[1])) / len(results[1]))) + "%")
     # print(results)
+#
+#
 
+def night_running(kama_kod):
+    create_nets(400, "top", 3)
+    create_nets(400, "bottom", 3)
 
-# create_net(400, "top")
-create_net(400, "bottom")
+    train_net("top", kama_kod)
+    train_net("bottom", kama_kod)
+
+    for i in range(3):
+        test_nets("top", "top_net_" + str(i), 5000)
+        test_nets("bottom", "bottom_net_" + str(i), 5000)
+
+gedulim = time.time()
+night_running(40000)
+print((time.time() - gedulim)/3600)
 #
-for i in range(1):
-    train_net("bottom", 20000)
-    print(str((i+1)*1000) +" trained")
-    print("CarmelStupidException: 1000 is not 4000. please try resetting your Carmel.")
-#
-test_net("bottom", 5000)
-#
-# #read_test()
+#read_test()
 # classes = os.listdir("classes")
 # classes_test(classes)
 

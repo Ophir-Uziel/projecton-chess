@@ -204,13 +204,13 @@ class game_loop_2:
                     else:
                         move = "inconclusive move"
                         if PRINTS:
-                            print("inconclusive move")
-                        raise Exception("inconclusive move")
+                            move = "inconclusive move"
+                        # raise Exception("inconclusive move")
 
                 else:
                     if PRINTS:
-                        print("inconclusive move")
-                    raise Exception("inconclusive move")
+                        move = "inconclusive move"
+                    # raise Exception("inconclusive move")
                     # raise Exception("inconclusive move")
                 # else:
                 #     hidden_moves = self.get_hidden_moves()
@@ -236,11 +236,11 @@ class game_loop_2:
         if self.is_test:
             move = rival_move
         self.last_move = move[0] + move[1]
-        self.chesshelper.do_turn(move[0], move[1])
+        self.chesshelper.do_turn(move[0:2], move[2:4])
 
         # delayed helper do his turn now for filter_colors needs
         self.delay_chesshelper.do_turn(self.best_move[0:2],self.best_move[2:4])
-        self.delay_chesshelper.do_turn(move[0], move[1])
+        self.delay_chesshelper.do_turn(move[0:2], move[2:4])
         self.moves_counter += 1
         return move
 
@@ -287,6 +287,7 @@ class game_loop_2:
                                                                              SOURCE)
             destsims, destsabvims, dstdiff = self.get_diff_im_and_dif_abv_im_list(dests, cut_board_im, angle,
                                                                          not SOURCE)
+
             difftot = (srcdiff + dstdiff)/(180*160)
             if difftot>MAX_DIFF_RATIO: ## too much white in img
                 raise Exception()
@@ -324,6 +325,7 @@ class game_loop_2:
         except:
             if PRINTS:
                 print("angle " + str(angle_idx) + " failed")
+            raise
             return [0]*len(sources), [0]*len(dests)
 
     def get_diff_im_and_dif_abv_im_list(self, locs, cut_board_im, angle, is_source):
