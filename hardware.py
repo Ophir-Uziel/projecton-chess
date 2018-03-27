@@ -59,6 +59,6 @@ class hardware:
         self.socket.send_msg(connection.CLOSE)
 
 def first_2_chars(x):
-    return int(x[2:-4])
+    return int(x[0:-11])
 
 
