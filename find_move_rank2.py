@@ -93,7 +93,11 @@ class find_moves_rank:
                 real_idx_target = None
 
             sources_rank = self.check_squares(sources_self,
-                                         sources_above,real_change_s, real_idx_source)
+                                         sources_above, sources_place,
+                                              [
+                                                  self.chess_helper.get_square_above(loc) for loc in sources_place],
+                                              real_change_s,
+                                              real_idx_source)
             if to_save and SAVE_ALLOT:
                 for idx in self.mistake_idxes:
                     tester_helper.save_bw(img=np.array(sources_self[idx]), place=sources_place[idx], move_num=move_num,
@@ -122,7 +126,10 @@ class find_moves_rank:
                 self.neuron_counter += 2
 
             targets_rank = self.check_squares(targets_self,
-                                         targets_above,real_change_t, real_idx_target)
+                                         targets_above,targets_place,
+                                              [
+                                                  self.chess_helper.get_square_above(loc) for loc in targets_place],
+                                              real_change_t, real_idx_target)
 
             if to_save and SAVE_ALLOT:
                 for idx in self.mistake_idxes:
@@ -150,30 +157,31 @@ class find_moves_rank:
     receives a list of square images, and list of square images above them and
     returns a list of rank with the corresponding indexes
     '''
-    def check_squares(self, squares, above_squares, real_change = None, real_change_idx = None):
+    def check_squares(self, squares, above_squares, squarelocs,
+                      abvlocs, real_change = None, real_change_idx = None):
         self.mistake_idxes = []
         rank_lst = []
         # idx_lst = scikit_learn.check_net(self.net, tester_helper.connect_two_ims_lst(squares, above_squares))
         bottom_coeffs = []
         bottom_ranks = scikit_learn.check_net(self.net_btm,squares)
         top_ranks = scikit_learn.check_net(self.net_top, above_squares)
-        # for sqr in squares:
-        #     if self.chess_helper.square_color(sqr):
-        #         bottom_coeffs.append(WHITE_COEFF)
-        #     else:
-        #         bottom_coeffs.append(BLACK_COEFF)
-        #
-        # top_coeffs = []
-        # for sqr in above_squares:
-        #     if self.chess_helper.square_color(sqr):
-        #         top_coeffs.append(WHITE_COEFF)
-        #     else:
-        #         top_coeffs.append(BLACK_COEFF)
-        #
-        # for i in range(len(top_ranks)):
-        #     top_ranks[i]*= top_coeffs[i]
-        # for i in range(len(bottom_ranks)):
-        #     bottom_ranks[i] *= bottom_coeffs[i]
+        for sqr in squarelocs:
+            if self.chess_helper.square_color(sqr):
+                bottom_coeffs.append(WHITE_COEFF)
+            else:
+                bottom_coeffs.append(BLACK_COEFF)
+
+        top_coeffs = []
+        for sqr in abvlocs:
+            if self.chess_helper.square_color(sqr):
+                top_coeffs.append(WHITE_COEFF)
+            else:
+                top_coeffs.append(BLACK_COEFF)
+
+        for i in range(len(top_ranks)):
+            top_ranks[i]*= top_coeffs[i]
+        for i in range(len(bottom_ranks)):
+            bottom_ranks[i] *= bottom_coeffs[i]
 
         tot_ranks =   list(map(lambda x, y:(2-(x**BOT_RATIO + y**TOP_RATIO)), top_ranks, bottom_ranks))
 
