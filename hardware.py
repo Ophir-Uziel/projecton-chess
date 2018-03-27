@@ -40,10 +40,22 @@ class hardware:
             self.angles_imgs_counter[int(direction)] += 1
             return img
         else:
+            while True:
+                try:
+                    self.socket.send_msg(
+                        connection.REQUEST_SHOT_MSG + str(direction) +
+                        str(last_error_dir))
+                    break
+                except:
+                    self.socket = connection.connection(connection.LISTENER)
 
-            self.socket.send_msg(connection.REQUEST_SHOT_MSG + str(direction) +
-                                 str(last_error_dir))
-            img =self.socket.get_image()
+            while True:
+                try:
+                    img = self.socket.get_image()
+                    break
+                except:
+                    self.socket = connection.connection(connection.LISTENER)
+
             return img
 
 
@@ -53,10 +65,21 @@ class hardware:
     # TODO write this func
 
     def player_indication(self, move):
-        self.socket.send_msg(connection.MOVE_MSG+move)
+        while True:
+            try:
+                self.socket.send_msg(connection.MOVE_MSG+move)
+                break
+            except:
+                self.socket = connection.connection(connection.LISTENER)
+
 
     def close(self):
-        self.socket.send_msg(connection.CLOSE)
+        while True:
+            try:
+                self.socket.send_msg(connection.CLOSE)
+                break
+            except:
+                self.socket = connection.connection(connection.LISTENER)
 
 def first_2_chars(x):
     return int(x[0:-11])
