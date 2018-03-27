@@ -137,9 +137,12 @@ def make_dir(dir_name):
             raise
 
 
+
+
+
 # if_one_dir_new("game")
-IDX = 42
-super_tester_2("move_files1\\moves" +str(IDX), None, WITH_SAVES,IDX)
+# IDX = 33
+super_tester_2("moves.txt", ["angle2","angle3"], WITH_SAVES,1)
 
 
 
