@@ -6,37 +6,29 @@ This file is responsible for all chess logic that isn't Stockfish.
 class chess_helper:
 
     RIVAL = False
-    ME = True
+    USER = True
 
-    def __init__(self, start_player):
+    def __init__(self, start_player = True):
         """
 
         :param start_player:
         """
         self.board = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        self.user_starts = start_player
         self.curr_player = start_player
-        if(True):
-            self.user_starts = True
-        else:
-            self.user_starts = False
 
-    """
-    updates the board.
-    :return whether turn is legal
-    """
     def do_turn(self, src, dest):
         stringmove = src+dest
         move2do = chess.Move.from_uci(stringmove)
-        if [src, dest] not in self.get_relevant_locations():
-            raise Exception("illegal move")
         if (move2do not in self.board.legal_moves):
-            return False
+            raise Exception("illegal move: " + stringmove)
         self.board.push(move2do)
-        if(self.curr_player == chess_helper.ME):
+        if(self.curr_player == chess_helper.USER):
             self.curr_player = chess_helper.RIVAL
         else:
-            self.curr_player = chess_helper.ME
+            self.curr_player = chess_helper.USER
         return True
+
 
     """
         :src source square
@@ -75,6 +67,8 @@ class chess_helper:
         letter = square_location[0]
         number = int(square_location[1]) - 1
         numLine = ord(letter) - 97
+        if number == 8 or number == -1:
+            return None
         square = number * 8 + numLine
         piece = self.board.piece_at(square)
         if piece == None:
@@ -117,6 +111,28 @@ class chess_helper:
         dests = self.get_destinations()
         return [sources, dests]
 
+    def get_square_below(self, square):
+        """
+        :param square:
+        :return the square below the square given to us, -1 if illegal:
+        """
+        flag = self.user_starts
+        col = square[0]
+        if flag:
+            row = int(square[1]) - 1
+        else:
+            row = int(square[1]) + 1
+        return square[0] + str(row)
 
-    def get_current_player(self):
-        return self.curr_player
+    def get_square_above(self, square):
+        """
+        :param square:
+        :return the square above the square given to us, -1 if illegal:
+        """
+        flag = self.user_starts
+        col = square[0]
+        if flag:
+            row = int(square[1]) + 1
+        else:
+            row = int(square[1]) - 1
+        return square[0] + str(row)

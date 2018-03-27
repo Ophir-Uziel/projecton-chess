@@ -7,8 +7,8 @@ import shutil
 import hardware
 import board_cut_fixer
 WITH_SAVES = True
-from two_turns import photos_angle_2
-from  two_turns import chess_helper_2
+import photos_angle_2
+import chess_helper
 
 def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
     if net_idx:
@@ -30,9 +30,9 @@ def super_tester_2(moves_file, img_dir_lst, with_saves, net_idx = None):
         move = line.rstrip('\n')
         if len(move) == 4:
             if x%2 ==0:
-                user_moves.append((move[0:2], move[2:4]))
+                user_moves.append(move[0:2] + move[2:4])
             else:
-                real_rival_moves.append((move[0:2], move[2:4]))
+                real_rival_moves.append(move[0:2] + move[2:4])
         elif len(move) != 0:
             raise Exception("illegal move:" + move)
         x+=1
@@ -50,7 +50,7 @@ def berkos_tester(fold_name):
         raise Exception("change the name of tje folder!")
     else:
         make_dir("berkos\\" + fold_name)
-    ch = chess_helper_2.chess_helper_2(True)
+    ch = chess_helper.chess_helper(True)
     hw = hardware.hardware(2)
     cnt = 0
     while True:
@@ -74,7 +74,7 @@ def berkos_tester_2(fold_name):
         raise Exception("change the name of tje folder!")
     else:
         make_dir("berkos\\" + fold_name)
-    ch = chess_helper_2.chess_helper_2(True)
+    ch = chess_helper.chess_helper(True)
     hw = hardware.hardware(1)
     cnt = 0
     while True:
@@ -140,12 +140,12 @@ def make_dir(dir_name):
 
 
 
-# if_one_dir_new("game")
-IDX = 33
-# super_tester_2("move_files\\moves"+str(IDX), None, WITH_SAVES,IDX)
+if_one_dir_new("fixed")
+# IDX = 33
+super_tester_2("fixed\\moves.txt", ["angle0","angle1"], WITH_SAVES,1)
 
 
 
 
 
-berkos_tester("1_4_3")
+# berkos_tester("1_4_3")

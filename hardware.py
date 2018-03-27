@@ -2,7 +2,6 @@ import os
 import cv2
 import time
 from scipy import misc
-import gui_img_manager
 import connection
 """
 This file is for user communication and hardware.
@@ -27,7 +26,7 @@ class hardware:
                                               sorted_img_names[j], cv2.IMREAD_COLOR))
 
                 print(sorted_img_names)
-                lf.angles_imgs_lst.append(img_array)
+                self.angles_imgs_lst.append(img_array)
                 self.angles_imgs_counter.append(0)
         else:
             self.is_live = True
@@ -38,7 +37,6 @@ class hardware:
             img = self.angles_imgs_lst[int(direction)][
                 self.angles_imgs_counter[int(direction)]]
             #img = cv2.resize(img,(RESIZE_SIZE,RESIZE_SIZE))
-            gui_img_manager.add_img(img)
             self.angles_imgs_counter[int(direction)] += 1
             return img
         else:
@@ -46,7 +44,6 @@ class hardware:
             self.socket.send_msg(connection.REQUEST_SHOT_MSG + str(direction) +
                                  str(last_error_dir))
             img =self.socket.get_image()
-            gui_img_manager.add_img(img)
             return img
 
 

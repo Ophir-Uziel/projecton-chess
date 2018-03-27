@@ -1,10 +1,10 @@
 import cv2
-import two_turns.filter_colors_2
+import filter_colors_2
 import identify_board
 import board_cut_fixer
 import tester_helper
 import numpy as np
-
+import mygui
 print_and_save = False
 
 
@@ -24,9 +24,10 @@ class photos_angle_2:
                 self.prep_img()
                 cut_board_im = self.get_new_img(tester_info=(-1, self.idx))
                 break
-            except:
+            except Exception as e:
+                print(e)
                 print("init colors - please take another photo")
-        self.color_filter = two_turns.filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper,
+        self.color_filter = filter_colors_2.filter_colors_2(cut_board_im, self.chess_helper,
                                                                       self.delay_chess_helper)
 
     def prep_img(self):
@@ -36,9 +37,10 @@ class photos_angle_2:
         try:
             to_save = bool(tester_info)
             new_board_im = self.prep_im
-
+            mygui.add_angle_image(new_board_im)
             better_cut_board_im = self.fixer.main(new_board_im)
-            #better_cut_board_im = new_board_im
+            mygui.add_angle_image(better_cut_board_im)
+            # better_cut_board_im = new_board_im
 
             if to_save:
                 move_num = tester_info[0]
@@ -51,6 +53,7 @@ class photos_angle_2:
         except:
             cv2.imshow("image", new_board_im)
             cv2.waitKey(1000)
+            cv2.destroyAllWindows()
             print("get new im failed")
             raise Exception()
 

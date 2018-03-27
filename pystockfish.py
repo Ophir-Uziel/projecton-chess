@@ -152,6 +152,8 @@ class Engine(subprocess.Popen):
             "Minimum Thinking Time": 20,
             "Slow Mover": 80,
             "UCI_Chess960": "false",
+            "Aggressiveness": 180,
+            "Cowardice": 100,
         }
 
         if rand:
@@ -207,7 +209,7 @@ class Engine(subprocess.Popen):
 
         This is format in which stockfish "setoption setposition" takes move input.
         """
-        return ' '.join(str(moves))
+        return ' '.join(moves)
 
     def bestmove(self):
         """
