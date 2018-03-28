@@ -17,7 +17,7 @@ mindensity=0.1
 maxdensity=3.5
 minyahas=0.5
 maxyahas=1
-WHITE_COEFF = 2
+WHITE_COEFF = 1
 BLACK_COEFF = 1
 normalizing_factor_density = (((maxdensity+mindensity)*0.5)**2/2)+(
     maxdensity*mindensity*(-0.5)+0.2)
@@ -43,7 +43,7 @@ SAVE_ALLOT = False
 class find_moves_rank:
 
 
-    def __init__(self, chess_helper, net_dir_name = None):
+    def __init__(self, chess_helper, delay_chess_helper, net_dir_name = None):
         # self.net = scikit_learn.read_net(scikit_learn.NET_FILE)
         # classes = os.listdir("classes")
         # self.net = scikit_learn.classes_test(classes)
@@ -53,6 +53,7 @@ class find_moves_rank:
         if SAVE_ALLOT:
             tester_helper.make_squares_dirs()
         self.chess_helper = chess_helper
+        self.delay_chess_helper = delay_chess_helper
         self.mistake_idxes = []
         if net_dir_name:
             self.net_dir_name = net_dir_name
@@ -163,29 +164,30 @@ class find_moves_rank:
         rank_lst = []
         # idx_lst = scikit_learn.check_net(self.net, tester_helper.connect_two_ims_lst(squares, above_squares))
         bottom_coeffs = []
-        bottom_ranks = scikit_learn.check_net(self.net_btm,squares)
+        bottom_ranks = [scikit_learn.check_net(self.net_btm,[squares[i]])[0]
+                        if
+                        self.is_relevant_square(
+                squarelocs[i]) else 1 for
+                        i in range(len(squares))]
+        top_ranks = [scikit_learn.check_net(self.net_top, [above_squares[i]])[0]
+                        if
+                        self.is_relevant_square(
+                            abvlocs[i]) else 1 for
+                        i in range(len(squares))]
+
+        scikit_learn.check_net(self.net_btm,squares)
         top_ranks = scikit_learn.check_net(self.net_top, above_squares)
-        for sqr in squarelocs:
-            if self.chess_helper.square_color(sqr):
-                bottom_coeffs.append(WHITE_COEFF)
-            else:
-                bottom_coeffs.append(BLACK_COEFF)
 
-        top_coeffs = []
-        for sqr in abvlocs:
-            if self.chess_helper.square_color(sqr):
-                top_coeffs.append(WHITE_COEFF)
-            else:
-                top_coeffs.append(BLACK_COEFF)
 
-        for i in range(len(top_ranks)):
-            top_ranks[i]*= top_coeffs[i]
-        for i in range(len(bottom_ranks)):
-            bottom_ranks[i] *= bottom_coeffs[i]
-
+        # tot_ranks = []
+        # for i in range(len(squares)):
+        #     if self.is_relevant_square(squares):
+        #         tot_ranks[i] = 2-((top_ranks[i]**BOT_RATIO)+(bottom_ranks[i]**TOP_RATIO))
+        #     else:
+        #         tot_ranks[i] = 0
         tot_ranks =   list(map(lambda x, y:(2-(x**BOT_RATIO + y**TOP_RATIO)), top_ranks, bottom_ranks))
 
-        # for i in range(len(idx_lst)):
+                # for i in range(len(idx_lst)):
         #     idx = idx_lst[i]
         #     if idx == 9 or idx == 8 or idx == 4:
         #         rank_lst.append(0)
@@ -211,6 +213,11 @@ class find_moves_rank:
                     # a metric that consider both the square itself and the square above checks
         # return rank_lst
 
+    def is_relevant_square(self, square):
+        return (self.chess_helper.square_color(square) is True) or (
+                self.chess_helper.piece_color(square) is True) or (
+                self.chess_helper.piece_color(
+                    self.chess_helper.get_square_below(square)) is True)
     '''
         receives a sources ranks and places, targets ranks and places, and the chess board, and returns the best pair.
         this is done by find the best match of each source (using best_target_for_given_source method),
@@ -245,7 +252,7 @@ class find_moves_rank:
         inv_target_img_dict = dict(zip(target_ranks, targets_place))
         matches = self.chess_helper.square_dests(source_place)  # all the
         # natches of a given square
-        best_match_rank = 0.01
+        best_match_rank = 0
         best_match_places = []
         if source_place == "f8":
             print("hello")

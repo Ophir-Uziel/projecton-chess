@@ -28,10 +28,10 @@ class game_loop_2:
     def __init__(self, angles_num, user_moves_if_test=None,rival_moves_if_test=None, imgs_if_test=None, if_save_and_print=True, net_dir_name = None, save_idx=0):
 
         global RESULTS_DIR
-        mygui.init()
+        # mygui.init()
         RESULTS_DIR += str(net_dir_name)
-        if ('super_tester_results' + str(net_dir_name)) in os.listdir("professional games 3"):
-            raise Exception("berkos exception. change the name of the folder")
+        # if ('super_tester_results' + str(net_dir_name)) in os.listdir("professional games 3"):
+        #     raise Exception("berkos exception. change the name of the folder")
         tester_helper.RESULTS_DIR += str(net_dir_name)
         if net_dir_name:
             net_dir_name = os.path.join(RESULTS_DIR,str(net_dir_name))
@@ -45,6 +45,8 @@ class game_loop_2:
 
         if user_moves_if_test is not None:
             self.is_test = True
+            self.incon_cnt = 0
+            self.corrects_cnt = 0
             self.net_dir_name = net_dir_name
             self.user_moves = user_moves_if_test
             self.rival_moves = rival_moves_if_test
@@ -69,7 +71,7 @@ class game_loop_2:
         for ang in self.ph_angles:
             ang.init_colors()
 
-        self.movefinder = fm.find_moves_rank(self.chesshelper, self.net_dir_name)
+        self.movefinder = fm.find_moves_rank(self.chesshelper, self.delay_chesshelper, self.net_dir_name)
         self.chess_engine = chess_engine_wrapper.chess_engine_wrapper()
         self.bad_angles = []
 
@@ -79,6 +81,8 @@ class game_loop_2:
                     or self.moves_counter >= len(self.rival_moves)):
                 if (PRINTS):
                     print('Done')
+                    print(self.corrects_cnt)
+                    print(self.incon_cnt)
 
                     print(self.chesshelper.board)
                 if self.is_live_test or not self.is_test:
@@ -108,7 +112,7 @@ class game_loop_2:
             self.hardware.player_indication(self.best_move)
 
         self.chesshelper.do_turn(self.best_move[0:2], self.best_move[2:])
-        mygui.make_moves(self.best_move[0:4])
+#        mygui.make_moves(self.best_move[0:4])
 
     def play_rival_move(self):
         if PRINTS:
@@ -147,8 +151,13 @@ class game_loop_2:
                     new_src_ranks, new_trgt_ranks, cutim = self.check_one_direction(sources, dests, angle_idx=i)
                     cut_images[i] = cutim
                     if not i in self.bad_angles:
-                        src_ranks = list(map(lambda x, y: x + y, src_ranks, new_src_ranks))
-                        trgt_ranks = list(map(lambda x, y: x + y, trgt_ranks, new_trgt_ranks))
+                        src_ranks = list(map(lambda x, y: x + y/sum(
+                            new_src_ranks),
+                                             src_ranks,
+                                             new_src_ranks))
+                        trgt_ranks = list(map(lambda x, y: x + y/sum(
+                            new_trgt_ranks)**2,
+                                              trgt_ranks, new_trgt_ranks))
 
                     # new_pairs = pairs_and_ranks[0]
                     # new_ranks = pairs_and_ranks[1]
@@ -174,7 +183,7 @@ class game_loop_2:
                     print(trgt_ranks)
                     print(pairs)
                     print(pairs_ranks)
-                best_pair_idxes = [i for i in range(len(pairs_ranks)) if round(pairs_ranks[i]) == round(max(pairs_ranks))]
+                best_pair_idxes = [i for i in range(len(pairs_ranks)) if (pairs_ranks[i]) == (max(pairs_ranks))]
                 potential_moves = [pairs[best_pair_idxes[j]] for j in range(len(best_pair_idxes))]
                 potential_moves_copy = copy.deepcopy(potential_moves)
                 for i in range(2):
@@ -194,9 +203,11 @@ class game_loop_2:
                     if len(potential_trgts) == 1:
                         move = pairs[best_pair_idxes[0]][0] + pairs[best_pair_idxes[0]][1][0]
                     else:
+                        self.incon_cnt +=1
                         raise Exception("inconclusive move")
 
                 else:
+                    self.incon_cnt += 1
                     raise Exception("inconclusive move")
                     # raise Exception("inconclusive move")
                     # raise Exception("inconclusive move")
@@ -206,10 +217,12 @@ class game_loop_2:
                 #         move = hidden_moves[0]
                 #     else:
                 #         raise Exception("inconclusive move")
+
                 break
 
             except Exception as e:
                 if PRINTS:
+                    print(e)
                     move = ' both direction failed'
                     print(move)
 
@@ -232,6 +245,8 @@ class game_loop_2:
             print(rival_move)
 
         if self.is_test:
+            if move == rival_move:
+                self.corrects_cnt +=1
             move = rival_move
         self.last_move = move[0:2] + move[2:]
         self.chesshelper.do_turn(move[0:2], move[2:])
@@ -240,13 +255,15 @@ class game_loop_2:
         self.delay_chesshelper.do_turn(self.best_move[0:2],self.best_move[2:])
         self.delay_chesshelper.do_turn(move[0:2], move[2:])
         self.moves_counter += 1
-        mygui.make_moves(move)
+#        mygui.make_moves(move)
         return move
 
     def get_hidden_move_rank(self, move):
         return int(self.is_hidden_square(move[0], SOURCE))+int(self.is_hidden_square(move[1], not SOURCE)) +\
-               int(self.is_hidden_square(self.chesshelper.get_square_above(move[0])), SOURCE) + \
-               int(self.is_hidden_square(self.chesshelper.get_square_above(move[1])), not SOURCE)
+               int(self.is_hidden_square(self.chesshelper.get_square_above(
+                   move[0]), SOURCE)) + \
+               int(self.is_hidden_square(self.chesshelper.get_square_above(
+                   move[1]), not SOURCE))
 
 
     def get_hidden_moves(self, src = None):
@@ -261,7 +278,8 @@ class game_loop_2:
         return hidden_moves
 
     def is_hidden_square(self, square, is_src):
-        double_eat = (self.chesshelper.piece_color(square)) is False and (self.delay_chesshelper.piece_color(square) is False)
+        double_eat = (self.chesshelper.piece_color(square)) is False and (
+            is_src is False)
         bel_sqr = self.chesshelper.get_square_below(square)
         is_black_square = not self.chesshelper.square_color(square)
         is_static_piece_bel = ((self.chesshelper.piece_color(bel_sqr) is not None) and (self.delay_chesshelper.piece_color(bel_sqr) is not None))
@@ -325,8 +343,9 @@ class game_loop_2:
             #angle.set_prev_im(cut_board_im)
 
             return src_ranks, trgt_ranks, cut_board_im
-        except:
+        except Exception as e:
             if PRINTS:
+                print(e)
                 print("angle " + str(angle_idx) + " failed")
             cut_board_im = None
             return [0]*len(sources), [0]*len(dests), cut_board_im
@@ -364,8 +383,8 @@ class game_loop_2:
             raise
 
 #
-game = game_loop_2(2, net_dir_name=3)
-game.main()
+# game = game_loop_2(2, net_dir_name=3)
+# game.main()
 #
 
 

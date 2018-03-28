@@ -12,7 +12,7 @@ import this
 TOP_NET_FILENAME = "top_net_old"
 BOTTOM_NET_FILENAME = "bottom_net_old"
 NET_FILE = "net2"
-
+PRINT = False
 
 def try1():
     digits = datasets.load_digits()
@@ -147,7 +147,8 @@ def im_to_lst(lst):
     imgs = []
     for i in range(len(lst)):
         if i%100 == 0:
-            print("ims to lst: " + str(i))
+            if(PRINT):
+                print("ims to lst: " + str(i))
         new_im =[]
         for row in lst[i]:
             for pixel in list(row):
